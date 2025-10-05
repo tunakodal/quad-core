@@ -16,4 +16,4 @@ Scrum Master(SM): Kayrahan Toprak Tosun
 ## Bağlantılar
 
 - Google Drive: https://drive.google.com/drive/folders/1lyXuqaJ0JrhiMycv8PPHxm4y8imNcxqK?usp=sharing
-- Sprint Board (Jira): quadcore.atlassian.net 
+- Sprint Board (Jira): https://quadcore.atlassian.net/jira/software/projects/BP/boards/34/timeline?timeline=MONTHS
