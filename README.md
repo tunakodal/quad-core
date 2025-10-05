@@ -5,7 +5,7 @@
 
 Grup Adı: Quad-Core  
 Project Manager (PM): Ebrar Sude Doğan   
-Scrum Master(SM): Kayrahan Toprak Tosun  
+Scrum Master (SM): Kayrahan Toprak Tosun  
 
 ## Grup Üyeleri:
 - Ebrar Sude Doğan
