@@ -1,0 +1,36 @@
+.btn{
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .06s ease, filter .2s ease, background .2s ease, border-color .2s ease;
+}
+.btn:active{ transform: translateY(1px); }
+
+.primary{
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  color: var(--petrol); /* DEĞİŞTİ */
+  box-shadow: 0 12px 40px rgba(255,106,0,0.24);
+}
+
+.primary:hover{
+  filter: brightness(1.05);
+}
+
+.ghost{
+  background: rgba(11,47,58,0.04);
+  color: var(--petrol);
+  border: 1px solid rgba(11,47,58,0.18);
+}
+
+.ghost:hover{
+  background: rgba(11,47,58,0.08);
+}
+.secondary{
+  background: rgba(11,47,58,0.06);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.full{ width:100%; }

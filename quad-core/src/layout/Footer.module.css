@@ -1,0 +1,16 @@
+.footer{
+  width: 100%;
+  background: var(--petrol);
+  color: #a2b7cd;
+}
+
+.inner{
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 15px 20px;
+
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.85;
+}
