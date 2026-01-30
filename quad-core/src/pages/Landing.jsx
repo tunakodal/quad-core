@@ -1,10 +1,12 @@
 import styles from "./Landing.module.css";
-import logo from "../assets/logo.png";
+import logo from "/logo.png";
 import { Button } from "../ui/Button";
+import { useNavigate } from "react-router-dom";
 
 const letters = ["G", "U", "I", "D", "E"];
 
 export function Landing() {
+  const navigate = useNavigate();
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
@@ -30,8 +32,19 @@ export function Landing() {
         </p>
 
         <div className={styles.actions}>
-          <Button className={styles.primaryBtn}>Start Planning</Button>
-          <Button variant="ghost" className={styles.ghostBtn}>How it works</Button>
+          <Button
+              className={styles.primaryBtn}
+              onClick={() => navigate("/planning")}
+            >
+              Start Planning
+          </Button>
+          <Button
+            variant="ghost"
+            className={styles.ghostBtn}
+            onClick={() => navigate("/how-it-works")}
+          >
+            How GUIDE Works
+        </Button>
         </div>
 
       </div>

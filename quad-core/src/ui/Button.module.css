@@ -10,7 +10,7 @@
 
 .primary{
   background: linear-gradient(180deg, var(--accent), var(--accent-2));
-  color: var(--petrol); /* DEĞİŞTİ */
+  color: var(--petrol);
   box-shadow: 0 12px 40px rgba(255,106,0,0.24);
 }
 

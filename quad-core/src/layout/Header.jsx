@@ -1,14 +1,15 @@
 import styles from "./Header.module.css";
-import logo from "../assets/logo.png?url";
+import logo from "/logo.png?url";
+import { Link } from "react-router-dom";
 
 export function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        <div className={styles.brand}>
-          <img src={logo} alt="Guide logo" className={styles.logo} />
-          <span>GUIDE</span>
-        </div>
+        <Link to="/" className={styles.brand} aria-label="Go to landing page">
+          <img className={styles.logo} src={logo} alt="GUIDE logo" />
+          <span className={styles.brandText}>GUIDE</span>
+        </Link>
       </div>
     </header>
   );

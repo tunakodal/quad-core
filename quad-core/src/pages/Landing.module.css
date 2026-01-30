@@ -39,7 +39,7 @@
   display: inline-flex;
   gap: 2px;
 
-  font-size: 32px;
+  font-size: 50px;
   letter-spacing: 6px;
   line-height: 1;
   color: var(--petrol);
@@ -74,19 +74,6 @@
   gap: 12px;
   width: 320px;            /* buton genişliği */
   max-width: 92vw;
-}
-
-.primaryBtn{
-  width: 100%;
-  padding: 16px 20px;
-  font-size: 16px;
-
-  position: relative;
-  z-index: 0;            /* halo arkada kalsın */
-  isolation: isolate;    /* stacking düzgün olsun */
-  overflow: visible;
-
-  animation: none;       /* eski glow varsa kapat */
 }
 
 .primaryBtn{

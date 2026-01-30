@@ -8,5 +8,5 @@ export function Button({ variant = "primary", fullWidth, className = "", ...rest
     className,
   ].join(" ");
 
-  return <button className={cn} {...rest} />;
+  return <button type="button" className={cn} {...rest} />;
 }
