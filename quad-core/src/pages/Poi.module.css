@@ -1,0 +1,473 @@
+.page{
+  width: 100%;
+  padding: 20px 16px;
+}
+
+.hero{
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.layout{
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 980px){
+  .layout{ grid-template-columns: 1fr; }
+}
+
+/* LEFT */
+.left{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mainPhoto{
+  height: 360px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(9, 40, 54, 0.10);
+  background: rgba(9,40,54,0.06);
+}
+
+.mainPhoto img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.info{
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(9, 40, 54, 0.06);
+  border: 1px solid rgba(9, 40, 54, 0.10);
+}
+
+.name{
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: var(--petrol);
+}
+
+.meta{
+  margin-top: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--petrol);
+  opacity: 0.85;
+  font-size: 14px;
+}
+
+.dot{ opacity: 0.55; }
+
+.chips{
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip{
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,106,0,0.10);
+  border: 1px solid rgba(255,106,0,0.22);
+  color: var(--petrol);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Language buttons */
+.langRow{
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.langBtn{
+  border: 1px solid rgba(9,40,54,0.14);
+  background: rgba(255,255,255,0.70);
+  border-radius: 999px;
+  padding: 10px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: var(--petrol);
+}
+
+.langBtn:hover{ border-color: rgba(255,106,0,0.22); }
+
+.langBtnOn{
+  box-shadow: 0 0 0 4px rgba(255,106,0,0.14);
+  border-color: rgba(255,106,0,0.28);
+}
+
+.flagWrap{
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(9,40,54,0.10);
+  flex: 0 0 22px;
+  background: rgba(9,40,54,0.06);
+}
+
+.flagWrap img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.langText{
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.langCode{
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Player */
+.player{
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.70);
+  border: 1px solid rgba(9,40,54,0.14);
+}
+
+.playerTop{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.playerTitle{
+  color: var(--petrol);
+  font-weight: 600;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.playerClose{
+  border: 1px solid rgba(9,40,54,0.18);
+  background: rgba(255,255,255,0.65);
+  color: var(--petrol);
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  line-height: 1;
+}
+.playerClose:hover{ border-color: rgba(255,106,0,0.24); }
+
+/* Progress */
+.progressWrap{
+  position: relative;
+  padding-bottom: 16px;
+}
+
+.progressTime{
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  font-size: 12px;
+  color: var(--petrol);
+  opacity: 0.75;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.progress{
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  outline: none;
+  background: transparent;
+}
+
+.progress::-webkit-slider-runnable-track{
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--petrol) 0%,
+    var(--petrol) var(--pct),
+    rgba(9, 40, 54, 0.18) var(--pct),
+    rgba(9, 40, 54, 0.18) 100%
+  );
+}
+
+.progress::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--petrol);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  margin-top: -4px;
+  cursor: pointer;
+}
+
+.progress::-moz-range-track{
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(9, 40, 54, 0.18);
+}
+.progress::-moz-range-progress{
+  height: 6px;
+  border-radius: 999px;
+  background: var(--petrol);
+}
+.progress::-moz-range-thumb{
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--petrol);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  cursor: pointer;
+}
+
+.playerCtrls{
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ctrlBtn{
+  border: 1px solid rgba(9,40,54,0.18);
+  background: rgba(11,47,58,0.04);
+  color: var(--petrol);
+  border-radius: 999px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.playBtn{
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 800;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  color: var(--petrol);
+  box-shadow: 0 12px 40px rgba(255,106,0,0.24);
+  line-height: 1;
+}
+
+.playIcon{
+  font-size: 14px;
+  line-height: 1;
+}
+
+.desc{
+  margin-top: 14px;
+  color: var(--petrol);
+  opacity: 0.86;
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+/* RIGHT */
+.right{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.galleryTop{
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(9, 40, 54, 0.06);
+  border: 1px solid rgba(9, 40, 54, 0.10);
+}
+
+.galleryStrip{
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.thumb{
+  width: 74px;
+  height: 56px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(9,40,54,0.14);
+  background: rgba(255,255,255,0.60);
+  cursor: pointer;
+  padding: 0;
+}
+
+.thumb img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbOn{
+  outline: 3px solid rgba(255,106,0,0.18);
+}
+
+.dots{
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dotBtn{
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(9,40,54,0.25);
+  cursor: pointer;
+}
+
+.dotOn{ background: rgba(255,106,0,0.85); }
+
+/* NAV (tek tanım) */
+.nav{
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(9, 40, 54, 0.06);
+  border: 1px solid rgba(9, 40, 54, 0.10);
+  display: grid;
+  gap: 10px;
+}
+
+.navCard{
+  width: 100%;
+  border: 1px solid rgba(9,40,54,0.14);
+  background: rgba(255,255,255,0.70);
+  border-radius: 16px;
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  color: var(--petrol);
+}
+
+.navCard:hover{
+  border-color: rgba(255,106,0,0.22);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.06);
+}
+
+.navDisabled{
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.navArrow{
+  font-size: 18px;
+  opacity: 0.8;
+  flex: 0 0 auto;
+}
+
+.navTexts{
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.navTop{
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.navName{
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.backBtn{
+  width: 100%;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* NEXT BIG CARD (column garanti) */
+.navNextBig{
+  display: flex;            /* override garantisi */
+  flex-direction: column;   /* 👈 önemli */
+  padding: 0;
+  overflow: hidden;
+}
+
+/* üstte büyük görsel */
+.nextHero{
+  position: relative;
+  width: 100%;
+  height: 140px;
+  background: rgba(9,40,54,0.06);
+}
+
+.nextHero img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.nextHeroPh{
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(9,40,54,0.12),
+    rgba(9,40,54,0.04)
+  );
+}
+
+/* alttaki satır: previous gibi */
+.navNextRow{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+}
+
+.loading{
+  padding: 18px;
+  color: var(--petrol);
+  opacity: 0.8;
+}

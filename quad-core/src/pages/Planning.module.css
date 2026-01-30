@@ -1,0 +1,385 @@
+.page{
+  width: 100%;
+  padding: 44px 16px;
+}
+
+.hero{
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  position: relative;
+  overflow: visible;
+}
+
+.brand{
+  margin: 8px 0 0;
+  font-size: 28px;
+  letter-spacing: 3px;
+  color: var(--petrol);
+}
+
+.block{
+  background: rgba(9, 40, 54, 0.06);
+  border: 1px solid rgba(9, 40, 54, 0.10);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.twoCols{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 760px){
+  .twoCols{ grid-template-columns: 1fr; }
+}
+
+/* --- Search Select --- */
+.selectWrap{
+  position: relative;
+}
+
+.selectTop{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  background: #fff;
+  border: 1px solid rgba(9, 40, 54, 0.15);
+  border-radius: 14px;
+  padding: 12px 12px;
+}
+
+.searchIcon{
+  opacity: 0.6;
+}
+
+.chev{
+  margin-left: auto;
+  opacity: 0.6;
+}
+
+.selectInput{
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: var(--petrol);
+  background: transparent;
+}
+
+.dropdown{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+
+  background: #fff;
+  border: 1px solid rgba(9, 40, 54, 0.15);
+  border-radius: 14px;
+  padding: 8px;
+  z-index: 20;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.option{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  padding: 10px 10px;
+  border-radius: 12px;
+  color: var(--petrol);
+  text-align: left;
+  font-size: 15px;
+}
+
+.option:hover{
+  background: rgba(9, 40, 54, 0.06);
+}
+
+.optionPin{
+  opacity: 0.9;
+}
+
+.empty{
+  padding: 10px;
+  opacity: 0.7;
+}
+
+/* Region select */
+.regionRow{
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.regionLabel{
+  min-width: 62px;
+  font-size: 13px;
+  opacity: 0.75;
+  color: var(--petrol);
+}
+
+.regionSelect{
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(9, 40, 54, 0.15);
+  background: #fff;
+  color: var(--petrol);
+  outline: none;
+}
+
+/* --- Range --- */
+.rangeRow{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rangeHead{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rangeTitle{
+  font-size: 18px;
+  color: var(--petrol);
+  margin-bottom: 8px;
+}
+
+.valuePill{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  background: #fff;
+  border: 1px solid rgba(9, 40, 54, 0.15);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.pillInput{
+  width: 42px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--petrol);
+  font-weight: 600;
+  text-align: right;
+}
+
+.pillUnit{
+  font-size: 12px;
+  opacity: 0.7;
+  color: var(--petrol);
+}
+
+.range{
+  width: 100%;
+}
+
+.ticks{
+  position: relative;
+  width: 100%;
+  height: 14px;
+  margin-top: 4px;
+
+  display: block;
+}
+
+.tick{
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+
+  font-size: 12px;
+  color: var(--petrol);
+  opacity: 0.6;
+}
+
+.distanceTicks{
+  --tick-offset: 6px; /* önce 6px dene */
+}
+
+/* --- Interests --- */
+.sectionTitle{
+  font-size: 18px;
+  color: var(--petrol);
+  margin-bottom: 10px;
+}
+
+.grid{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 920px){
+  .grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px){
+  .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.interestPill{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 10px 12px;
+  border-radius: 14px;
+
+  background: #fff;
+  border: 1px solid rgba(9, 40, 54, 0.15);
+  cursor: pointer;
+
+  color: var(--petrol);
+  text-align: left;
+}
+
+.interestOn{
+  border-color: rgba(255, 106, 0, 0.50);
+  box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.10);
+}
+
+.iconSlot{
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(9, 40, 54, 0.08);
+  border: 1px dashed rgba(9, 40, 54, 0.25);
+  flex: 0 0 26px;
+}
+
+.interestLabel{
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+/* mini switch */
+.miniSwitch{
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(9, 40, 54, 0.10);
+  border: 1px solid rgba(9, 40, 54, 0.15);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.miniSwitchOn{
+  background: rgba(255, 106, 0, 0.25);
+  border-color: rgba(255, 106, 0, 0.35);
+  justify-content: flex-end;
+}
+
+.miniKnob{
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* CTA */
+.cta{
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 0;
+}
+
+
+.inlineQuote{
+  margin: 2px 0 2px;
+  text-align: center;
+}
+
+.quoteText{
+  margin: 0;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 12px;
+
+  color: var(--petrol);
+  opacity: 0.45;
+}
+
+.quoteAuthor{
+  margin: 4px 0 0;
+
+  font-style: italic;
+  font-weight: 300;
+  font-size: 10px;
+
+  color: var(--petrol);
+  opacity: 0.45;
+}
+
+.generateBtn{
+  padding: 12px 40px;
+  font-size: 14px;
+}
+
+.blockingOverlay{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(9, 40, 54, 0.22);
+  backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+}
+
+
+.loadingCard{
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(9, 40, 54, 0.14);
+  border-radius: 18px;
+  padding: 18px 22px;
+  min-width: 240px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  box-shadow: 0 18px 44px rgba(0,0,0,0.16);
+}
+
+.spinner{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 4px solid rgba(255,106,0,0.22);
+  border-top-color: rgba(255,106,0,0.95);
+  animation: spin 0.9s linear infinite;
+}
+
+.loadingText{
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--petrol);
+  letter-spacing: 0.2px;
+}
+
+@keyframes spin{
+  to{ transform: rotate(360deg); }
+}
