@@ -30,6 +30,12 @@ class AbstractDataSource(ABC):
     def load_by_id(self, poi_id: str) -> Poi | None: ...
 
 
+# TODO (Tuna): JsonDataSource yerine PostgresDataSource yaz.
+#   - Aynı AbstractDataSource interface'ini kalıt
+#   - load_all_pois()  → SELECT * FROM pois
+#   - load_by_id(id)   → SELECT * FROM pois WHERE id = $1
+#   - Her satırı Poi(id, name, category, city, location=GeoPoint(...), estimated_visit_duration) nesnesine dönüştür
+#   - Hazır olunca containers.py'deki JsonDataSource satırını PostgresDataSource ile değiştir
 class JsonDataSource(AbstractDataSource):
     """Loads POI records from a JSON file on disk."""
 
@@ -136,6 +142,11 @@ class PoiRepository(AbstractPoiRepository):
         return self._data_source.load_by_id(poi_id)
 
 
+# TODO (Tuna): ContentRepository'nin __init__ ve _load() metodlarını DB'den çekecek şekilde güncelle.
+#   - find_content(poi_id, lang)       → SELECT ... FROM poi_contents WHERE poi_id=$1 AND language=$2
+#                                         Bulamazsa language='EN' ile tekrar dene, o da yoksa None döner
+#   - find_content_batch(poi_ids, lang) → Her poi_id için find_content() çağır, {poi_id: PoiContent} döner
+#   - Her satırı PoiContent(poi_id, language, description_text, images=[], audio=None) nesnesine dönüştür
 class ContentRepository(AbstractContentRepository):
     """
     Provides destination descriptions and image/audio metadata for POIs.

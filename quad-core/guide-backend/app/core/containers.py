@@ -71,6 +71,9 @@ def create_container() -> AppContainer:
     """Factory: build the full dependency graph for production."""
 
     # ── Data Access ───────────────────────────────────────────────
+    # TODO (Tuna): PostgreSQL'e geçince bu iki satırı değiştir:
+    #   data_source        = PostgresDataSource(settings.database_url)
+    #   content_repository = ContentRepository(settings.database_url)
     data_source = JsonDataSource(_resolve_data_path("pois.json"))
     poi_repository = PoiRepository(data_source)
     content_repository = ContentRepository(_resolve_data_path("contents.json"))

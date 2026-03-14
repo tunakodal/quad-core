@@ -91,8 +91,16 @@ class MonteCarloItineraryPlanner:
         self, pois: list[Poi], constraints: TravelConstraints
     ) -> list[Itinerary]:
         """
-        TODO: Generate `max_iterations` candidate itineraries by randomly
-        sampling and reordering POIs, then return all candidates.
+        TODO (Tuna): Bu metodun içini doldur. Mantık şu şekilde olmalı:
+            rng = random.Random(self.random_seed)
+            candidates = []
+            for _ in range(self.max_iterations):
+                shuffled = list(pois)
+                rng.shuffle(shuffled)
+                candidate = self.itinerary_builder.allocate_to_days(shuffled, constraints)
+                candidates.append(candidate)
+            return candidates
+        Metod imzasını (parametre ve dönüş tipi) değiştirme.
         """
         # Stub: returns a single deterministic allocation until implemented
         return [self.itinerary_builder.allocate_to_days(pois, constraints)]
