@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import RouteMap from "./RouteMap";
 import { Button } from "../ui/Button";
-import styles from "./Replanning.module.css";
+import styles from "../styles/Replanning.module.css";
 
 // --- helpers ---
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));

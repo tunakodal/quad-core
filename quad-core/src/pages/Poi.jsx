@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import styles from "./Poi.module.css";
+import styles from "../styles/Poi.module.css";
 import { Button } from "../ui/Button";
 
 /** DEV fallback */

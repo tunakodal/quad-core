@@ -1,4 +1,4 @@
-import styles from "./Landing.module.css";
+import styles from "../styles/Landing.module.css";
 import logo from "/logo.png";
 import { Button } from "../ui/Button";
 import { useNavigate } from "react-router-dom";

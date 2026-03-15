@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import styles from "./HowItWorks.module.css";
+import styles from "../styles/HowItWorks.module.css";
 import { Button } from "../ui/Button";
 
 /**

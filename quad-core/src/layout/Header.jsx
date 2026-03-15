@@ -1,4 +1,4 @@
-import styles from "./Header.module.css";
+import styles from "../styles/Header.module.css";
 import logo from "/logo.png?url";
 import { Link } from "react-router-dom";
 

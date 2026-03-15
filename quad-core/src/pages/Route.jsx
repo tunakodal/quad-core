@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import RouteMap from "./RouteMap";
-import styles from "./Route.module.css";
+import styles from "../styles/Route.module.css";
 import { Button } from "../ui/Button";
 
 const DEV_POIS = [

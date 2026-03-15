@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import styles from "./AppShell.module.css";
+import styles from "../styles/AppShell.module.css";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 

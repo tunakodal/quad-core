@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import styles from "./Planning.module.css";
+import styles from "../styles/Planning.module.css";
 import { Button } from "../ui/Button";
 import { useNavigate } from "react-router-dom";
 
