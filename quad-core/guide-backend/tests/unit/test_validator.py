@@ -5,6 +5,7 @@ Covers TC-UT-01 through TC-UT-05 from the GUIDE Test Plan.
 All tests are synchronous and require no external dependencies.
 """
 import pytest
+from pydantic import ValidationError
 
 from app.api.validator import RequestValidator
 from app.core.config import settings
@@ -88,14 +89,22 @@ def test_empty_categories_produces_warning_not_error(validator):
 
 
 # ── TC-UT-04: trip_days upper bound ───────────────────────────────────────────
+# NOTE: TravelPreferences DTO enforces the upper bound via Pydantic field
+# constraints (le=max_trip_days). The rejection therefore happens at the DTO
+# construction level before RequestValidator is even called — which is a
+# stronger guarantee than post-construction validation.
 
 def test_reject_trip_days_above_max(validator):
-    """TC-UT-04 — trip_days > settings.max_trip_days must be rejected."""
-    req = _make_route_request(trip_days=settings.max_trip_days + 1)
-    result = validator.validate_route_request(req)
+    """TC-UT-04 — trip_days > settings.max_trip_days must be rejected.
 
-    assert not result.is_valid
-    assert any("trip_days" in e.lower() for e in result.errors)
+    TravelPreferences enforces this via a Pydantic field constraint, so the
+    ValidationError is raised when building the request object itself.
+    """
+    with pytest.raises(ValidationError) as exc_info:
+        _make_route_request(trip_days=settings.max_trip_days + 1)
+
+    errors = exc_info.value.errors()
+    assert any(e["loc"] == ("trip_days",) for e in errors)
 
 
 def test_accept_trip_days_at_max(validator):
@@ -112,13 +121,17 @@ def test_accept_trip_days_at_max(validator):
 # City-specific upper bounds are not yet implemented.
 
 def test_reject_daily_distance_below_minimum(validator):
-    """TC-UT-05 (partial) — max_distance_per_day below min threshold is rejected."""
-    too_low = settings.min_daily_distance_meters - 1
-    req = _make_route_request(max_distance_per_day=too_low)
-    result = validator.validate_route_request(req)
+    """TC-UT-05 (partial) — max_distance_per_day below min threshold is rejected.
 
-    assert not result.is_valid
-    assert any("distance" in e.lower() for e in result.errors)
+    TravelPreferences enforces this via a Pydantic field constraint, so the
+    ValidationError is raised when building the request object itself.
+    """
+    too_low = settings.min_daily_distance_meters - 1
+    with pytest.raises(ValidationError) as exc_info:
+        _make_route_request(max_distance_per_day=too_low)
+
+    errors = exc_info.value.errors()
+    assert any(e["loc"] == ("max_distance_per_day",) for e in errors)
 
 
 def test_accept_daily_distance_at_minimum(validator):
