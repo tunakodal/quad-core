@@ -1,116 +1,34 @@
-from __future__ import annotations
-from enum import Enum
-from pydantic import BaseModel, Field
-from typing import Optional
-from app.models.domain import Language, Itinerary, RoutePlan, Poi, PoiContent
+"""
+Backward-compatible re-export module.
 
+All DTOs have been moved to focused submodules:
+  - app.schemas.common          → Severity, ApiWarning, ApiErrorResponse, ValidationResult
+  - app.schemas.travel          → TravelPreferences, TravelConstraints
+  - app.schemas.route_dtos      → RouteRequest, RouteResponse, ReplanRequest,
+                                   UserEdits, DayReorderOperation
+  - app.schemas.poi_dtos        → PoiQuery, PoiQueryResponse,
+                                   PoiContentRequest, PoiContentResponse
+  - app.schemas.suggestion_dtos → TripDaySuggestionRequest, TripDaySuggestionResponse
 
-# ── Warnings & Errors ──────────────────────────────────────────────
+New code should import directly from those submodules.
+This file exists only to avoid breaking existing imports (e.g. tests).
+"""
+from app.schemas.common import Severity, ApiWarning, ApiErrorResponse, ValidationResult
+from app.schemas.travel import TravelPreferences, TravelConstraints
+from app.schemas.route_dtos import (
+    DayReorderOperation, UserEdits,
+    RouteRequest, RouteResponse, ReplanRequest,
+)
+from app.schemas.poi_dtos import (
+    PoiQuery, PoiQueryResponse,
+    PoiContentRequest, PoiContentResponse,
+)
+from app.schemas.suggestion_dtos import TripDaySuggestionRequest, TripDaySuggestionResponse
 
-class Severity(str, Enum):
-    INFO = "INFO"
-    WARN = "WARN"
-
-
-class ApiWarning(BaseModel):
-    code: str
-    severity: Severity = Severity.WARN
-    message: str
-
-
-class ApiErrorResponse(BaseModel):
-    error_code: str
-    message: str
-    details: list[str] = []
-
-
-class ValidationResult(BaseModel):
-    is_valid: bool
-    errors: list[str] = []
-    warnings: list[ApiWarning] = []
-
-
-# ── Travel preferences & constraints ──────────────────────────────
-
-class TravelPreferences(BaseModel):
-    city: str
-    trip_days: int = Field(..., ge=1, le=10)
-    categories: list[str] = []
-    max_distance_per_day: int = Field(..., ge=1000)  # meters
-
-
-class TravelConstraints(BaseModel):
-    max_trip_days: int = 10
-    max_pois_per_day: int = 9
-    max_daily_distance: int = 100_000  # meters
-
-
-# ── Route generation ───────────────────────────────────────────────
-
-class RouteRequest(BaseModel):
-    preferences: TravelPreferences
-    constraints: TravelConstraints
-    language: Language = Language.EN
-
-
-class RouteResponse(BaseModel):
-    itinerary: Itinerary
-    route_plan: RoutePlan
-    warnings: list[ApiWarning] = []
-    effective_trip_days: Optional[int] = None
-
-
-# ── Replanning ─────────────────────────────────────────────────────
-
-class DayReorderOperation(BaseModel):
-    day_index: int
-    ordered_poi_ids: list[str]
-
-
-class UserEdits(BaseModel):
-    removed_poi_ids: list[str] = []
-    locked_pois_by_day: dict[int, list[str]] = {}
-    reorder_operations: list[DayReorderOperation] = []
-
-
-class ReplanRequest(BaseModel):
-    existing_itinerary: Itinerary
-    edits: UserEdits
-    constraints: TravelConstraints
-
-
-# ── POI queries ────────────────────────────────────────────────────
-
-class PoiQuery(BaseModel):
-    city: str
-    categories: list[str] = []
-    text_query: Optional[str] = None
-
-
-class PoiQueryResponse(BaseModel):
-    pois: list[Poi] = []
-    warnings: list[ApiWarning] = []
-
-
-class PoiContentRequest(BaseModel):
-    poi_id: str
-    language: Language = Language.EN
-
-
-class PoiContentResponse(BaseModel):
-    content: PoiContent
-    warnings: list[ApiWarning] = []
-
-
-# ── Trip day suggestion ────────────────────────────────────────────
-
-class TripDaySuggestionRequest(BaseModel):
-    city: str
-    categories: list[str] = []
-    max_distance_per_day: Optional[int] = None
-
-
-class TripDaySuggestionResponse(BaseModel):
-    max_recommended_days: int
-    poi_count: int
-    warnings: list[ApiWarning] = []
+__all__ = [
+    "Severity", "ApiWarning", "ApiErrorResponse", "ValidationResult",
+    "TravelPreferences", "TravelConstraints",
+    "DayReorderOperation", "UserEdits", "RouteRequest", "RouteResponse", "ReplanRequest",
+    "PoiQuery", "PoiQueryResponse", "PoiContentRequest", "PoiContentResponse",
+    "TripDaySuggestionRequest", "TripDaySuggestionResponse",
+]

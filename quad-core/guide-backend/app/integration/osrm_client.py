@@ -1,5 +1,6 @@
 import httpx
-from app.models.domain import GeoPoint, RoutingProfile
+from app.models.enums import RoutingProfile
+from app.models.geo import GeoPoint
 from app.core.config import settings
 
 

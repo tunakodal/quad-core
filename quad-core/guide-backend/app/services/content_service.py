@@ -1,5 +1,6 @@
-from app.models.domain import PoiContent, Language
-from app.schemas.dtos import ApiWarning, Severity
+from app.models.enums import Language
+from app.models.poi import PoiContent
+from app.schemas.common import ApiWarning, Severity
 
 
 class ContentService:

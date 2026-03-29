@@ -1,5 +1,5 @@
-from app.models.domain import Poi
-from app.schemas.dtos import TravelPreferences, TravelConstraints
+from app.models.poi import Poi
+from app.schemas.travel import TravelConstraints, TravelPreferences
 
 
 class PoiService:

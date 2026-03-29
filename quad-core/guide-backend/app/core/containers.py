@@ -13,26 +13,22 @@ from pathlib import Path
 
 from app.core.config import settings
 from app.integration.osrm_client import OsrmClient
-from app.repositories.repositories import (
-    JsonDataSource,
-    PoiRepository,
-    ContentRepository,
-    MediaRepository,
-    AudioAssetResolver,
+from app.repositories.interfaces import (
     AbstractPoiRepository,
     AbstractContentRepository,
     AbstractMediaRepository,
     AbstractAudioAssetResolver,
 )
+from app.repositories.poi_repository import JsonDataSource, PoiRepository
+from app.repositories.content_repository import ContentRepository
+from app.repositories.media_repository import AudioAssetResolver, MediaRepository
 from app.services.poi_service import PoiService
-from app.services.routing_service import RoutingService, RouteAssembler
+from app.services.routing_service import RouteAssembler, RoutingService
 from app.services.content_service import ContentService
-from app.services.itinerary_service import (
-    ItineraryService,
-    ItineraryBuilder,
-    MonteCarloItineraryPlanner,
-    HeuristicPlanRanker,
-)
+from app.services.plan_ranker import HeuristicPlanRanker
+from app.services.itinerary_builder import ItineraryBuilder
+from app.services.itinerary_planner import MonteCarloItineraryPlanner
+from app.services.itinerary_service import ItineraryService
 from app.api.validator import RequestValidator
 
 

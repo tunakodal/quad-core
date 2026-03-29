@@ -6,15 +6,13 @@ Dependencies are resolved from the application container at request time.
 """
 from fastapi import APIRouter, HTTPException, Request
 
-from app.schemas.dtos import (
-    PoiQuery, PoiQueryResponse,
-    PoiContentRequest, PoiContentResponse,
-    ApiErrorResponse, TravelPreferences,
-)
+from app.schemas.common import ApiErrorResponse
+from app.schemas.poi_dtos import PoiContentRequest, PoiContentResponse, PoiQuery, PoiQueryResponse
+from app.schemas.travel import TravelPreferences
 from app.api.validator import RequestValidator
 from app.services.poi_service import PoiService
 from app.services.content_service import ContentService
-from app.repositories.repositories import AbstractPoiRepository
+from app.repositories.interfaces import AbstractPoiRepository
 
 router = APIRouter(prefix="/pois", tags=["POIs"])
 

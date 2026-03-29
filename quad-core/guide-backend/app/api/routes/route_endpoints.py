@@ -6,11 +6,10 @@ Dependencies are resolved from the application container at request time.
 """
 from fastapi import APIRouter, HTTPException, Request
 
-from app.schemas.dtos import (
-    RouteRequest, RouteResponse,
-    ReplanRequest, TripDaySuggestionRequest, TripDaySuggestionResponse,
-    ApiErrorResponse, TravelPreferences,
-)
+from app.schemas.common import ApiErrorResponse
+from app.schemas.route_dtos import ReplanRequest, RouteRequest, RouteResponse
+from app.schemas.suggestion_dtos import TripDaySuggestionRequest, TripDaySuggestionResponse
+from app.schemas.travel import TravelPreferences
 from app.api.validator import RequestValidator
 from app.services.itinerary_service import ItineraryService
 from app.services.routing_service import RoutingService
