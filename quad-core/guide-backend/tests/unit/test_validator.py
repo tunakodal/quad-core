@@ -20,7 +20,7 @@ from app.schemas.dtos import (
     TripDaySuggestionRequest,
     UserEdits,
 )
-from app.models.enums import Language
+from app.models.enums import  Language
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
