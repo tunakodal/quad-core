@@ -12,7 +12,6 @@ from app.core.config import settings
 from app.models.domain import Itinerary, DayPlan, Poi, GeoPoint
 from app.schemas.dtos import (
     DayReorderOperation,
-    Language,
     PoiQuery,
     ReplanRequest,
     RouteRequest,
@@ -21,7 +20,7 @@ from app.schemas.dtos import (
     TripDaySuggestionRequest,
     UserEdits,
 )
-
+from app.models.enums import Language
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
