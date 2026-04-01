@@ -1,8 +1,12 @@
 """
-Content repository — POI text descriptions and image metadata.
+Content repository — POI text descriptions.
 
-Currently backed by a JSON file.
-PostgreSQL implementation is pending — see TODO below.
+ContentRepository       — JSON dosyasından okur (geliştirme / fallback).
+PostgresContentRepository — Supabase/PostgreSQL'den okur (production).
+
+DB şema notu:
+  - poi_contents.poi_id → INTEGER (domain: str, sorguda int(poi_id) yapılır)
+  - language            → PostgreSQL USER-DEFINED enum, ::text cast ile string okunur
 """
 from __future__ import annotations
 
@@ -58,6 +62,63 @@ class ContentRepository(AbstractContentRepository):
         if result is None:
             result = poi_contents.get("EN")
         return result
+
+    async def find_content_batch(
+        self, poi_ids: list[str], lang: Language
+    ) -> dict[str, PoiContent]:
+        result: dict[str, PoiContent] = {}
+        for poi_id in poi_ids:
+            content = await self.find_content(poi_id, lang)
+            if content is not None:
+                result[poi_id] = content
+        return result
+
+
+# ── PostgreSQL implementation ─────────────────────────────────────
+
+class PostgresContentRepository(AbstractContentRepository):
+    """
+    Content repository backed by Supabase/PostgreSQL.
+
+    poi_contents.language PostgreSQL enum'u ::text cast ile okunur.
+    Dil bulunamazsa EN'e fallback yapılır.
+    """
+
+    def __init__(self, pool):
+        self._pool = pool
+
+    async def find_content(self, poi_id: str, lang: Language) -> PoiContent | None:
+        # Önce istenen dili dene, bulamazsa EN'e düş
+        row = await self._pool.fetchrow(
+            """
+            SELECT poi_id, language::text AS language, description_text
+            FROM poi_contents
+            WHERE poi_id = $1
+              AND language::text = $2
+            """,
+            int(poi_id),
+            lang.value,
+        )
+        if row is None and lang != Language.EN:
+            row = await self._pool.fetchrow(
+                """
+                SELECT poi_id, language::text AS language, description_text
+                FROM poi_contents
+                WHERE poi_id = $1
+                  AND language::text = 'EN'
+                """,
+                int(poi_id),
+            )
+        if row is None:
+            return None
+
+        return PoiContent(
+            poi_id=poi_id,          # domain str ID
+            language=Language(row["language"]),
+            description_text=row["description_text"] or "",
+            images=[],
+            audio=None,
+        )
 
     async def find_content_batch(
         self, poi_ids: list[str], lang: Language

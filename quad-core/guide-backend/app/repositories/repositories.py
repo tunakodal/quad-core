@@ -18,9 +18,9 @@ from app.repositories.interfaces import (
     AbstractMediaRepository,
     AbstractAudioAssetResolver,
 )
-from app.repositories.poi_repository import JsonDataSource, PoiRepository
-from app.repositories.content_repository import ContentRepository
-from app.repositories.media_repository import MediaRepository, AudioAssetResolver
+from app.repositories.poi_repository import JsonDataSource, PoiRepository, PostgresPoiRepository
+from app.repositories.content_repository import ContentRepository, PostgresContentRepository
+from app.repositories.media_repository import MediaRepository, AudioAssetResolver, PostgresMediaRepository
 from app.repositories.stubs import (
     StubPoiRepository,
     StubContentRepository,
@@ -34,9 +34,9 @@ __all__ = [
     "AbstractContentRepository",
     "AbstractMediaRepository",
     "AbstractAudioAssetResolver",
-    "JsonDataSource", "PoiRepository",
-    "ContentRepository",
-    "MediaRepository", "AudioAssetResolver",
+    "JsonDataSource", "PoiRepository", "PostgresPoiRepository",
+    "ContentRepository", "PostgresContentRepository",
+    "MediaRepository", "AudioAssetResolver", "PostgresMediaRepository",
     "StubPoiRepository", "StubContentRepository",
     "StubMediaRepository", "StubAudioAssetResolver",
 ]

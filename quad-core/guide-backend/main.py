@@ -17,11 +17,18 @@ from app.core.containers import create_container
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan: create the DI container on startup."""
-    container = create_container()
+    """
+    Application lifespan:
+      - Startup : DI container oluşturulur, DB pool açılır (DATABASE_URL varsa)
+      - Shutdown: DB pool kapatılır
+    """
+    from app.core.database import close_pool
+
+    container = await create_container()
     app.state.container = container
     yield
-    # Shutdown: nothing to clean up for now
+    if container.db_pool is not None:
+        await close_pool(container.db_pool)
 
 
 app = FastAPI(

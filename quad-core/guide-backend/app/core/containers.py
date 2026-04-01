@@ -1,48 +1,60 @@
 """
 Dependency Injection Container — Wires all components together.
 
-Aligned with GUIDE LLD: each component receives its dependencies
-through constructor injection, supporting testability and separation
-of concerns.
+DATABASE_URL set edilmişse PostgreSQL repo'ları kullanılır.
+Set edilmemişse JSON dosya tabanlı repo'lara (geliştirme modu) düşülür.
 """
 from __future__ import annotations
 
-import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
+
+import asyncpg
 
 from app.core.config import settings
+from app.core.database import close_pool, create_pool
 from app.integration.osrm_client import OsrmClient
 from app.repositories.interfaces import (
-    AbstractPoiRepository,
+    AbstractAudioAssetResolver,
     AbstractContentRepository,
     AbstractMediaRepository,
-    AbstractAudioAssetResolver,
+    AbstractPoiRepository,
 )
-from app.repositories.poi_repository import JsonDataSource, PoiRepository
-from app.repositories.content_repository import ContentRepository
-from app.repositories.media_repository import AudioAssetResolver, MediaRepository
-from app.services.poi_service import PoiService
-from app.services.routing_service import RouteAssembler, RoutingService
+from app.repositories.poi_repository import (
+    JsonDataSource,
+    PoiRepository,
+    PostgresPoiRepository,
+)
+from app.repositories.content_repository import (
+    ContentRepository,
+    PostgresContentRepository,
+)
+from app.repositories.media_repository import (
+    AudioAssetResolver,
+    MediaRepository,
+    PostgresMediaRepository,
+)
 from app.services.content_service import ContentService
-from app.services.plan_ranker import HeuristicPlanRanker
 from app.services.itinerary_builder import ItineraryBuilder
 from app.services.itinerary_planner import MonteCarloItineraryPlanner
 from app.services.itinerary_service import ItineraryService
+from app.services.plan_ranker import HeuristicPlanRanker
+from app.services.poi_service import PoiService
+from app.services.routing_service import RouteAssembler, RoutingService
 from app.api.validator import RequestValidator
 
 
 def _resolve_data_path(filename: str) -> str:
-    """Resolve path to a data file relative to the project root."""
-    # Walk up from this file to find the project root (where data/ lives)
+    """JSON veri dosyalarının yolunu proje köküne göre çözer."""
     current = Path(__file__).resolve()
-    project_root = current.parent.parent.parent  # app/core/containers.py -> guide-backend/
+    project_root = current.parent.parent.parent  # app/core/containers.py → guide-backend/
     return str(project_root / "data" / filename)
 
 
 @dataclass
 class AppContainer:
-    """Holds all wired application components."""
+    """Wired uygulama bileşenlerini tutar."""
 
     # Data Access
     poi_repository: AbstractPoiRepository
@@ -62,19 +74,33 @@ class AppContainer:
     # API Boundary
     validator: RequestValidator
 
+    # DB pool — varsa uygulama kapanırken kapatılır
+    db_pool: Optional[asyncpg.Pool] = field(default=None)
 
-def create_container() -> AppContainer:
-    """Factory: build the full dependency graph for production."""
+
+async def create_container() -> AppContainer:
+    """
+    Tam dependency graph'ı oluşturur.
+
+    DATABASE_URL .env'de tanımlıysa → PostgreSQL
+    Tanımlı değilse               → JSON dosyalar (geliştirme modu)
+    """
+    db_pool: Optional[asyncpg.Pool] = None
 
     # ── Data Access ───────────────────────────────────────────────
-    # TODO (Tuna): PostgreSQL'e geçince bu iki satırı değiştir:
-    #   data_source        = PostgresDataSource(settings.database_url)
-    #   content_repository = ContentRepository(settings.database_url)
-    data_source = JsonDataSource(_resolve_data_path("pois.json"))
-    poi_repository = PoiRepository(data_source)
-    content_repository = ContentRepository(_resolve_data_path("contents.json"))
-    media_repository = MediaRepository(settings.media_root_path)
-    audio_asset_resolver = AudioAssetResolver(media_repository)
+    if settings.database_url:
+        db_pool = await create_pool(settings.database_url, use_ssl=settings.db_ssl)
+        poi_repository: AbstractPoiRepository = PostgresPoiRepository(db_pool)
+        content_repository: AbstractContentRepository = PostgresContentRepository(db_pool)
+        media_repository: AbstractMediaRepository = PostgresMediaRepository(db_pool)
+    else:
+        # Geliştirme modu: JSON dosyalar
+        data_source = JsonDataSource(_resolve_data_path("pois.json"))
+        poi_repository = PoiRepository(data_source)
+        content_repository = ContentRepository(_resolve_data_path("contents.json"))
+        media_repository = MediaRepository(settings.media_root_path)
+
+    audio_asset_resolver: AbstractAudioAssetResolver = AudioAssetResolver(media_repository)
 
     # ── Integration ───────────────────────────────────────────────
     osrm_client = OsrmClient()
@@ -108,4 +134,5 @@ def create_container() -> AppContainer:
         content_service=content_service,
         itinerary_service=itinerary_service,
         validator=validator,
+        db_pool=db_pool,
     )
