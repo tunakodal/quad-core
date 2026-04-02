@@ -3,9 +3,9 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    # ── Database ──────────────────────────────────────────────────
-    database_url: Optional[str] = None
-    db_ssl: bool = True          # Supabase ve uzak postgres için True
+    # ── Supabase ──────────────────────────────────────────────────
+    supabase_url: Optional[str] = None
+    supabase_key: Optional[str] = None  # anon/publishable key
 
     # ── OSRM ─────────────────────────────────────────────────────
     osrm_base_url: str = "http://localhost:5000"
@@ -24,6 +24,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        env_file_encoding = "utf-8"
 
 
 settings = Settings()

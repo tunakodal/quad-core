@@ -19,16 +19,16 @@ from app.core.containers import create_container
 async def lifespan(app: FastAPI):
     """
     Application lifespan:
-      - Startup : DI container oluşturulur, DB pool açılır (DATABASE_URL varsa)
-      - Shutdown: DB pool kapatılır
+      - Startup : DI container oluşturulur, Supabase client açılır (SUPABASE_URL varsa)
+      - Shutdown: Supabase client kapatılır
     """
-    from app.core.database import close_pool
+    from app.core.database import close_supabase_client
 
     container = await create_container()
     app.state.container = container
     yield
-    if container.db_pool is not None:
-        await close_pool(container.db_pool)
+    if container.supabase_client is not None:
+        await close_supabase_client(container.supabase_client)
 
 
 app = FastAPI(
@@ -74,6 +74,6 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=status_code, content=api_error.model_dump())
 
 
-@app.get("/health")
-async def health():
+@app.get("/health", tags=["Health"])
+async def health_check():
     return {"status": "ok", "service": "GUIDE API"}

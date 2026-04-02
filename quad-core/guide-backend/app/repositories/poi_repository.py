@@ -1,13 +1,14 @@
 """
 POI data source and repository implementations.
 
-JsonDataSource  — JSON dosyasından okur (geliştirme / fallback).
-PostgresPoiRepository — Supabase/PostgreSQL'den okur (production).
+İki strateji:
+  JsonDataSource / PoiRepository      — JSON dosyasından okur (geliştirme / fallback)
+  PostgresPoiRepository               — Supabase Data API üzerinden okur (production)
 
-DB şema notu (gerçek tablo vs domain model farkları):
-  - pois.id          → INTEGER  (domain: str, repository'de str(id) yapılır)
-  - pois.categories  → TEXT[]   (domain: category str, main_category_1 kullanılır)
-  - estimated_visit_duration → DB'de YOK, default 60 dk kullanılır
+DB ↔ domain model farkları (PostgresPoiRepository tarafından çözülür):
+  pois.id              INTEGER  → domain Poi.id: str   (str() ile dönüştürülür)
+  pois.categories      TEXT[]   → domain Poi.category: str  (main_category_1 kullanılır)
+  estimated_visit_duration       → tabloda yok, sabit 60 dk kullanılır
 """
 from __future__ import annotations
 
@@ -19,14 +20,15 @@ from app.models.poi import Poi
 from app.repositories.interfaces import AbstractDataSource, AbstractPoiRepository
 
 
-# TODO (Tuna): JsonDataSource yerine PostgresDataSource yaz.
-#   - Aynı AbstractDataSource interface'ini kalıt
-#   - load_all_pois()  → SELECT * FROM pois
-#   - load_by_id(id)   → SELECT * FROM pois WHERE id = $1
-#   - Her satırı Poi(..., location=GeoPoint(...)) nesnesine dönüştür
-#   - Hazır olunca containers.py'deki JsonDataSource satırını değiştir
+# ── JSON / geliştirme implementasyonu ────────────────────────────
+
 class JsonDataSource(AbstractDataSource):
-    """Loads POI records from a JSON file on disk."""
+    """
+    POI kayıtlarını disk üzerindeki JSON dosyasından yükler.
+
+    Geliştirme ortamında ve Supabase bağlantısı olmadığında fallback olarak kullanılır.
+    Dosya yoksa sessizce boş liste döner; uygulama başlamaya devam eder.
+    """
 
     def __init__(self, json_path: str):
         self._pois: list[Poi] = []
@@ -34,6 +36,7 @@ class JsonDataSource(AbstractDataSource):
         self._load(json_path)
 
     def _load(self, json_path: str) -> None:
+        """JSON dosyasını okur ve belleğe alır."""
         path = Path(json_path)
         if not path.exists():
             return
@@ -55,25 +58,37 @@ class JsonDataSource(AbstractDataSource):
             self._index[poi.id] = poi
 
     def load_all_pois(self) -> list[Poi]:
+        """Yüklü tüm POI'ları döner."""
         return list(self._pois)
 
     def load_by_id(self, poi_id: str) -> Poi | None:
+        """Verilen ID'ye sahip POI'yı döner; bulunamazsa None."""
         return self._index.get(poi_id)
 
 
 class PoiRepository(AbstractPoiRepository):
-    """Provides access to POI metadata via a pluggable DataSource."""
+    """
+    Takılabilir bir AbstractDataSource üzerinden POI erişimi sağlar.
+
+    Strateji deseni: hangi DataSource inject edilirse o kullanılır.
+    Şu an JsonDataSource ile çalışır; gelecekte başka kaynaklar da takılabilir.
+    """
 
     def __init__(self, data_source: AbstractDataSource):
         self._data_source = data_source
 
     async def find_by_city(self, city: str) -> list[Poi]:
+        """Verilen şehirdeki tüm POI'ları döner (büyük/küçük harf duyarsız)."""
         all_pois = self._data_source.load_all_pois()
         return [p for p in all_pois if p.city.lower() == city.lower()]
 
     async def find_by_city_and_categories(
         self, city: str, categories: list[str]
     ) -> list[Poi]:
+        """
+        Şehir ve kategori listesine göre POI filtreler.
+        categories boşsa şehirdeki tüm POI'lar döner.
+        """
         city_pois = await self.find_by_city(city)
         if not categories:
             return city_pois
@@ -81,26 +96,32 @@ class PoiRepository(AbstractPoiRepository):
         return [p for p in city_pois if p.category.lower() in cat_lower]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
+        """ID'ye göre tek POI döner; bulunamazsa None."""
         return self._data_source.load_by_id(poi_id)
 
 
-# ── PostgreSQL implementation ─────────────────────────────────────
+# ── Supabase Data API implementasyonu ────────────────────────────
 
-_DEFAULT_VISIT_DURATION = 60  # DB'de estimated_visit_duration yok, 60 dk default
+# Supabase'deki pois tablosunda estimated_visit_duration kolonu yok;
+# tüm POI'lar için sabit 60 dakika kullanılır.
+_DEFAULT_VISIT_DURATION = 60
+
+# Supabase'den çekilecek kolon listesi — sadece ihtiyaç duyulanlar
+_POI_COLUMNS = "id, name, city, latitude, longitude, categories, main_category_1"
 
 
-def _row_to_poi(row) -> Poi:
+def _row_to_poi(row: dict) -> Poi:
     """
-    asyncpg Record → Poi domain nesnesi.
+    Supabase'den dönen satır dict'ini Poi domain nesnesine dönüştürür.
 
-    Mapping notları:
-      - row['id'] INTEGER → str(id)
-      - row['main_category_1'] → domain category (yoksa categories[0], o da yoksa 'Other')
-      - estimated_visit_duration → DB'de yok, _DEFAULT_VISIT_DURATION kullanılır
+    Alan dönüşümleri:
+      id             → str()  (tabloda INTEGER, domain'de str)
+      main_category_1 → Poi.category  (yoksa categories[0], o da yoksa 'Other')
+      estimated_visit_duration → tabloda yok, _DEFAULT_VISIT_DURATION sabiti kullanılır
     """
-    raw_cats = row["categories"] or []
+    raw_cats = row.get("categories") or []
     category = (
-        row["main_category_1"]
+        row.get("main_category_1")
         or (raw_cats[0] if raw_cats else "Other")
     )
     return Poi(
@@ -118,60 +139,49 @@ def _row_to_poi(row) -> Poi:
 
 class PostgresPoiRepository(AbstractPoiRepository):
     """
-    POI repository backed by Supabase/PostgreSQL.
+    Supabase Data API (PostgREST) üzerinden POI erişimi sağlar.
 
-    Kategori filtresi için PostgreSQL array overlap (&&) kullanır,
-    büyük/küçük harf duyarsız karşılaştırma Python tarafında yapılır.
+    Kategori filtresi ağ trafiğini azaltmak için Python tarafında uygulanır:
+    önce şehrin tüm POI'ları çekilir, ardından kategori eşleştirmesi
+    büyük/küçük harf duyarsız biçimde in-memory yapılır.
     """
 
-    def __init__(self, pool):
-        self._pool = pool
+    def __init__(self, client):
+        self._client = client
 
     async def find_by_city(self, city: str) -> list[Poi]:
-        rows = await self._pool.fetch(
-            """
-            SELECT id, name, city, latitude, longitude,
-                   categories, main_category_1
-            FROM pois
-            WHERE LOWER(city) = LOWER($1)
-            """,
-            city,
+        """Verilen şehirdeki tüm POI'ları Supabase'den çeker (büyük/küçük harf duyarsız)."""
+        response = await (
+            self._client.table("pois")
+            .select(_POI_COLUMNS)
+            .ilike("city", city)
+            .execute()
         )
-        return [_row_to_poi(r) for r in rows]
+        return [_row_to_poi(r) for r in response.data]
 
     async def find_by_city_and_categories(
         self, city: str, categories: list[str]
     ) -> list[Poi]:
+        """
+        Şehir ve kategori listesine göre POI filtreler.
+        categories boşsa şehirdeki tüm POI'lar döner.
+        Filtreleme Python tarafında yapılır (büyük/küçük harf duyarsız).
+        """
+        all_pois = await self.find_by_city(city)
         if not categories:
-            return await self.find_by_city(city)
-
-        # Büyük/küçük harf duyarsız array overlap:
-        # DB'deki her kategori ile kullanıcının seçtiği kategoriler LOWER bazında karşılaştırılır
-        cat_lower = [c.lower() for c in categories]
-        rows = await self._pool.fetch(
-            """
-            SELECT id, name, city, latitude, longitude,
-                   categories, main_category_1
-            FROM pois
-            WHERE LOWER(city) = LOWER($1)
-              AND EXISTS (
-                  SELECT 1 FROM unnest(categories) AS c
-                  WHERE LOWER(c) = ANY($2::text[])
-              )
-            """,
-            city,
-            cat_lower,
-        )
-        return [_row_to_poi(r) for r in rows]
+            return all_pois
+        cat_lower = {c.lower() for c in categories}
+        return [p for p in all_pois if p.category.lower() in cat_lower]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
-        row = await self._pool.fetchrow(
-            """
-            SELECT id, name, city, latitude, longitude,
-                   categories, main_category_1
-            FROM pois
-            WHERE id = $1
-            """,
-            int(poi_id),
+        """ID'ye göre tek POI döner; bulunamazsa None."""
+        response = await (
+            self._client.table("pois")
+            .select(_POI_COLUMNS)
+            .eq("id", int(poi_id))
+            .limit(1)
+            .execute()
         )
-        return _row_to_poi(row) if row else None
+        if not response.data:
+            return None
+        return _row_to_poi(response.data[0])

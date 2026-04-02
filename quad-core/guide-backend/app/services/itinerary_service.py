@@ -1,7 +1,9 @@
 """
-Itinerary service — orchestrates itinerary construction and stateless replanning.
+Itinerary service — güzergah oluşturma ve durumsuz yeniden planlama.
 
-Delegates the actual planning logic to MonteCarloItineraryPlanner.
+Planlama mantığını MonteCarloItineraryPlanner'a devreder.
+Backend tamamen durumsuz çalışır: her yeniden planlama isteğinde
+mevcut güzergah context'i client tarafından gönderilir.
 """
 from app.models.poi import Poi
 from app.models.route import Itinerary
@@ -12,8 +14,8 @@ from app.services.itinerary_planner import MonteCarloItineraryPlanner
 
 class ItineraryService:
     """
-    Orchestrates itinerary construction and replanning.
-    Delegates planning to MonteCarloItineraryPlanner.
+    Güzergah oluşturma ve yeniden planlama işlemlerini orkestre eder.
+    Planlama kararlarını MonteCarloItineraryPlanner'a devreder.
     """
 
     def __init__(self, planner: MonteCarloItineraryPlanner):
@@ -22,6 +24,10 @@ class ItineraryService:
     async def build_itinerary(
         self, pois: list[Poi], constraints: TravelConstraints, prefs: TravelPreferences
     ) -> Itinerary:
+        """
+        Verilen POI listesinden kısıtlar ve tercihler doğrultusunda
+        en iyi güzergahı oluşturur.
+        """
         return self.planner.select_best(pois, constraints, prefs)
 
     async def replan(
@@ -32,8 +38,14 @@ class ItineraryService:
         prefs: TravelPreferences,
     ) -> Itinerary:
         """
-        Apply user edits deterministically and rebuild affected days.
-        Backend is stateless — full itinerary context comes from client.
+        Kullanıcı düzenlemelerini mevcut güzergaha uygular ve yeniden planlar.
+
+        Silinen POI'lar çıkarılır, kalan tüm POI'lar planlayıcıya tekrar
+        verilir. Backend durumsuz olduğundan tam güzergah context'i
+        client'tan alınır.
+
+        Kilitli POI'ların (locked_pois_by_day) sabit gün ataması
+        planlayıcı geliştirildiğinde bu metodda desteklenecektir.
         """
         all_pois: list[Poi] = [
             poi
@@ -41,6 +53,4 @@ class ItineraryService:
             for poi in day.pois
             if poi.id not in edits.removed_poi_ids
         ]
-
-        # TODO: honour locked_pois_by_day placement when Tuna's planner is ready
         return self.planner.select_best(all_pois, constraints, prefs)

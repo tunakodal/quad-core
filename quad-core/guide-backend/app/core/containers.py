@@ -1,7 +1,7 @@
 """
 Dependency Injection Container — Wires all components together.
 
-DATABASE_URL set edilmişse PostgreSQL repo'ları kullanılır.
+SUPABASE_URL + SUPABASE_KEY set edilmişse Supabase Data API repo'ları kullanılır.
 Set edilmemişse JSON dosya tabanlı repo'lara (geliştirme modu) düşülür.
 """
 from __future__ import annotations
@@ -10,10 +10,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-import asyncpg
-
 from app.core.config import settings
-from app.core.database import close_pool, create_pool
+from app.core.database import close_supabase_client, create_supabase_client
 from app.integration.osrm_client import OsrmClient
 from app.repositories.interfaces import (
     AbstractAudioAssetResolver,
@@ -74,25 +72,27 @@ class AppContainer:
     # API Boundary
     validator: RequestValidator
 
-    # DB pool — varsa uygulama kapanırken kapatılır
-    db_pool: Optional[asyncpg.Pool] = field(default=None)
+    # Supabase client — varsa uygulama kapanırken kapatılır
+    supabase_client: Optional[object] = field(default=None)
 
 
 async def create_container() -> AppContainer:
     """
     Tam dependency graph'ı oluşturur.
 
-    DATABASE_URL .env'de tanımlıysa → PostgreSQL
-    Tanımlı değilse               → JSON dosyalar (geliştirme modu)
+    SUPABASE_URL + SUPABASE_KEY .env'de tanımlıysa → Supabase Data API
+    Tanımlı değilse                                → JSON dosyalar (geliştirme modu)
     """
-    db_pool: Optional[asyncpg.Pool] = None
+    supabase_client = None
 
     # ── Data Access ───────────────────────────────────────────────
-    if settings.database_url:
-        db_pool = await create_pool(settings.database_url, use_ssl=settings.db_ssl)
-        poi_repository: AbstractPoiRepository = PostgresPoiRepository(db_pool)
-        content_repository: AbstractContentRepository = PostgresContentRepository(db_pool)
-        media_repository: AbstractMediaRepository = PostgresMediaRepository(db_pool)
+    if settings.supabase_url and settings.supabase_key:
+        supabase_client = await create_supabase_client(
+            settings.supabase_url, settings.supabase_key
+        )
+        poi_repository: AbstractPoiRepository = PostgresPoiRepository(supabase_client)
+        content_repository: AbstractContentRepository = PostgresContentRepository(supabase_client)
+        media_repository: AbstractMediaRepository = PostgresMediaRepository(supabase_client)
     else:
         # Geliştirme modu: JSON dosyalar
         data_source = JsonDataSource(_resolve_data_path("pois.json"))
@@ -134,5 +134,5 @@ async def create_container() -> AppContainer:
         content_service=content_service,
         itinerary_service=itinerary_service,
         validator=validator,
-        db_pool=db_pool,
+        supabase_client=supabase_client,
     )

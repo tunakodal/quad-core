@@ -1,12 +1,15 @@
 """
-Content repository — POI text descriptions.
+Content repository — POI metin açıklamaları.
 
-ContentRepository       — JSON dosyasından okur (geliştirme / fallback).
-PostgresContentRepository — Supabase/PostgreSQL'den okur (production).
+İki strateji:
+  ContentRepository         — JSON dosyasından okur (geliştirme / fallback)
+  PostgresContentRepository — Supabase Data API üzerinden okur (production)
 
-DB şema notu:
-  - poi_contents.poi_id → INTEGER (domain: str, sorguda int(poi_id) yapılır)
-  - language            → PostgreSQL USER-DEFINED enum, ::text cast ile string okunur
+DB ↔ domain model farkları:
+  poi_contents.poi_id  INTEGER → domain PoiContent.poi_id: str  (int() ile sorgulanır)
+  language             Supabase enum string olarak döner (örn. 'EN', 'TR')
+
+Dil stratejisi: önce istenen dil denenir, bulunamazsa EN'e fallback yapılır.
 """
 from __future__ import annotations
 
@@ -19,20 +22,23 @@ from app.models.poi import PoiContent
 from app.repositories.interfaces import AbstractContentRepository
 
 
-# TODO (Tuna): DB'den çekecek şekilde güncelle.
-#   - find_content(poi_id, lang) → SELECT ... FROM poi_contents
-#                                   WHERE poi_id=$1 AND language=$2
-#   - Bulamazsa language='EN' ile tekrar dene, o da yoksa None döner
-#   - find_content_batch → her poi_id için find_content() çağır
-#   - Her satırı PoiContent(poi_id, language, description_text, images=[], audio=None) nesnesine dönüştür
+# ── JSON / geliştirme implementasyonu ────────────────────────────
+
 class ContentRepository(AbstractContentRepository):
-    """Provides POI descriptions and image metadata from a JSON file."""
+    """
+    POI açıklama metinlerini ve görsel metadata'sını JSON dosyasından sağlar.
+
+    İçerik, yükleme sırasında {poi_id → {lang → PoiContent}} yapısına
+    çözümlenir; sorgular O(1) dict lookup ile karşılanır.
+    """
 
     def __init__(self, json_path: str):
+        # {poi_id: {lang_value: PoiContent}}
         self._contents: dict[str, dict[str, PoiContent]] = {}
         self._load(json_path)
 
     def _load(self, json_path: str) -> None:
+        """JSON dosyasını okur ve bellek içi arama yapısını oluşturur."""
         path = Path(json_path)
         if not path.exists():
             return
@@ -54,18 +60,19 @@ class ContentRepository(AbstractContentRepository):
             self._contents[poi_id][lang_str] = content
 
     async def find_content(self, poi_id: str, lang: Language) -> PoiContent | None:
+        """
+        Belirtilen POI ve dil için içerik döner.
+        İstenen dil bulunamazsa EN'e fallback yapar; o da yoksa None.
+        """
         poi_contents = self._contents.get(poi_id)
         if poi_contents is None:
             return None
-        # Exact language match → fallback to EN
-        result = poi_contents.get(lang.value)
-        if result is None:
-            result = poi_contents.get("EN")
-        return result
+        return poi_contents.get(lang.value) or poi_contents.get("EN")
 
     async def find_content_batch(
         self, poi_ids: list[str], lang: Language
     ) -> dict[str, PoiContent]:
+        """Birden fazla POI için içerik toplu olarak döner. Bulunamayanlar atlanır."""
         result: dict[str, PoiContent] = {}
         for poi_id in poi_ids:
             content = await self.find_content(poi_id, lang)
@@ -74,55 +81,62 @@ class ContentRepository(AbstractContentRepository):
         return result
 
 
-# ── PostgreSQL implementation ─────────────────────────────────────
+# ── Supabase Data API implementasyonu ────────────────────────────
 
 class PostgresContentRepository(AbstractContentRepository):
     """
-    Content repository backed by Supabase/PostgreSQL.
+    Supabase Data API (PostgREST) üzerinden POI içerik erişimi sağlar.
 
-    poi_contents.language PostgreSQL enum'u ::text cast ile okunur.
-    Dil bulunamazsa EN'e fallback yapılır.
+    Dil stratejisi:
+      1. İstenen dil (lang) ile sorgula.
+      2. Bulunamazsa EN ile tekrar sorgula.
+      3. O da yoksa None döner — üst katman graceful degradation uygular.
     """
 
-    def __init__(self, pool):
-        self._pool = pool
+    def __init__(self, client):
+        self._client = client
 
     async def find_content(self, poi_id: str, lang: Language) -> PoiContent | None:
-        # Önce istenen dili dene, bulamazsa EN'e düş
-        row = await self._pool.fetchrow(
-            """
-            SELECT poi_id, language::text AS language, description_text
-            FROM poi_contents
-            WHERE poi_id = $1
-              AND language::text = $2
-            """,
-            int(poi_id),
-            lang.value,
+        """
+        POI için istenen dildeki içeriği döner.
+        İstenen dil bulunamazsa EN'e fallback yapar.
+        """
+        response = await (
+            self._client.table("poi_contents")
+            .select("poi_id, language, description_text")
+            .eq("poi_id", int(poi_id))
+            .eq("language", lang.value)
+            .limit(1)
+            .execute()
         )
-        if row is None and lang != Language.EN:
-            row = await self._pool.fetchrow(
-                """
-                SELECT poi_id, language::text AS language, description_text
-                FROM poi_contents
-                WHERE poi_id = $1
-                  AND language::text = 'EN'
-                """,
-                int(poi_id),
+
+        # İstenen dil yoksa EN'e düş (EN için tekrar sorgu gerekmez)
+        if not response.data and lang != Language.EN:
+            response = await (
+                self._client.table("poi_contents")
+                .select("poi_id, language, description_text")
+                .eq("poi_id", int(poi_id))
+                .eq("language", Language.EN.value)
+                .limit(1)
+                .execute()
             )
-        if row is None:
+
+        if not response.data:
             return None
 
+        row = response.data[0]
         return PoiContent(
-            poi_id=poi_id,          # domain str ID
+            poi_id=poi_id,
             language=Language(row["language"]),
             description_text=row["description_text"] or "",
-            images=[],
-            audio=None,
+            images=[],   # Görseller ayrı media_assets tablosundan çekilir
+            audio=None,  # Ses asset'i ContentService tarafından eklenir
         )
 
     async def find_content_batch(
         self, poi_ids: list[str], lang: Language
     ) -> dict[str, PoiContent]:
+        """Birden fazla POI için içerik toplu olarak döner. Bulunamayanlar atlanır."""
         result: dict[str, PoiContent] = {}
         for poi_id in poi_ids:
             content = await self.find_content(poi_id, lang)

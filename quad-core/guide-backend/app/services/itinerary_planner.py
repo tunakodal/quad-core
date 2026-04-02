@@ -1,6 +1,6 @@
 """
-Monte Carlo itinerary planner — generates candidate itineraries via random sampling
-and returns the highest-scoring one according to a PlanRanker.
+Monte Carlo güzergah planlayıcı — rastgele örnekleme ile aday planlar üretir
+ve en yüksek puanlıyı PlanRanker aracılığıyla seçer.
 """
 from app.models.poi import Poi
 from app.models.route import Itinerary
@@ -11,11 +11,11 @@ from app.services.plan_ranker import PlanRanker
 
 class MonteCarloItineraryPlanner:
     """
-    Generates multiple candidate itineraries via Monte Carlo sampling
-    and selects the best one using PlanRanker.
+    Birden fazla aday güzergah üretir ve en iyisini seçer.
 
-    TODO: Implementation is owned by Tuna (Database & Algorithm).
-          The interface below must remain stable.
+    generate_candidates() şu an deterministik tek plan döndürmektedir.
+    Monte Carlo sampling implementasyonu bu metodun içine yazılacak;
+    dışarıya açık arayüz (parametre ve dönüş tipleri) sabit kalacaktır.
     """
 
     def __init__(
@@ -34,18 +34,12 @@ class MonteCarloItineraryPlanner:
         self, pois: list[Poi], constraints: TravelConstraints
     ) -> list[Itinerary]:
         """
-        TODO (Tuna): Bu metodun içini doldur. Mantık şu şekilde olmalı:
-            rng = random.Random(self.random_seed)
-            candidates = []
-            for _ in range(self.max_iterations):
-                shuffled = list(pois)
-                rng.shuffle(shuffled)
-                candidate = self.itinerary_builder.allocate_to_days(shuffled, constraints)
-                candidates.append(candidate)
-            return candidates
-        Metod imzasını (parametre ve dönüş tipi) değiştirme.
+        Verilen POI listesinden aday güzergahlar üretir.
+
+        Şu an tek deterministik plan döndürür.
+        Monte Carlo implementasyonu: POI listesini max_iterations kez rastgele
+        karıştırarak her seferinde farklı bir aday plan oluşturacak.
         """
-        # Stub: tek bir deterministik allocation döndürür, implement edilene kadar
         return [self.itinerary_builder.allocate_to_days(pois, constraints)]
 
     def select_best(
@@ -54,7 +48,7 @@ class MonteCarloItineraryPlanner:
         constraints: TravelConstraints,
         prefs: TravelPreferences,
     ) -> Itinerary:
-        """Generate candidates and return the highest-scoring one."""
+        """Aday güzergahlar üretir ve en yüksek puanlıyı döner."""
         candidates = self.generate_candidates(pois, constraints)
         return self.select_best_from_candidates(candidates, constraints, prefs)
 
@@ -64,7 +58,10 @@ class MonteCarloItineraryPlanner:
         constraints: TravelConstraints,
         prefs: TravelPreferences,
     ) -> Itinerary:
-        """Score all candidates and return the best."""
+        """
+        Verilen aday listesini puanlar ve en iyisini döner.
+        Liste boşsa boş bir Itinerary döner.
+        """
         if not candidates:
             return Itinerary()
         return max(candidates, key=lambda c: self.plan_ranker.score(c, prefs, constraints))
