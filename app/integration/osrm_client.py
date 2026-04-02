@@ -1,9 +1,12 @@
 import httpx
-from app.models.domain import GeoPoint, RoutingProfile
+from app.models.enums import RoutingProfile
+from app.models.geo import GeoPoint
 from app.core.config import settings
 
 
 class OsrmRouteResponse:
+    """Normalized subset of OSRM response fields needed by GUIDE."""
+
     def __init__(self, distance: int, duration: int, geometry_encoded: str):
         self.distance = distance          # meters
         self.duration = duration          # seconds
@@ -19,7 +22,7 @@ class OsrmClient:
     def __init__(
         self,
         base_url: str = settings.osrm_base_url,
-        timeout_ms: int = 10_000,
+        timeout_ms: int = settings.osrm_timeout_ms,
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout_ms / 1000
@@ -30,7 +33,15 @@ class OsrmClient:
     async def route(
         self, waypoints: list[GeoPoint], profile: RoutingProfile = RoutingProfile.DRIVING
     ) -> OsrmRouteResponse:
-        """Compute a route through ordered waypoints."""
+        """Compute a route through ordered waypoints.
+
+        Args:
+            waypoints: Ordered list of GeoPoints to route through.
+            profile: Routing profile (DRIVING or WALKING).
+
+        Returns:
+            OsrmRouteResponse with distance, duration, and encoded geometry.
+        """
         coords = self._coords_str(waypoints)
         url = f"{self.base_url}/route/v1/{profile.value}/{coords}"
         params = {
@@ -39,8 +50,6 @@ class OsrmClient:
             "steps": "false",
         }
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = client.get(url, params=params)  # type: ignore[assignment]
-            # httpx sync used here; swap to await client.get() if fully async
             resp = await client.get(url, params=params)
             resp.raise_for_status()
             data = resp.json()
@@ -55,7 +64,15 @@ class OsrmClient:
     async def trip(
         self, waypoints: list[GeoPoint], profile: RoutingProfile = RoutingProfile.DRIVING
     ) -> OsrmRouteResponse:
-        """Compute an optimised round-trip through waypoints."""
+        """Compute an optimised round-trip through waypoints.
+
+        Args:
+            waypoints: List of GeoPoints to include in the trip.
+            profile: Routing profile (DRIVING or WALKING).
+
+        Returns:
+            OsrmRouteResponse with distance, duration, and encoded geometry.
+        """
         coords = self._coords_str(waypoints)
         url = f"{self.base_url}/trip/v1/{profile.value}/{coords}"
         params = {

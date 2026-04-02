@@ -1,32 +1,22 @@
-from fastapi import APIRouter, HTTPException
-from app.schemas.dtos import (
-    RouteRequest, RouteResponse,
-    ReplanRequest, TripDaySuggestionRequest, TripDaySuggestionResponse,
-    ApiErrorResponse,
-)
+"""
+Route Endpoints — API Boundary for route generation, replanning, and trip-day suggestion.
+
+Aligned with GUIDE LLD: RouteController class (Appendix A.1.1).
+Dependencies are resolved from the application container at request time.
+"""
+from fastapi import APIRouter, HTTPException, Request
+
+from app.schemas.common import ApiErrorResponse
+from app.schemas.route_dtos import ReplanRequest, RouteRequest, RouteResponse
+from app.schemas.suggestion_dtos import TripDaySuggestionRequest, TripDaySuggestionResponse
+from app.schemas.travel import TravelPreferences
 from app.api.validator import RequestValidator
-from app.services.itinerary_service import (
-    ItineraryService, ItineraryBuilder,
-    MonteCarloItineraryPlanner, HeuristicPlanRanker,
-)
-from app.services.routing_service import RoutingService, RouteAssembler
+from app.services.itinerary_service import ItineraryService
+from app.services.routing_service import RoutingService
 from app.services.poi_service import PoiService
-from app.repositories.repositories import StubPoiRepository
-from app.integration.osrm_client import OsrmClient
+from app.core.config import settings
 
 router = APIRouter(prefix="/routes", tags=["Routes"])
-
-# Dependency wiring (will be replaced with proper DI / lifespan)
-_poi_repo = StubPoiRepository()
-_poi_service = PoiService(_poi_repo)
-_builder = ItineraryBuilder()
-_ranker = HeuristicPlanRanker()
-_planner = MonteCarloItineraryPlanner(_builder, _ranker)
-_itinerary_service = ItineraryService(_planner)
-_osrm = OsrmClient()
-_assembler = RouteAssembler()
-_routing_service = RoutingService(_osrm, _assembler)
-_validator = RequestValidator()
 
 _ERROR_RESPONSES = {
     400: {"model": ApiErrorResponse},
@@ -37,6 +27,14 @@ _ERROR_RESPONSES = {
 
 
 class RouteController:
+    """
+    Handles route generation and replanning endpoints by validating requests,
+    orchestrating itinerary and routing services, and returning a normalized
+    API response (including warnings) in a stateless workflow.
+
+    Aligned with LLD RouteController interface (Appendix A.1.1).
+    """
+
     def __init__(
         self,
         validator: RequestValidator,
@@ -82,11 +80,15 @@ class RouteController:
         if not validation.is_valid:
             raise HTTPException(status_code=422, detail=validation.errors)
 
-        # Rebuild preferences from constraints for scoring (minimal)
-        from app.schemas.dtos import TravelPreferences
+        # Derive city from existing itinerary
+        city = "unknown"
+        if req.existing_itinerary.days:
+            first_day = req.existing_itinerary.days[0]
+            if first_day.pois:
+                city = first_day.pois[0].city
 
         prefs = TravelPreferences(
-            city="unknown",
+            city=city,
             trip_days=req.constraints.max_trip_days,
             categories=[],
             max_distance_per_day=req.constraints.max_daily_distance,
@@ -97,7 +99,11 @@ class RouteController:
         )
         route_plan = await self._routing_service.update_route_after_edits(itinerary, req.edits)
 
-        return RouteResponse(itinerary=itinerary, route_plan=route_plan)
+        return RouteResponse(
+            itinerary=itinerary,
+            route_plan=route_plan,
+            warnings=validation.warnings,
+        )
 
     async def suggest_trip_days(
         self, req: TripDaySuggestionRequest
@@ -108,9 +114,11 @@ class RouteController:
             raise HTTPException(status_code=422, detail=validation.errors)
 
         count = await self._poi_service.count_available_pois(req.city, req.categories)
-        from app.core.config import settings
 
-        max_days = min(count // 3, settings.max_trip_days)  # ~3 POIs/day baseline
+        max_days = min(
+            count // settings.pois_per_day_baseline,
+            settings.max_trip_days
+        )
 
         return TripDaySuggestionResponse(
             max_recommended_days=max(max_days, 1),
@@ -119,31 +127,46 @@ class RouteController:
         )
 
 
-_controller = RouteController(
-    validator=_validator,
-    poi_service=_poi_service,
-    itinerary_service=_itinerary_service,
-    routing_service=_routing_service,
-)
+# ── Lazy controller accessor ──────────────────────────────────────
 
-router.add_api_route(
+def _get_controller(request: Request) -> RouteController:
+    """Resolve RouteController from the application DI container."""
+    container = request.app.state.container
+    return RouteController(
+        validator=container.validator,
+        poi_service=container.poi_service,
+        itinerary_service=container.itinerary_service,
+        routing_service=container.routing_service,
+    )
+
+
+# ── Endpoint wrappers ─────────────────────────────────────────────
+
+@router.post(
     "/generate",
-    _controller.generate_route,
-    methods=["POST"],
     response_model=RouteResponse,
     responses=_ERROR_RESPONSES,
+    summary="Generate a multi-day itinerary and route",
 )
-router.add_api_route(
+async def generate_route(req: RouteRequest, request: Request):
+    return await _get_controller(request).generate_route(req)
+
+
+@router.post(
     "/replan",
-    _controller.replan_route,
-    methods=["POST"],
     response_model=RouteResponse,
     responses=_ERROR_RESPONSES,
+    summary="Replan itinerary after user edits",
 )
-router.add_api_route(
+async def replan_route(req: ReplanRequest, request: Request):
+    return await _get_controller(request).replan_route(req)
+
+
+@router.post(
     "/suggest-days",
-    _controller.suggest_trip_days,
-    methods=["POST"],
     response_model=TripDaySuggestionResponse,
     responses=_ERROR_RESPONSES,
+    summary="Suggest max feasible trip days",
 )
+async def suggest_trip_days(req: TripDaySuggestionRequest, request: Request):
+    return await _get_controller(request).suggest_trip_days(req)

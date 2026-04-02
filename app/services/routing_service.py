@@ -1,5 +1,7 @@
-from app.models.domain import Itinerary, RoutePlan, RouteSegment, RoutingProfile
-from app.schemas.dtos import TravelConstraints, UserEdits
+from app.models.enums import RoutingProfile
+from app.models.route import Itinerary, RoutePlan, RouteSegment
+from app.schemas.route_dtos import UserEdits
+from app.schemas.travel import TravelConstraints
 from app.integration.osrm_client import OsrmClient
 
 

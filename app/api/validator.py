@@ -1,7 +1,7 @@
-from app.schemas.dtos import (
-    RouteRequest, ReplanRequest, PoiQuery,
-    TripDaySuggestionRequest, ValidationResult, ApiWarning, Severity
-)
+from app.schemas.common import ApiWarning, Severity, ValidationResult
+from app.schemas.poi_dtos import PoiQuery
+from app.schemas.route_dtos import ReplanRequest, RouteRequest
+from app.schemas.suggestion_dtos import TripDaySuggestionRequest
 from app.core.config import settings
 
 

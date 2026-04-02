@@ -1,68 +1,26 @@
-from __future__ import annotations
-from enum import Enum
-from pydantic import BaseModel, Field
-from typing import Optional
+"""
+Backward-compatible re-export module.
 
+All domain classes have been moved to focused submodules:
+  - app.models.enums   → Language, RoutingProfile
+  - app.models.geo     → GeoPoint
+  - app.models.media   → MediaAsset
+  - app.models.poi     → Poi, PoiContent
+  - app.models.route   → RouteSegment, DayPlan, Itinerary, RoutePlan
 
-class Language(str, Enum):
-    TR = "TR"
-    EN = "EN"
-    DE = "DE"
+New code should import directly from those submodules.
+This file exists only to avoid breaking existing imports (e.g. tests).
+"""
+from app.models.enums import Language, RoutingProfile
+from app.models.geo import GeoPoint
+from app.models.media import MediaAsset
+from app.models.poi import Poi, PoiContent
+from app.models.route import RouteSegment, DayPlan, Itinerary, RoutePlan
 
-
-class RoutingProfile(str, Enum):
-    DRIVING = "driving"
-    WALKING = "walking"
-
-
-class GeoPoint(BaseModel):
-    latitude: float = Field(..., ge=-90, le=90)
-    longitude: float = Field(..., ge=-180, le=180)
-
-
-class MediaAsset(BaseModel):
-    asset_id: str
-    url_or_path: str
-    media_type: str  # "image" | "audio"
-
-
-class Poi(BaseModel):
-    id: str
-    name: str
-    category: str
-    location: GeoPoint
-    estimated_visit_duration: int  # minutes
-
-
-class PoiContent(BaseModel):
-    poi_id: str
-    language: Language
-    description_text: str = ""
-    images: list[MediaAsset] = []
-    audio: Optional[MediaAsset] = None
-
-
-class RouteSegment(BaseModel):
-    day_index: int
-    distance: int       # meters
-    duration: int       # seconds
-    geometry_encoded: str = ""
-
-
-class DayPlan(BaseModel):
-    day_index: int
-    pois: list[Poi] = []
-    route_segment: Optional[RouteSegment] = None
-
-
-class Itinerary(BaseModel):
-    days: list[DayPlan] = []
-    total_distance: int = 0   # meters
-    total_duration: int = 0   # seconds
-
-
-class RoutePlan(BaseModel):
-    segments: list[RouteSegment] = []
-    total_distance: int = 0
-    total_duration: int = 0
-    geometry_encoded: str = ""
+__all__ = [
+    "Language", "RoutingProfile",
+    "GeoPoint",
+    "MediaAsset",
+    "Poi", "PoiContent",
+    "RouteSegment", "DayPlan", "Itinerary", "RoutePlan",
+]

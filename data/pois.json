@@ -1,0 +1,346 @@
+[
+  {
+    "id": "istanbul-hagia-sophia",
+    "name": "Hagia Sophia",
+    "category": "Historical",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0086, "longitude": 28.9802},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "istanbul-blue-mosque",
+    "name": "Blue Mosque",
+    "category": "Historical",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0054, "longitude": 28.9768},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "istanbul-topkapi",
+    "name": "Topkapi Palace",
+    "category": "Historical",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0115, "longitude": 28.9834},
+    "estimated_visit_duration": 120
+  },
+  {
+    "id": "istanbul-grand-bazaar",
+    "name": "Grand Bazaar",
+    "category": "Shopping",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0107, "longitude": 28.9680},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "istanbul-basilica-cistern",
+    "name": "Basilica Cistern",
+    "category": "Historical",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0084, "longitude": 28.9779},
+    "estimated_visit_duration": 45
+  },
+  {
+    "id": "istanbul-galata-tower",
+    "name": "Galata Tower",
+    "category": "Historical",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0256, "longitude": 28.9741},
+    "estimated_visit_duration": 40
+  },
+  {
+    "id": "istanbul-dolmabahce",
+    "name": "Dolmabahce Palace",
+    "category": "Historical",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0391, "longitude": 29.0007},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "istanbul-spice-bazaar",
+    "name": "Spice Bazaar",
+    "category": "Shopping",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0164, "longitude": 28.9706},
+    "estimated_visit_duration": 45
+  },
+  {
+    "id": "istanbul-suleymaniye",
+    "name": "Suleymaniye Mosque",
+    "category": "Religious",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0161, "longitude": 28.9641},
+    "estimated_visit_duration": 45
+  },
+  {
+    "id": "istanbul-chora",
+    "name": "Chora Church",
+    "category": "Historical",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0314, "longitude": 28.9393},
+    "estimated_visit_duration": 40
+  },
+  {
+    "id": "istanbul-istanbul-modern",
+    "name": "Istanbul Modern Art Museum",
+    "category": "Museum",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0266, "longitude": 28.9836},
+    "estimated_visit_duration": 75
+  },
+  {
+    "id": "istanbul-archeology-museum",
+    "name": "Istanbul Archaeology Museums",
+    "category": "Museum",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0118, "longitude": 28.9813},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "istanbul-princes-islands",
+    "name": "Princes' Islands (Buyukada)",
+    "category": "Nature",
+    "city": "Istanbul",
+    "location": {"latitude": 40.8690, "longitude": 29.1240},
+    "estimated_visit_duration": 240
+  },
+  {
+    "id": "istanbul-pierre-loti",
+    "name": "Pierre Loti Hill",
+    "category": "Nature",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0473, "longitude": 28.9396},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "istanbul-bosphorus",
+    "name": "Bosphorus Cruise",
+    "category": "Nature",
+    "city": "Istanbul",
+    "location": {"latitude": 41.0235, "longitude": 29.0040},
+    "estimated_visit_duration": 120
+  },
+  {
+    "id": "ankara-anitkabir",
+    "name": "Anitkabir",
+    "category": "Historical",
+    "city": "Ankara",
+    "location": {"latitude": 39.9254, "longitude": 32.8369},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "ankara-citadel",
+    "name": "Ankara Citadel",
+    "category": "Historical",
+    "city": "Ankara",
+    "location": {"latitude": 39.9408, "longitude": 32.8639},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "ankara-anadolu-medeniyetleri",
+    "name": "Museum of Anatolian Civilizations",
+    "category": "Museum",
+    "city": "Ankara",
+    "location": {"latitude": 39.9383, "longitude": 32.8595},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "ankara-kocatepe",
+    "name": "Kocatepe Mosque",
+    "category": "Religious",
+    "city": "Ankara",
+    "location": {"latitude": 39.9190, "longitude": 32.8573},
+    "estimated_visit_duration": 30
+  },
+  {
+    "id": "ankara-genclik-parki",
+    "name": "Genclik Park",
+    "category": "Nature",
+    "city": "Ankara",
+    "location": {"latitude": 39.9339, "longitude": 32.8497},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "ankara-atakule",
+    "name": "Atakule Tower",
+    "category": "Modern",
+    "city": "Ankara",
+    "location": {"latitude": 39.8883, "longitude": 32.8601},
+    "estimated_visit_duration": 45
+  },
+  {
+    "id": "ankara-etnografya",
+    "name": "Ethnography Museum of Ankara",
+    "category": "Museum",
+    "city": "Ankara",
+    "location": {"latitude": 39.9336, "longitude": 32.8538},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "ankara-eymir-golu",
+    "name": "Lake Eymir",
+    "category": "Nature",
+    "city": "Ankara",
+    "location": {"latitude": 39.8166, "longitude": 32.8130},
+    "estimated_visit_duration": 120
+  },
+  {
+    "id": "izmir-clock-tower",
+    "name": "Izmir Clock Tower",
+    "category": "Historical",
+    "city": "Izmir",
+    "location": {"latitude": 38.4189, "longitude": 27.1287},
+    "estimated_visit_duration": 20
+  },
+  {
+    "id": "izmir-kordon",
+    "name": "Kordon Promenade",
+    "category": "Nature",
+    "city": "Izmir",
+    "location": {"latitude": 38.4350, "longitude": 27.1420},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "izmir-kemeralti",
+    "name": "Kemeralti Bazaar",
+    "category": "Shopping",
+    "city": "Izmir",
+    "location": {"latitude": 38.4180, "longitude": 27.1300},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "izmir-agora",
+    "name": "Agora of Smyrna",
+    "category": "Historical",
+    "city": "Izmir",
+    "location": {"latitude": 38.4175, "longitude": 27.1393},
+    "estimated_visit_duration": 45
+  },
+  {
+    "id": "izmir-asansor",
+    "name": "Asansor",
+    "category": "Historical",
+    "city": "Izmir",
+    "location": {"latitude": 38.4121, "longitude": 27.1310},
+    "estimated_visit_duration": 30
+  },
+  {
+    "id": "izmir-ephesus",
+    "name": "Ephesus Ancient City",
+    "category": "Historical",
+    "city": "Izmir",
+    "location": {"latitude": 37.9414, "longitude": 27.3420},
+    "estimated_visit_duration": 180
+  },
+  {
+    "id": "izmir-cesme",
+    "name": "Cesme Castle",
+    "category": "Historical",
+    "city": "Izmir",
+    "location": {"latitude": 38.3244, "longitude": 26.3032},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "antalya-old-town",
+    "name": "Kaleici (Old Town)",
+    "category": "Historical",
+    "city": "Antalya",
+    "location": {"latitude": 36.8841, "longitude": 30.7056},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "antalya-duden-falls",
+    "name": "Duden Waterfalls",
+    "category": "Nature",
+    "city": "Antalya",
+    "location": {"latitude": 36.8536, "longitude": 30.7436},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "antalya-museum",
+    "name": "Antalya Museum",
+    "category": "Museum",
+    "city": "Antalya",
+    "location": {"latitude": 36.8854, "longitude": 30.6795},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "antalya-hadrian-gate",
+    "name": "Hadrian's Gate",
+    "category": "Historical",
+    "city": "Antalya",
+    "location": {"latitude": 36.8864, "longitude": 30.7060},
+    "estimated_visit_duration": 20
+  },
+  {
+    "id": "antalya-aspendos",
+    "name": "Aspendos Theatre",
+    "category": "Historical",
+    "city": "Antalya",
+    "location": {"latitude": 36.9391, "longitude": 31.1719},
+    "estimated_visit_duration": 75
+  },
+  {
+    "id": "antalya-perge",
+    "name": "Perge Ancient City",
+    "category": "Historical",
+    "city": "Antalya",
+    "location": {"latitude": 36.9611, "longitude": 30.8539},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "antalya-konyaalti",
+    "name": "Konyaalti Beach",
+    "category": "Nature",
+    "city": "Antalya",
+    "location": {"latitude": 36.8674, "longitude": 30.6348},
+    "estimated_visit_duration": 120
+  },
+  {
+    "id": "cappadocia-goreme",
+    "name": "Goreme Open-Air Museum",
+    "category": "Historical",
+    "city": "Cappadocia",
+    "location": {"latitude": 38.6431, "longitude": 34.8310},
+    "estimated_visit_duration": 120
+  },
+  {
+    "id": "cappadocia-uchisar",
+    "name": "Uchisar Castle",
+    "category": "Historical",
+    "city": "Cappadocia",
+    "location": {"latitude": 38.6327, "longitude": 34.8071},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "cappadocia-derinkuyu",
+    "name": "Derinkuyu Underground City",
+    "category": "Historical",
+    "city": "Cappadocia",
+    "location": {"latitude": 38.3741, "longitude": 34.7347},
+    "estimated_visit_duration": 90
+  },
+  {
+    "id": "cappadocia-love-valley",
+    "name": "Love Valley",
+    "category": "Nature",
+    "city": "Cappadocia",
+    "location": {"latitude": 38.6604, "longitude": 34.8298},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "cappadocia-pigeon-valley",
+    "name": "Pigeon Valley",
+    "category": "Nature",
+    "city": "Cappadocia",
+    "location": {"latitude": 38.6332, "longitude": 34.8172},
+    "estimated_visit_duration": 60
+  },
+  {
+    "id": "cappadocia-avanos",
+    "name": "Avanos Pottery Town",
+    "category": "Shopping",
+    "city": "Cappadocia",
+    "location": {"latitude": 38.7148, "longitude": 34.8460},
+    "estimated_visit_duration": 60
+  }
+]

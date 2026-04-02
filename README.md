@@ -25,7 +25,7 @@ uvicorn main:app --reload
 ## Docs
 After running: http://localhost:8000/docs
 
-## TODO (Erdem)
+## TODO (Tuna)
 - `app/repositories/repositories.py` → Replace Stub* classes with real PostgreSQL queries
 - `app/services/itinerary_service.py` → `MonteCarloItineraryPlanner.generate_candidates()` implement et
 - `alembic/` → DB migration dosyaları

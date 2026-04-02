@@ -1,18 +1,28 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
-from app.core.config import settings
+"""
+Supabase async client — Data API (PostgREST) üzerinden bağlantı.
 
-engine = create_async_engine(settings.database_url, echo=False)
+asyncpg yerine supabase-py kullanılıyor; bu sayede:
+  - Port 5432 engeli yok (HTTPS/443 üzerinden)
+  - SSL sertifika sorunu yok
+  - Connection pool yönetimi supabase-py'a devredildi
 
-AsyncSessionLocal = sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
+Gerekli .env değişkenleri:
+  SUPABASE_URL=https://xxx.supabase.co
+  SUPABASE_KEY=sb_publishable_...   (anon/publishable key)
+"""
+from __future__ import annotations
 
-Base = declarative_base()
+from supabase import AsyncClient, acreate_client
 
 
-async def get_db() -> AsyncSession:
-    async with AsyncSessionLocal() as session:
-        yield session
+async def create_supabase_client(url: str, key: str) -> AsyncClient:
+    """Supabase async client oluşturur."""
+    return await acreate_client(url, key)
+
+
+async def close_supabase_client(client: AsyncClient) -> None:
+    """Client kaynakları serbest bırakır (varsa)."""
+    try:
+        await client.aclose()
+    except Exception:
+        pass
