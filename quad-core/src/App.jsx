@@ -23,18 +23,17 @@ function ScrollToTop() {
     return null;
 }
 
-/* 🔥 App */
+/* App */
 export default function App() {
     return (
         <div className="app-root">
             <Header />
 
-            {/* 🔥 BURASI KRİTİK */}
             <ScrollToTop />
 
             <main className="app-content">
                 <Routes>
-                    <Route path="/" element={<Landing />} />
+                    <Route path="/quad-core" element={<Landing />} />
                     <Route path="/planning" element={<Planning />} />
                     <Route path="/journey" element={<Journey />} />
                     <Route path="/route" element={<RoutePage />} />
