@@ -1,0 +1,34 @@
+# Env ve API anahtarları — ASLA commitlenmesin
+.env
+*.env
+
+# Büyük veri dosyaları
+poi_raw_osm.json
+poi_raw_wiki.json
+poi_merged.json
+poi_enriched.json
+poi_with_photos.json
+poi_with_audio.json
+poi_complete.json
+poi_final.json
+guide_seed.sql
+
+# Progress dosyaları
+*_progress.json
+
+# Medya klasörleri (büyük, S3'te saklı)
+poi_photos/
+poi_audio/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
