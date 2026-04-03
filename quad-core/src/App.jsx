@@ -33,7 +33,7 @@ export default function App() {
 
             <main className="app-content">
                 <Routes>
-                    <Route path="/quad-core" element={<Landing />} />
+                    <Route path="/" element={<Landing />} />
                     <Route path="/planning" element={<Planning />} />
                     <Route path="/journey" element={<Journey />} />
                     <Route path="/route" element={<RoutePage />} />
