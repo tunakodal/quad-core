@@ -1,36 +1,63 @@
 .btn{
   border: 1px solid transparent;
   border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 700;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  transition: transform .06s ease, filter .2s ease, background .2s ease, border-color .2s ease;
-}
-.btn:active{ transform: translateY(1px); }
 
+  transition: transform .06s ease, box-shadow .2s ease, background .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.btn:active{
+  transform: translateY(1px);
+}
+
+/* 🔥 PRIMARY (turuncu) */
 .primary{
-  background: linear-gradient(180deg, var(--accent), var(--accent-2));
-  color: var(--petrol);
-  box-shadow: 0 12px 40px rgba(255,106,0,0.24);
+  background: var(--accent);
+  color: white;
+  border: none;
+
+  box-shadow: 0 6px 18px rgba(241,119,32,0.25);
 }
 
 .primary:hover{
-  filter: brightness(1.05);
+  background: var(--accent-hover);
+  box-shadow: 0 10px 24px rgba(241,119,32,0.35);
+  transform: translateY(-1px);
 }
 
+/* 🔥 GHOST (beyaz + turuncu border) */
 .ghost{
-  background: rgba(11,47,58,0.04);
-  color: var(--petrol);
-  border: 1px solid rgba(11,47,58,0.18);
+  background: white;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+
+  transition: all 160ms ease;
 }
 
 .ghost:hover{
-  background: rgba(11,47,58,0.08);
-}
-.secondary{
-  background: rgba(11,47,58,0.06);
-  color: var(--text);
-  border-color: var(--border);
+  background: white;   /* 💥 sabit kalıyor */
+  color: var(--accent);
+
+  border-color: var(--accent-hover);   /* hafif koyulaşır */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);  /* çok hafif lift */
+  transform: translateY(-1px);
 }
 
-.full{ width:100%; }
+/* 🔥 SECONDARY (soft neutral) */
+.secondary{
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.secondary:hover{
+  background: #e9edf2;
+}
+
+/* full width */
+.full{
+  width: 100%;
+}

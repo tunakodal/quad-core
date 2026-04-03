@@ -9,27 +9,41 @@ const toInt = (v, fallback) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-// Fallback (backend gelene kadar)
 const FALLBACK_CITIES = [
-  { id: "istanbul", name: "Istanbul" },
+  { id: "istanbul", name: "İstanbul" },
   { id: "ankara", name: "Ankara" },
-  { id: "izmir", name: "Izmir" },
+  { id: "izmir", name: "İzmir" },
 ];
 
-// 12 kategori placeholder (backend’den gelecek)
-const FALLBACK_CATEGORIES = [
-  { key: "landmarks", label: "Landmarks" },
-  { key: "museums", label: "Museums" },
-  { key: "dining", label: "Dining" },
-  { key: "shopping", label: "Shopping" },
-  { key: "nature", label: "Nature" },
-  { key: "nightlife", label: "Nightlife" },
-  { key: "art", label: "Art & Culture" },
-  { key: "relax", label: "Relaxation" },
-  { key: "religious", label: "Religious" },
-  { key: "historical", label: "Historical" },
-  { key: "viewpoints", label: "Viewpoints" },
-  { key: "family", label: "Family Friendly" },
+const CATEGORY_TREE = [
+  {
+    key: "museums",
+    label: "Museums",
+    sub: null,
+  },
+  {
+    key: "cultural",
+    label: "Cultural Heritage",
+    sub: [
+      { key: "archaeology", label: "Ancient & Archaeology" },
+      { key: "architecture", label: "Civil & Traditional Architecture" },
+      { key: "fortifications", label: "Fortifications" },
+      { key: "infrastructure", label: "Historical Infrastructure" },
+      { key: "religious", label: "Religious" },
+      { key: "transport", label: "Transportation as Heritage" },
+      { key: "monumental", label: "Urban & Monumental Heritage" },
+    ],
+  },
+  {
+    key: "nature",
+    label: "Nature",
+    sub: [
+      { key: "parks", label: "Parks & Outdoor" },
+      { key: "terrain", label: "Terrain & Landforms" },
+      { key: "water", label: "Water & Coastal" },
+      { key: "wildlife", label: "Wildlife & Natural Experience" },
+    ],
+  },
 ];
 
 function EditablePillNumber({ value, unitLabel, min, max, onCommit }) {
@@ -57,54 +71,36 @@ function EditablePillNumber({ value, unitLabel, min, max, onCommit }) {
   );
 }
 
-function RangeRow({ title, value, min, max, step, unitLabel, onChange, tickLabels, tickClassName, tickBiasPx}) {
+function RangeRow({ title, value, min, max, step, unitLabel, onChange }) {
   return (
-    <div className={styles.rangeRow}>
-      <div className={styles.rangeHead}>
-        <div className={styles.rangeTitle}>{title}</div>
-        <EditablePillNumber
-          value={value}
-          unitLabel={unitLabel}
-          min={min}
-          max={max}
-          onCommit={onChange}
+      <div className={styles.rangeRow}>
+        <div className={styles.rangeHead}>
+          <div className={styles.rangeTitle}>{title}</div>
+          <EditablePillNumber
+              value={value}
+              unitLabel={unitLabel}
+              min={min}
+              max={max}
+              onCommit={onChange}
+          />
+        </div>
+
+        <input
+            className={styles.range}
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={(e) => onChange(toInt(e.target.value, value))}
         />
+
+        {/* 🔥 SADE MIN MAX */}
+        <div className={styles.minMax}>
+          <span>{min}</span>
+          <span>{max}</span>
+        </div>
       </div>
-
-      <input
-        className={styles.range}
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(toInt(e.target.value, value))}
-        aria-label={title}
-      />
-
-      {tickLabels?.length ? (
-  <div className={`${styles.ticks} ${tickClassName ?? ""}`}>
-    {tickLabels.map((t) => {
-      const val = Number(t);
-      const pct = ((val - min) / (max - min)) * 100;
-
-
-      const bias = (pct - 50) / 50; // -1 .. +1
-      const px = (tickBiasPx ?? 0) * bias; // sola/sağa
-
-      return (
-        <span
-          key={t}
-          className={styles.tick}
-          style={{ left: `${pct}%`, transform: `translateX(calc(-50% + ${px}px))` }}
-        >
-          {t}
-        </span>
-      );
-    })}
-  </div>
-) : null}
-    </div>
   );
 }
 
@@ -144,7 +140,7 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => { onSelect(it.id); setOpen(false); }}
             >
-              <span className={styles.optionPin} aria-hidden="true">📍</span>
+              <span className={styles.dot}></span>
               <span>{it.name}</span>
             </button>
           ))}
@@ -174,15 +170,35 @@ function InterestPill({ label, checked, onToggle }) {
 }
 
 export default function Planning() {
-  const [cities, setCities] = useState(FALLBACK_CITIES);
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+  const [distanceRange, setDistanceRange] = useState({
+    min: 20,
+    max: 2000,
+  });
 
+  const [daysRange, setDaysRange] = useState({
+    min: 1,
+    max: 5,
+  });
+
+  const [cities, setCities] = useState(FALLBACK_CITIES);
   const [cityId, setCityId] = useState(FALLBACK_CITIES[0]?.id ?? "");
 
   const [days, setDays] = useState(3);          // 1–10
   const [distanceKm, setDistanceKm] = useState(100); // 20–2000
 
-  const [selected, setSelected] = useState(() => new Set(["landmarks", "museums"]));
+  const [selected, setSelected] = useState(() => {
+    const all = new Set();
+
+    CATEGORY_TREE.forEach((cat) => {
+      if (cat.sub) {
+        cat.sub.forEach((s) => all.add(s.key));
+      } else {
+        all.add(cat.key);
+      }
+    });
+
+    return all;
+  });
 
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -192,14 +208,65 @@ export default function Planning() {
   // GET /api/categories
   useEffect(() => {
     setCities(FALLBACK_CITIES);
-    setCategories(FALLBACK_CATEGORIES);
   }, []);
 
-  const toggleCategory = (key) => {
+  useEffect(() => {
+    let newDistanceRange;
+    let newDaysRange;
+
+    if (cityId === "istanbul") {
+      newDistanceRange = { min: 20, max: 500 };
+      newDaysRange = { min: 1, max: 3 };
+    } else if (cityId === "ankara") {
+      newDistanceRange = { min: 30, max: 800 };
+      newDaysRange = { min: 1, max: 4 };
+    } else if (cityId === "izmir") {
+      newDistanceRange = { min: 25, max: 600 };
+      newDaysRange = { min: 1, max: 3 };
+    } else {
+      newDistanceRange = { min: 20, max: 2000 };
+      newDaysRange = { min: 1, max: 5 };
+    }
+
+    setDistanceRange(newDistanceRange);
+    setDaysRange(newDaysRange);
+
+    // 🔥 RESET
+    setDistanceKm(newDistanceRange.min);
+    setDays(newDaysRange.min);
+
+  }, [cityId]);
+
+  const [expanded, setExpanded] = useState(null);
+  const toggleMain = (cat) => {
     setSelected((prev) => {
       const next = new Set(prev);
+
+      if (!cat.sub) {
+        if (next.has(cat.key)) next.delete(cat.key);
+        else next.add(cat.key);
+        return next;
+      }
+
+      const allSelected = cat.sub.every((s) => next.has(s.key));
+
+      if (allSelected) {
+        cat.sub.forEach((s) => next.delete(s.key));
+      } else {
+        cat.sub.forEach((s) => next.add(s.key));
+      }
+
+      return next;
+    });
+  };
+
+  const toggleSub = (key) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+
       if (next.has(key)) next.delete(key);
       else next.add(key);
+
       return next;
     });
   };
@@ -214,7 +281,7 @@ export default function Planning() {
 const onGenerateRoute = async () => {
   setIsGenerating(true);
   try {
-    const payload = buildPayload(); // ✅ senin mevcut fonksiyonun
+    const payload = buildPayload();
 
     // DEV fake wait
     await new Promise((r) => setTimeout(r, 900));
@@ -258,45 +325,106 @@ const onGenerateRoute = async () => {
         </div>
 
         {/* Days + Distance */}
-        <div className={styles.block}>
-          <div className={styles.twoCols}>
+        <div className={styles.twoCols}>
+
+          <div className={styles.block}>
             <RangeRow
                 title="Days"
                 value={days}
-                min={1}
-                max={10}
+                min={daysRange.min}
+                max={daysRange.max}
                 step={1}
                 unitLabel="days"
-                onChange={(v) => setDays(clamp(v, 1, 10))}
-                tickLabels={["1", "3", "5", "7", "10"]}
-            />
-           <RangeRow
-              title="Distance"
-              value={distanceKm}
-              min={20}
-              max={2000}
-              step={10}
-              unitLabel="km"
-              onChange={(v) => setDistanceKm(clamp(v, 20, 2000))}
-              tickLabels={[20, 500, 1000, 1500, 2000]}
-              tickClassName={styles.distanceTicks}
-              tickBiasPx={-15}
+                onChange={(v) =>
+                    setDays(clamp(v, daysRange.min, daysRange.max))
+                }
             />
           </div>
+
+          <div className={styles.block}>
+            <RangeRow
+                title="Distance"
+                value={distanceKm}
+                min={distanceRange.min}
+                max={distanceRange.max}
+                step={5}
+                unitLabel="km"
+                onChange={(v) =>
+                    setDistanceKm(clamp(v, distanceRange.min, distanceRange.max))
+                }
+            />
+          </div>
+
         </div>
 
         {/* Categories */}
         <div className={styles.block}>
           <div className={styles.sectionTitle}>Interests</div>
-          <div className={styles.grid}>
-            {categories.map((c) => (
-                <InterestPill
-                    key={c.key}
-                    label={c.label}
-                    checked={selected.has(c.key)}
-                    onToggle={() => toggleCategory(c.key)}
-                />
-            ))}
+
+          <div className={styles.categoryGrid}>
+
+            {/* ÜST (sub olanlar) */}
+            {CATEGORY_TREE.filter((cat) => cat.sub).map((cat) => {
+              const isAllSelected = cat.sub.every((s) => selected.has(s.key));
+
+              return (
+                  <div key={cat.key} className={styles.categoryBlock}>
+
+                    <label className={styles.mainRow}>
+                      <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          ref={(el) => {
+                            if (el) {
+                              const someSelected =
+                                  cat.sub.some((s) => selected.has(s.key)) && !isAllSelected;
+
+                              el.indeterminate = someSelected;
+                            }
+                          }}
+                          onChange={() => toggleMain(cat)}
+                      />
+                      <span>{cat.label}</span>
+                    </label>
+
+                    <div className={styles.subList}>
+                      {cat.sub.map((s) => (
+                          <label key={s.key} className={styles.subRow}>
+                            <input
+                                type="checkbox"
+                                checked={selected.has(s.key)}
+                                onChange={() => toggleSub(s.key)}
+                            />
+                            <span>{s.label}</span>
+                          </label>
+                      ))}
+                    </div>
+                  </div>
+              );
+            })}
+
+            {/* ALT (sub olmayan → Museums) */}
+            {CATEGORY_TREE.filter((cat) => !cat.sub).map((cat) => {
+              const isSelected = selected.has(cat.key);
+
+              return (
+                  <div key={cat.key} className={styles.fullWidth}>
+                    <div className={styles.categoryBlock}>
+
+                      <label className={styles.mainRow}>
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleMain(cat)}
+                        />
+                        <span>{cat.label}</span>
+                      </label>
+
+                    </div>
+                  </div>
+              );
+            })}
+
           </div>
         </div>
 

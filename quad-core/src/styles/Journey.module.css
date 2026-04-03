@@ -1,0 +1,201 @@
+.page{
+    display: flex;
+    height: 100vh;
+    background: var(--bg);
+    color: var(--primary);
+}
+
+/* LEFT */
+
+.daysPanel{
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; /* 🔥 kritik */
+    gap: 18px;
+}
+
+.dayButton{
+    border: none;
+    background: transparent;
+
+    text-align: center; /* 🔥 artık center */
+    font-size: 20px;
+    font-weight: 500;
+
+    color: var(--primary);
+    opacity: 0.45;
+
+    cursor: pointer;
+
+    transform-origin: center;
+
+    transform: scale(0.85); /* default küçük */
+
+    letter-spacing: -0.8px;
+
+    transition:
+            transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 250ms ease;
+}
+
+/* ACTIVE */
+.active{
+    transform: scale(3);
+    opacity: 1;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+}
+/* hover (küçük his) */
+.dayButton:hover{
+    opacity: 0.75;
+}
+
+/* DIVIDER */
+
+.divider{
+    width: 2px;
+    background: var(--border);
+    margin: 40px 0;
+}
+
+/* RIGHT */
+
+.card{
+    background: var(--surface-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 18px;
+
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cardHeader{
+    font-weight: 300;
+    font-size: 18px;
+    color: var(--primary);
+}
+
+.content{
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 20px;
+    padding: 24px;
+
+    align-items: center; /* 🔥 kritik fix */
+}
+
+/* MAP */
+
+.mapSection{
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    height: 100%;
+}
+
+.mapCard{
+    border-radius: var(--r-lg);
+    overflow: hidden;
+}
+
+.mapWrap{
+    border-radius: var(--r-md);
+    overflow: hidden;
+}
+
+/* POI LIST */
+.poiGrid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.poiCard{
+    display: flex;
+    gap: 10px;
+
+    padding: 12px;
+    border-radius: var(--r-md);
+
+    background: var(--surface-card);
+    cursor: pointer;
+
+    transition: all 200ms ease;
+}
+
+.poiCard:hover{
+    background: var(--surface-card-hover);
+    transform: translateY(-2px);
+}
+
+.poiIndex{
+    width: 30px;
+    height: 30px;
+
+    border-radius: 8px;
+    background: var(--accent);
+
+    color: white;
+    font-weight: 700;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.poiName{
+    font-weight: 300;
+}
+
+.poiMeta{
+    font-size: 12px;
+    color: var(--muted-text);
+    display: flex;
+    gap: 8px;
+}
+
+.poiList{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.poiItem{
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    border-radius: var(--r-md);
+    background: var(--surface-card);
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.poiItem:hover{
+    background: var(--surface-card-hover);
+}
+
+.poiOrder{
+    font-weight: 400;
+    font-size: 18px;
+}
+
+.poiMain{
+    display: flex;
+    flex-direction: column;
+}
+
+.poiName{
+    font-weight: 300;
+}
+
+.poiMeta{
+    font-size: 12px;
+    color: var(--muted-text);
+    display: flex;
+    gap: 12px;
+}

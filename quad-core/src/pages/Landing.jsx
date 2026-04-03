@@ -19,7 +19,7 @@ export function Landing() {
               <span
                 key={`${ch}-${i}`}
                 className={styles.letter}
-                style={{ animationDelay: `${300 * i}ms` }}
+                style={{ animationDelay: `${180 + i * 90}ms` }}
               >
                 {ch}
               </span>

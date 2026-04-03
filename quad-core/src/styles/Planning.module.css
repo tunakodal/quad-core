@@ -20,12 +20,12 @@
   margin: 8px 0 0;
   font-size: 28px;
   letter-spacing: 3px;
-  color: var(--petrol);
+  color: var(--primary);
 }
 
 .block{
-  background: rgba(9, 40, 54, 0.06);
-  border: 1px solid rgba(9, 40, 54, 0.10);
+  background: var(--surface-card);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 14px;
 }
@@ -51,7 +51,7 @@
   gap: 10px;
 
   background: #fff;
-  border: 1px solid rgba(9, 40, 54, 0.15);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 12px 12px;
 }
@@ -70,7 +70,7 @@
   border: none;
   outline: none;
   font-size: 15px;
-  color: var(--petrol);
+  color: var(--primary);
   background: transparent;
 }
 
@@ -81,7 +81,7 @@
   top: calc(100% + 8px);
 
   background: #fff;
-  border: 1px solid rgba(9, 40, 54, 0.15);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 8px;
   z-index: 20;
@@ -100,13 +100,13 @@
 
   padding: 10px 10px;
   border-radius: 12px;
-  color: var(--petrol);
+  color: var(--primary);
   text-align: left;
   font-size: 15px;
 }
 
 .option:hover{
-  background: rgba(9, 40, 54, 0.06);
+  background: var(--surface-soft);
 }
 
 .optionPin{
@@ -130,7 +130,7 @@
   min-width: 62px;
   font-size: 13px;
   opacity: 0.75;
-  color: var(--petrol);
+  color: var(--primary);
 }
 
 .regionSelect{
@@ -139,7 +139,7 @@
   border-radius: 12px;
   border: 1px solid rgba(9, 40, 54, 0.15);
   background: #fff;
-  color: var(--petrol);
+  color: var(--primary);
   outline: none;
 }
 
@@ -158,7 +158,7 @@
 
 .rangeTitle{
   font-size: 18px;
-  color: var(--petrol);
+  color: var(--primary);
   margin-bottom: 8px;
 }
 
@@ -168,7 +168,7 @@
   gap: 6px;
 
   background: #fff;
-  border: 1px solid rgba(9, 40, 54, 0.15);
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px 10px;
 }
@@ -178,7 +178,7 @@
   border: none;
   outline: none;
   background: transparent;
-  color: var(--petrol);
+  color: var(--primary);
   font-weight: 600;
   text-align: right;
 }
@@ -186,11 +186,12 @@
 .pillUnit{
   font-size: 12px;
   opacity: 0.7;
-  color: var(--petrol);
+  color: var(--primary);
 }
 
 .range{
   width: 100%;
+  accent-color: var(--primary);
 }
 
 .ticks{
@@ -208,7 +209,7 @@
   white-space: nowrap;
 
   font-size: 12px;
-  color: var(--petrol);
+  color: var(--primary);
   opacity: 0.6;
 }
 
@@ -219,7 +220,7 @@
 /* --- Interests --- */
 .sectionTitle{
   font-size: 18px;
-  color: var(--petrol);
+  color: var(--primary);
   margin-bottom: 10px;
 }
 
@@ -245,24 +246,24 @@
   border-radius: 14px;
 
   background: #fff;
-  border: 1px solid rgba(9, 40, 54, 0.15);
+  border: 1px solid var(--border);
   cursor: pointer;
 
-  color: var(--petrol);
+  color: var(--primary);
   text-align: left;
 }
 
 .interestOn{
-  border-color: rgba(255, 106, 0, 0.50);
-  box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.10);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(241,119,32,0.12);
 }
 
 .iconSlot{
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  background: rgba(9, 40, 54, 0.08);
-  border: 1px dashed rgba(9, 40, 54, 0.25);
+  background: var(--surface-soft);
+  border: 1px dashed var(--border);
   flex: 0 0 26px;
 }
 
@@ -277,8 +278,8 @@
   width: 40px;
   height: 22px;
   border-radius: 999px;
-  background: rgba(9, 40, 54, 0.10);
-  border: 1px solid rgba(9, 40, 54, 0.15);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   padding: 2px;
   display: flex;
   align-items: center;
@@ -286,8 +287,8 @@
 }
 
 .miniSwitchOn{
-  background: rgba(255, 106, 0, 0.25);
-  border-color: rgba(255, 106, 0, 0.35);
+  background: var(--accent);
+  border-color: var(--accent);
   justify-content: flex-end;
 }
 
@@ -308,7 +309,7 @@
 
 
 .inlineQuote{
-  margin: 2px 0 2px;
+  margin: -4px 0 8px;
   text-align: center;
 }
 
@@ -318,7 +319,7 @@
   font-weight: 300;
   font-size: 12px;
 
-  color: var(--petrol);
+  color: var(--primary);
   opacity: 0.45;
 }
 
@@ -329,7 +330,7 @@
   font-weight: 300;
   font-size: 10px;
 
-  color: var(--petrol);
+  color: var(--primary);
   opacity: 0.45;
 }
 
@@ -342,10 +343,106 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(9, 40, 54, 0.22);
+  background: rgba(0,0,0,0.15);
   backdrop-filter: blur(3px);
   display: grid;
   place-items: center;
+}
+
+.dot{
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--primary);
+  opacity: 0.8;
+
+  box-shadow: 0 0 0 3px rgba(3,4,94,0.08); /* çok hafif glow */
+}
+
+.minMax {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  opacity: 0.7;
+  margin-top: 6px;
+  padding: 0 2px;
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.fullWidth {
+  grid-column: span 2;
+}
+
+.categoryBlock {
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+
+  transition: all 0.2s ease;
+}
+
+.categoryBlock:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+/* MAIN */
+.mainRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* SUB */
+.subList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.subRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 6px 8px;
+  border-radius: 10px;
+
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.04);
+
+  font-size: 13px;
+  cursor: pointer;
+
+  transition: all 0.15s ease;
+}
+
+.subRow:hover {
+  background: rgba(255,255,255,0.9);
+}
+
+.mainRow span {
+  color: var(--primary);
+}
+
+.subRow span {
+  color: var(--primary);
+}
+
+/* checkbox biraz daha güzel */
+input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--surface-card); /* senin primary */
 }
 
 
@@ -368,15 +465,15 @@
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  border: 4px solid rgba(255,106,0,0.22);
-  border-top-color: rgba(255,106,0,0.95);
+  border: 4px solid rgba(241,119,32,0.2);
+  border-top-color: var(--accent);
   animation: spin 0.9s linear infinite;
 }
 
 .loadingText{
   font-size: 16px;
   font-weight: 700;
-  color: var(--petrol);
+  color: var(--primary);
   letter-spacing: 0.2px;
 }
 

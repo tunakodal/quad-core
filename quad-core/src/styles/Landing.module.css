@@ -1,10 +1,15 @@
 .page{
   width: 100%;
-  padding: 64px 20px;
+  min-height: calc(100vh - 80px);
+  padding: 120px 20px 240px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero{
-  max-width: 920px;
+  max-width: 980px;
   margin: 0 auto;
 
   display: flex;
@@ -12,77 +17,81 @@
   align-items: center;
   text-align: center;
 
-  gap: 18px;
+  gap: 22px;
 
-  /* sayfa tak diye gelmesin */
-  animation: fadeUp 520ms ease-out both;
+  opacity: 0;
+  transform: translateX(-28px);
+  animation: fadeSlideIn 760ms ease-out forwards;
 }
 
 .brandRow{
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
 }
 
 .logo{
-  width: 50px;
+  width: 64px;
   height: auto;
   display: block;
 
-  /* logo da yumuşak gelsin */
-  animation: pop 520ms ease-out both;
+  opacity: 0;
+  transform: translateX(-14px);
+  animation: fadeSlideIn 620ms ease-out forwards;
   animation-delay: 120ms;
 }
 
 .title{
-  margin-top: 50px;
+  margin: 2px;
   display: inline-flex;
-  gap: 2px;
+  gap: 0;
 
-  font-size: 50px;
-  letter-spacing: 6px;
+  font-size: clamp(60px, 8.5vw, 92px);
+  font-weight: 700;
+  letter-spacing: -4px;
   line-height: 1;
-  color: var(--petrol);
+  color: var(--primary);
 }
 
-/* harfler tek tek gelsin + hafif “yanıp sönme” */
 .letter{
   display: inline-block;
   opacity: 0;
-  transform: translateY(8px);
-  animation: letterIn 520ms cubic-bezier(.2,.8,.2,1) both;
+  transform: translateX(-10px);
+  animation: letterSlideIn 520ms cubic-bezier(.2,.8,.2,1) forwards;
 }
 
 .subtitle{
-  margin-top: 50px;
-  font-size: 18px;           /* genel olarak büyüttük */
-  line-height: 1.4;
+  margin-top: 8px;
+  font-size: 16px;
+  line-height: 1.5;
   color: var(--muted-text);
 
-  white-space: nowrap;       /* tek satır */
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 620px;
 
-  animation: fadeUp 520ms ease-out both;
-  animation-delay: 220ms;
+  opacity: 0;
+  animation: fadeIn 700ms ease-out forwards;
+  animation-delay: 520ms;
 }
 
 .actions{
-  margin-top: 118px;
+  margin-top: 64px;
   display: flex;
-  flex-direction: column;  /* alt alta */
+  flex-direction: column;
   gap: 12px;
-  width: 320px;            /* buton genişliği */
+  width: 200px;
   max-width: 92vw;
+
+  opacity: 0;
+  animation: fadeIn 700ms ease-out forwards;
+  animation-delay: 700ms;
 }
 
 .primaryBtn{
   width: 100%;
   padding: 16px 20px;
   font-size: 16px;
-
-  animation: ctaPulse 1800ms ease-in-out infinite;
-  transform-origin: center;
 }
 
 .ghostBtn{
@@ -92,35 +101,63 @@
   opacity: 0.95;
 }
 
-/* Mobil */
-@media (max-width: 520px){
-  .page{ padding: 44px 16px; }
-  .title{ font-size: 52px; letter-spacing: 4px; }
-  .logo{ width: 46px; }
-  .subtitle{ font-size: 15px; }
-}
-
-/* Animasyonlar */
-@keyframes fadeUp{
-  from{ opacity:0; transform: translateY(10px); }
-  to{ opacity:1; transform: translateY(0); }
-}
-
-@keyframes pop{
-  from{ opacity:0; transform: scale(0.92); }
-  to{ opacity:1; transform: scale(1); }
-}
-
-@keyframes letterIn{
-  from{ opacity:0; transform: translateY(10px); }
-  to{ opacity:1; transform: translateY(0); }
-}
-
-@keyframes ctaPulse{
-  0%, 100%{
-    transform: scale(1);
+@media (max-width: 640px){
+  .page{
+    min-height: calc(100vh + 120px);
+    padding: 36px 16px 56px;
   }
-  50%{
-    transform: scale(1.05);
+
+  .brandRow{
+    gap: 12px;
+  }
+
+  .logo{
+    width: 50px;
+  }
+
+  .title{
+    letter-spacing: 4px;
+  }
+
+  .subtitle{
+    font-size: 16px;
+    max-width: 92%;
+  }
+
+  .actions{
+    margin-top: 22px;
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+@keyframes fadeSlideIn{
+  from{
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to{
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes letterSlideIn{
+  from{
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to{
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn{
+  from{
+    opacity: 0;
+  }
+  to{
+    opacity: 1;
   }
 }

@@ -54,7 +54,7 @@
   font-size: 26px;
   font-weight: 500;
   letter-spacing: 0.2px;
-  color: var(--petrol);
+  color: var(--primary);
 }
 
 .meta{
@@ -62,7 +62,7 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  color: var(--petrol);
+  color: var(--primary);
   opacity: 0.85;
   font-size: 14px;
 }
@@ -83,7 +83,7 @@
   border-radius: 999px;
   background: rgba(255,106,0,0.10);
   border: 1px solid rgba(255,106,0,0.22);
-  color: var(--petrol);
+  color: var(--primary);
   font-size: 12px;
   font-weight: 600;
 }
@@ -105,7 +105,7 @@
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  color: var(--petrol);
+  color: var(--primary);
 }
 
 .langBtn:hover{ border-color: rgba(255,106,0,0.22); }
@@ -160,7 +160,7 @@
 }
 
 .playerTitle{
-  color: var(--petrol);
+  color: var(--primary);
   font-weight: 600;
   font-size: 13px;
   opacity: 0.9;
@@ -169,7 +169,7 @@
 .playerClose{
   border: 1px solid rgba(9,40,54,0.18);
   background: rgba(255,255,255,0.65);
-  color: var(--petrol);
+  color: var(--primary);
   border-radius: 999px;
   width: 28px;
   height: 28px;
@@ -191,7 +191,7 @@
   right: 0;
   bottom: 0;
   font-size: 12px;
-  color: var(--petrol);
+  color: var(--primary);
   opacity: 0.75;
   pointer-events: none;
   white-space: nowrap;
@@ -212,9 +212,9 @@
   border-radius: 999px;
   background: linear-gradient(
     90deg,
-    var(--petrol) 0%,
-    var(--petrol) var(--pct),
-    rgba(9, 40, 54, 0.18) var(--pct),
+    var(--primary) 0%,
+    var(--primary) var(--primary-hover),
+    rgba(9, 40, 54, 0.18) var(--primary-hover),
     rgba(9, 40, 54, 0.18) 100%
   );
 }
@@ -226,7 +226,7 @@
   height: 14px;
   border-radius: 999px;
   background: #fff;
-  border: 2px solid var(--petrol);
+  border: 2px solid var(--primary);
   box-shadow: 0 6px 16px rgba(0,0,0,0.18);
   margin-top: -4px;
   cursor: pointer;
@@ -240,14 +240,14 @@
 .progress::-moz-range-progress{
   height: 6px;
   border-radius: 999px;
-  background: var(--petrol);
+  background: var(--primary);
 }
 .progress::-moz-range-thumb{
   width: 14px;
   height: 14px;
   border-radius: 999px;
   background: #fff;
-  border: 2px solid var(--petrol);
+  border: 2px solid var(--primary);
   box-shadow: 0 6px 16px rgba(0,0,0,0.18);
   cursor: pointer;
 }
@@ -263,7 +263,7 @@
 .ctrlBtn{
   border: 1px solid rgba(9,40,54,0.18);
   background: rgba(11,47,58,0.04);
-  color: var(--petrol);
+  color: var(--primary);
   border-radius: 999px;
   padding: 9px 14px;
   cursor: pointer;
@@ -277,8 +277,8 @@
   padding: 10px 16px;
   cursor: pointer;
   font-weight: 800;
-  background: linear-gradient(180deg, var(--accent), var(--accent-2));
-  color: var(--petrol);
+  background: linear-gradient(180deg, var(--accent), var(--accent-soft));
+  color: var(--primary);
   box-shadow: 0 12px 40px rgba(255,106,0,0.24);
   line-height: 1;
 }
@@ -290,7 +290,7 @@
 
 .desc{
   margin-top: 14px;
-  color: var(--petrol);
+  color: var(--primary);
   opacity: 0.86;
   line-height: 1.55;
   font-size: 14px;
@@ -378,7 +378,7 @@
   align-items: center;
   gap: 12px;
   text-align: left;
-  color: var(--petrol);
+  color: var(--primary);
 }
 
 .navCard:hover{
@@ -468,6 +468,6 @@
 
 .loading{
   padding: 18px;
-  color: var(--petrol);
+  color: var(--primary);
   opacity: 0.8;
 }
