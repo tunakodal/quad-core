@@ -3,52 +3,52 @@
 **Guided User Itinerary & Destination Explorer**
 Team: QUAD-CORE | BIL495/496 Graduation Project | TOBB ETÜ
 
-Bu klasör, GUIDE projesinin POI veri toplama, zenginleştirme, ses üretimi, bulut depolama ve veritabanı yükleme süreçlerinde kullanılan tüm Python scriptlerini içerir.
+This folder contains all Python scripts used in the GUIDE project's POI data collection, enrichment, audio generation, cloud storage, and database upload processes.
 
 ---
 
-## Klasör Yapısı
+## Folder Structure
 
 ```
 GUIDE Data Pipeline/
-├── data_analysis.py                       # Dataset istatistik analizi
-├── requirements.txt                       # Bağımlılıklar
+├── data_analysis.py                       # Dataset statistics and analysis
+├── requirements.txt                       # Dependencies
 │
 ├── collectors/
-│   ├── osm_collector.py                   # OpenStreetMap / Overpass API POI toplama
-│   ├── wikipedia_collector.py             # Wikipedia kategori scraping
-│   ├── multi_source_poi_collector.py      # Tüm kaynakları birleştir + Wikipedia açıklama
-│   └── coordinate_validator.py            # Koordinat doğrulama, Türkiye dışı temizleme
+│   ├── osm_collector.py                   # OpenStreetMap / Overpass API POI collection
+│   ├── wikipedia_collector.py             # Wikipedia category scraping
+│   ├── multi_source_poi_collector.py      # Merge all sources + fetch Wikipedia descriptions
+│   └── coordinate_validator.py            # Coordinate validation, remove out-of-Turkey POIs
 │
 ├── enrichers/
-│   ├── google_enricher.py                 # Google Places API — rating, yorum, place_id
-│   └── photo_downloader.py                # Google Places API — fotoğraf indirme
+│   ├── google_enricher.py                 # Google Places API — rating, reviews, place_id
+│   └── photo_downloader.py                # Google Places API — photo download
 │
 ├── llm/
-│   ├── haiku_description_enricher.py      # Claude Haiku — TR + EN açıklama üretimi
-│   └── translate_german.py                # Claude Haiku — EN → DE çeviri
+│   ├── haiku_description_enricher.py      # Claude Haiku — generate TR + EN descriptions
+│   └── translate_german.py                # Claude Haiku — EN → DE translation
 │
 ├── tts/
-│   ├── tts_google.py                      # Google Cloud TTS — TR + EN MP3
-│   └── tts_german.py                      # Google Cloud TTS — DE MP3
+│   ├── tts_google.py                      # Google Cloud TTS — TR + EN MP3 generation
+│   └── tts_german.py                      # Google Cloud TTS — DE MP3 generation
 │
 ├── storage/
-│   └── upload_to_s3.py                    # AWS S3 — medya yükle, JSON URL güncelle
+│   └── upload_to_s3.py                    # AWS S3 — upload media, update JSON with URLs
 │
 └── database/
     ├── generate_seed.py                   # JSON → guide_schema.sql + guide_seed.sql
-    └── insert_to_supabase.py              # Supabase REST API ile veri yükleme (port 443)
+    └── insert_to_supabase.py              # Bulk insert to Supabase via REST API (port 443)
 ```
 
 ---
 
-## Kurulum
+## Setup
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Ortam değişkenlerini ayarla (`.env` dosyası oluştur, **asla commit etme**):
+Set environment variables (create a `.env` file, **never commit it**):
 
 ```env
 ANTHROPIC_API_KEY=[API_KEY]
@@ -64,57 +64,57 @@ SUPABASE_KEY=[YOUR_SERVICE_ROLE_KEY]
 
 ---
 
-## Pipeline Akışı ve Çalıştırma Sırası
+## Pipeline Flow and Execution Order
 
-| # | Script | Açıklama | Çıktı |
-|---|--------|----------|-------|
-| 1 | `collectors/osm_collector.py` | Overpass API ile Türkiye POI toplama | `poi_raw_osm.json` |
-| 2 | `collectors/wikipedia_collector.py` | Wikipedia kategori scraping | `poi_raw_wiki.json` |
-| 3 | `collectors/multi_source_poi_collector.py` | Kaynakları birleştir, duplicate temizle, Wikipedia açıklama çek | `poi_merged.json` |
-| 4 | `collectors/coordinate_validator.py` | Türkiye sınır kontrolü, yanlış il düzeltme, Nominatim geocoding | `poi_coord_validated.json` |
-| 5 | `enrichers/google_enricher.py` | Google Places ile rating, yorum, place_id ekleme | `poi_enriched.json` |
-| 6 | `llm/haiku_description_enricher.py` | Claude Haiku ile eksik TR + EN açıklama üretimi | `poi_enriched_descriptions.json` |
-| 7 | `llm/translate_german.py` | Claude Haiku ile EN → DE çeviri | `poi_with_german.json` |
-| 8 | `enrichers/photo_downloader.py` | Google Places ile POI başına 3 fotoğraf indirme | `poi_with_photos.json` |
-| 9 | `tts/tts_google.py` | Google Cloud TTS ile TR + EN MP3 üretimi | `poi_with_audio.json` |
-| 10 | `tts/tts_german.py` | Google Cloud TTS ile DE MP3 üretimi | `poi_complete.json` |
-| 11 | `storage/upload_to_s3.py` | Fotoğraf + ses dosyalarını AWS S3'e yükle, URL güncelle | `poi_final.json` |
-| 12 | `database/generate_seed.py` | JSON'dan SQL schema + seed dosyaları üret | `guide_schema.sql` + `guide_seed.sql` |
-| 13 | `database/insert_to_supabase.py` | Supabase'e REST API üzerinden veri yükle (port 443, psql gerekmez) | — |
-| 14 | `data_analysis.py` | Dataset istatistik raporu | `data_analysis_report.json` |
-
----
-
-## Kullanılan Teknolojiler ve API Maliyetleri
-
-| Teknoloji / API | Kullanım Amacı | Maliyet |
-|-----------------|----------------|---------|
-| OpenStreetMap / Overpass API | Temel POI toplama | Ücretsiz |
-| Wikipedia / Wikidata API | POI discovery + açıklama | Ücretsiz |
-| Nominatim API | Reverse geocoding (koordinat → il) | Ücretsiz |
-| Google Places API (New) | Rating, yorum sayısı, fotoğraf | ~$79 |
-| Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) | TR+EN açıklama üretimi + DE çeviri | ~$5-7 |
-| Google Cloud TTS | TR + EN + DE MP3 seslendirme | ~$34 |
-| AWS S3 | Fotoğraf ve ses dosyası depolama | ~$1/ay |
-| Supabase (PostgreSQL) | Veritabanı | Ücretsiz (free tier) |
+| # | Script | Description | Output |
+|---|--------|-------------|--------|
+| 1 | `collectors/osm_collector.py` | Collect POIs from Turkey via Overpass API | `poi_raw_osm.json` |
+| 2 | `collectors/wikipedia_collector.py` | Wikipedia category scraping | `poi_raw_wiki.json` |
+| 3 | `collectors/multi_source_poi_collector.py` | Merge sources, remove duplicates, fetch Wikipedia descriptions | `poi_merged.json` |
+| 4 | `collectors/coordinate_validator.py` | Turkey boundary check, fix wrong province assignments, Nominatim geocoding | `poi_coord_validated.json` |
+| 5 | `enrichers/google_enricher.py` | Add rating, review count, place_id via Google Places | `poi_enriched.json` |
+| 6 | `llm/haiku_description_enricher.py` | Generate missing TR + EN descriptions with Claude Haiku | `poi_enriched_descriptions.json` |
+| 7 | `llm/translate_german.py` | Translate EN descriptions to DE with Claude Haiku | `poi_with_german.json` |
+| 8 | `enrichers/photo_downloader.py` | Download 3 photos per POI via Google Places | `poi_with_photos.json` |
+| 9 | `tts/tts_google.py` | Generate TR + EN MP3 audio via Google Cloud TTS | `poi_with_audio.json` |
+| 10 | `tts/tts_german.py` | Generate DE MP3 audio via Google Cloud TTS | `poi_complete.json` |
+| 11 | `storage/upload_to_s3.py` | Upload photos + audio to AWS S3, update JSON with URLs | `poi_final.json` |
+| 12 | `database/generate_seed.py` | Generate SQL schema + seed files from JSON | `guide_schema.sql` + `guide_seed.sql` |
+| 13 | `database/insert_to_supabase.py` | Bulk insert to Supabase via REST API (port 443, no psql needed) | — |
+| 14 | `data_analysis.py` | Dataset statistics report | `data_analysis_report.json` |
 
 ---
 
-## Dataset İstatistikleri (Final)
+## Technologies and API Costs
 
-- **Toplam POI:** 2.337 (Türkiye'nin 81 ili)
-- **Dil desteği:** Türkçe, İngilizce, Almanca (açıklama + ses)
-- **Ses dosyaları:** ~7.000 MP3 (her POI için 3 dil)
-- **Fotoğraflar:** ~7.000 JPG (her POI için 3 adet)
-- **Veritabanı:** Supabase PostgreSQL — `cities`, `pois`, `poi_contents`, `media_assets`
-- **Medya depolama:** AWS S3
+| Technology / API | Purpose | Cost |
+|------------------|---------|------|
+| OpenStreetMap / Overpass API | Base POI collection | Free |
+| Wikipedia / Wikidata API | POI discovery + descriptions | Free |
+| Nominatim API | Reverse geocoding (coordinates → province) | Free |
+| Google Places API (New) | Ratings, review counts, photos | ~$79 |
+| Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) | TR+EN description generation + DE translation | ~$5-7 |
+| Google Cloud TTS | TR + EN + DE MP3 audio generation | ~$34 |
+| AWS S3 | Photo and audio file storage | ~$1/month |
+| Supabase (PostgreSQL) | Database | Free (free tier) |
 
 ---
 
-## Önemli Notlar
+## Dataset Statistics (Final)
 
-- Tüm scriptler **kaldığı yerden devam** eder — `*_progress.json` dosyaları sayesinde yarıda kesilirse tekrar çalıştırılabilir.
-- `guide_seed.sql` büyük bir dosyadır (~8 MB), `.gitignore`'a ekli.
-- `poi_photos/` ve `poi_audio/` klasörleri S3'te tutulur, lokale commit edilmez.
-- `insert_to_supabase.py` port 443 (HTTPS) kullandığından ISP port engelleme sorununu aşar.
-- Supabase yükleme sırası önemlidir: `cities → pois → poi_contents → media_assets`.
+- **Total POIs:** 2,337 (covering all 81 provinces of Turkey)
+- **Language support:** Turkish, English, German (descriptions + audio)
+- **Audio files:** ~7,000 MP3s (3 languages per POI)
+- **Photos:** ~7,000 JPGs (3 per POI)
+- **Database:** Supabase PostgreSQL — `cities`, `pois`, `poi_contents`, `media_assets`
+- **Media storage:** AWS S3
+
+---
+
+## Important Notes
+
+- All scripts are **resumable** — if interrupted, re-running continues from where it left off via `*_progress.json` files.
+- `guide_seed.sql` is a large file (~8 MB) and is listed in `.gitignore`.
+- `poi_photos/` and `poi_audio/` directories are stored on S3 and are not committed locally.
+- `insert_to_supabase.py` uses port 443 (HTTPS), bypassing ISP port blocking issues.
+- Supabase insert order matters: `cities → pois → poi_contents → media_assets`.
