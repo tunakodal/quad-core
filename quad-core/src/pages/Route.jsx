@@ -171,22 +171,23 @@ export default function Route() {
   const { state } = useLocation();
 
   const planningInput = state?.planningInput ?? {
-    cityId: "Istanbul",
+    cityId: "istanbul",
+    cityName: "İstanbul",
     days: 3,
-    distanceKm: 20,
+    distanceKm: 45,
     categories: [
-      "Museums",
-      "Historical Landmarks",
-      "Views",
-      "Architecture",
-      "Cultural Heritage",
-      "Scenic Spots",
-      "Bazaars",
-      "Palaces",
-      "Mosques",
-      "Waterfront",
-      "City Icons",
-      "Walking Routes",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
     ],
   };
 
@@ -372,7 +373,7 @@ export default function Route() {
               <div className={styles.summaryChips}>
                 <div className={styles.summaryChip}>
                   <span className={styles.chipLabel}>City</span>
-                  <span className={styles.chipValue}>İstanbul</span>
+                  <span className={styles.chipValue}>{planningInput?.cityName ?? "—"}</span>
                 </div>
 
                 <div className={styles.summaryChip}>
@@ -383,7 +384,7 @@ export default function Route() {
                 <div className={styles.summaryChip}>
                   <span className={styles.chipLabel}>Distance</span>
                   <span className={styles.chipValue}>
-                  {planningInput?.distanceKm ? `${planningInput.distanceKm} km` : "—"}
+                  {planningInput?.distanceKm ? `${planningInput.distanceKm} km` : "0"}
                 </span>
                 </div>
 

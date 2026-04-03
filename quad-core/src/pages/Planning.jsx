@@ -9,11 +9,192 @@ const toInt = (v, fallback) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-const FALLBACK_CITIES = [
+const ALL_CITIES = [
   { id: "istanbul", name: "İstanbul" },
   { id: "ankara", name: "Ankara" },
   { id: "izmir", name: "İzmir" },
+
+  { id: "adana", name: "Adana" },
+  { id: "adiyaman", name: "Adıyaman" },
+  { id: "afyon", name: "Afyonkarahisar" },
+  { id: "agri", name: "Ağrı" },
+  { id: "aksaray", name: "Aksaray" },
+  { id: "amasya", name: "Amasya" },
+  { id: "antalya", name: "Antalya" },
+  { id: "ardahan", name: "Ardahan" },
+  { id: "artvin", name: "Artvin" },
+  { id: "aydin", name: "Aydın" },
+
+  { id: "balikesir", name: "Balıkesir" },
+  { id: "bartin", name: "Bartın" },
+  { id: "batman", name: "Batman" },
+  { id: "bayburt", name: "Bayburt" },
+  { id: "bilecik", name: "Bilecik" },
+  { id: "bingol", name: "Bingöl" },
+  { id: "bitlis", name: "Bitlis" },
+  { id: "bolu", name: "Bolu" },
+  { id: "burdur", name: "Burdur" },
+  { id: "bursa", name: "Bursa" },
+
+  { id: "canakkale", name: "Çanakkale" },
+  { id: "cankiri", name: "Çankırı" },
+  { id: "corum", name: "Çorum" },
+
+  { id: "denizli", name: "Denizli" },
+  { id: "diyarbakir", name: "Diyarbakır" },
+  { id: "duzce", name: "Düzce" },
+
+  { id: "edirne", name: "Edirne" },
+  { id: "elazig", name: "Elazığ" },
+  { id: "erzincan", name: "Erzincan" },
+  { id: "erzurum", name: "Erzurum" },
+  { id: "eskisehir", name: "Eskişehir" },
+
+  { id: "gaziantep", name: "Gaziantep" },
+  { id: "giresun", name: "Giresun" },
+  { id: "gumushane", name: "Gümüşhane" },
+
+  { id: "hakkari", name: "Hakkâri" },
+  { id: "hatay", name: "Hatay" },
+
+  { id: "igdir", name: "Iğdır" },
+  { id: "isparta", name: "Isparta" },
+
+  { id: "kahramanmaras", name: "Kahramanmaraş" },
+  { id: "karabuk", name: "Karabük" },
+  { id: "karaman", name: "Karaman" },
+  { id: "kars", name: "Kars" },
+  { id: "kastamonu", name: "Kastamonu" },
+  { id: "kayseri", name: "Kayseri" },
+  { id: "kirikkale", name: "Kırıkkale" },
+  { id: "kirklareli", name: "Kırklareli" },
+  { id: "kirsehir", name: "Kırşehir" },
+  { id: "kilis", name: "Kilis" },
+  { id: "kocaeli", name: "Kocaeli" },
+  { id: "konya", name: "Konya" },
+  { id: "kutahya", name: "Kütahya" },
+
+  { id: "malatya", name: "Malatya" },
+  { id: "manisa", name: "Manisa" },
+  { id: "mardin", name: "Mardin" },
+  { id: "mersin", name: "Mersin" },
+  { id: "mugla", name: "Muğla" },
+  { id: "mus", name: "Muş" },
+
+  { id: "nevsehir", name: "Nevşehir" },
+  { id: "nigde", name: "Niğde" },
+
+  { id: "ordu", name: "Ordu" },
+  { id: "osmaniye", name: "Osmaniye" },
+
+  { id: "rize", name: "Rize" },
+
+  { id: "sakarya", name: "Sakarya" },
+  { id: "samsun", name: "Samsun" },
+  { id: "sanliurfa", name: "Şanlıurfa" },
+  { id: "siirt", name: "Siirt" },
+  { id: "sinop", name: "Sinop" },
+  { id: "sirnak", name: "Şırnak" },
+  { id: "sivas", name: "Sivas" },
+
+  { id: "tekirdag", name: "Tekirdağ" },
+  { id: "tokat", name: "Tokat" },
+  { id: "trabzon", name: "Trabzon" },
+  { id: "tunceli", name: "Tunceli" },
+
+  { id: "usak", name: "Uşak" },
+
+  { id: "van", name: "Van" },
+
+  { id: "yalova", name: "Yalova" },
+  { id: "yozgat", name: "Yozgat" },
+
+  { id: "zonguldak", name: "Zonguldak" },
 ];
+
+const CITY_CONFIG = {
+  adana: { distance: [0, 540], days: [1, 3] },
+  adiyaman: { distance: [0, 310], days: [1, 4] },
+  afyonkarahisar: { distance: [0, 385], days: [1, 4] },
+  agri: { distance: [5, 445], days: [1, 2] },
+  aksaray: { distance: [0, 285], days: [1, 4] },
+  amasya: { distance: [0, 135], days: [1, 3] },
+  ankara: { distance: [0, 110], days: [1, 6] },
+  antalya: { distance: [0, 690], days: [1, 8] },
+  ardahan: { distance: [0, 335], days: [1, 2] },
+  artvin: { distance: [30, 410], days: [1, 4] },
+  aydin: { distance: [25, 420], days: [1, 3] },
+  balikesir: { distance: [0, 585], days: [1, 5] },
+  bartin: { distance: [0, 160], days: [1, 4] },
+  batman: { distance: [0, 255], days: [1, 2] },
+  bayburt: { distance: [0, 280], days: [1, 4] },
+  bilecik: { distance: [0, 205], days: [1, 2] },
+  bingol: { distance: [0, 160], days: [1, 3] },
+  bitlis: { distance: [0, 305], days: [1, 4] },
+  bolu: { distance: [0, 385], days: [1, 4] },
+  burdur: { distance: [50, 425], days: [1, 2] },
+  bursa: { distance: [0, 180], days: [1, 5] },
+  canakkale: { distance: [10, 475], days: [1, 6] },
+  cankiri: { distance: [5, 330], days: [1, 3] },
+  corum: { distance: [25, 470], days: [1, 5] },
+  denizli: { distance: [5, 310], days: [1, 3] },
+  diyarbakir: { distance: [0, 260], days: [1, 3] },
+  duzce: { distance: [30, 195], days: [1, 2] },
+  edirne: { distance: [0, 20], days: [1, 2] },
+  elazig: { distance: [0, 210], days: [1, 3] },
+  erzincan: { distance: [0, 520], days: [1, 3] },
+  erzurum: { distance: [0, 400], days: [1, 4] },
+  eskisehir: { distance: [0, 420], days: [1, 3] },
+  gaziantep: { distance: [0, 320], days: [1, 3] },
+  giresun: { distance: [0, 325], days: [1, 4] },
+  gumushane: { distance: [35, 385], days: [1, 2] },
+  hakkari: { distance: [25, 280], days: [1, 2] },
+  hatay: { distance: [0, 255], days: [1, 3] },
+  igdir: { distance: [45, 305], days: [1, 1] },
+  isparta: { distance: [0, 315], days: [1, 4] },
+  istanbul: { distance: [0, 150], days: [1, 8] },
+  izmir: { distance: [0, 370], days: [1, 8] },
+  kahramanmaras: { distance: [10, 450], days: [1, 4] },
+  karabuk: { distance: [0, 130], days: [1, 3] },
+  karaman: { distance: [55, 235], days: [1, 1] },
+  kars: { distance: [10, 410], days: [1, 4] },
+  kastamonu: { distance: [0, 440], days: [1, 3] },
+  kayseri: { distance: [0, 420], days: [1, 5] },
+  kilis: { distance: [0, 55], days: [1, 2] },
+  kirikkale: { distance: [5, 295], days: [1, 3] },
+  kirklareli: { distance: [45, 255], days: [1, 2] },
+  kirsehir: { distance: [15, 290], days: [1, 3] },
+  kocaeli: { distance: [5, 285], days: [1, 2] },
+  konya: { distance: [0, 505], days: [1, 7] },
+  kutahya: { distance: [0, 320], days: [1, 2] },
+  malatya: { distance: [0, 355], days: [1, 4] },
+  manisa: { distance: [0, 380], days: [1, 3] },
+  mardin: { distance: [0, 195], days: [1, 3] },
+  mersin: { distance: [5, 500], days: [1, 5] },
+  mugla: { distance: [25, 645], days: [1, 5] },
+  mus: { distance: [0, 365], days: [1, 4] },
+  nevsehir: { distance: [0, 220], days: [1, 4] },
+  nigde: { distance: [0, 310], days: [1, 2] },
+  ordu: { distance: [0, 290], days: [1, 4] },
+  osmaniye: { distance: [15, 255], days: [1, 3] },
+  rize: { distance: [0, 225], days: [1, 4] },
+  sakarya: { distance: [25, 210], days: [1, 2] },
+  samsun: { distance: [0, 305], days: [1, 4] },
+  sanliurfa: { distance: [0, 420], days: [1, 4] },
+  siirt: { distance: [0, 140], days: [1, 2] },
+  sinop: { distance: [0, 305], days: [1, 4] },
+  sirnak: { distance: [0, 225], days: [1, 2] },
+  sivas: { distance: [0, 460], days: [1, 3] },
+  tekirdag: { distance: [0, 175], days: [1, 2] },
+  tokat: { distance: [0, 315], days: [1, 4] },
+  trabzon: { distance: [0, 275], days: [1, 3] },
+  tunceli: { distance: [0, 310], days: [1, 3] },
+  usak: { distance: [0, 175], days: [1, 3] },
+  van: { distance: [5, 510], days: [1, 5] },
+  yalova: { distance: [5, 125], days: [1, 2] },
+  yozgat: { distance: [0, 325], days: [1, 2] },
+  zonguldak: { distance: [20, 175], days: [1, 1] },
+};
 
 const CATEGORY_TREE = [
   {
@@ -45,6 +226,8 @@ const CATEGORY_TREE = [
     ],
   },
 ];
+
+
 
 function EditablePillNumber({ value, unitLabel, min, max, onCommit }) {
   const [draft, setDraft] = useState(String(value));
@@ -109,10 +292,23 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
 
+  const normalize = (str) =>
+      str
+          .toLowerCase()
+          .replace(/ı/g, "i")
+          .replace(/ğ/g, "g")
+          .replace(/ş/g, "s")
+          .replace(/ö/g, "o")
+          .replace(/ç/g, "c")
+          .replace(/ü/g, "u");
+
   const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
+    const s = normalize(q.trim());
     if (!s) return items;
-    return items.filter((x) => x.name.toLowerCase().includes(s));
+
+    return items.filter((x) =>
+        normalize(x.name).includes(s)
+    );
   }, [items, q]);
 
   return (
@@ -132,19 +328,21 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
 
       {open && (
         <div className={styles.dropdown} role="listbox">
-          {filtered.map((it) => (
-            <button
-              key={it.id}
-              type="button"
-              className={styles.option}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => { onSelect(it.id); setOpen(false); }}
-            >
-              <span className={styles.dot}></span>
-              <span>{it.name}</span>
-            </button>
-          ))}
-          {!filtered.length && <div className={styles.empty}>No results</div>}
+          <div className={styles.dropdownInner}>
+            {filtered.map((it) => (
+              <button
+                key={it.id}
+                type="button"
+                className={styles.option}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { onSelect(it.id); setOpen(false); }}
+              >
+                <span className={styles.dot}></span>
+                <span>{it.name}</span>
+              </button>
+            ))}
+            {!filtered.length && <div className={styles.empty}>No results</div>}
+          </div>
         </div>
       )}
     </div>
@@ -180,8 +378,9 @@ export default function Planning() {
     max: 5,
   });
 
-  const [cities, setCities] = useState(FALLBACK_CITIES);
-  const [cityId, setCityId] = useState(FALLBACK_CITIES[0]?.id ?? "");
+  const [cities, setCities] = useState(ALL_CITIES);
+  const [cityId, setCityId] = useState(ALL_CITIES[0]?.id ?? "");
+  const [cityName, setCityName] = useState(ALL_CITIES[0]?.name ?? "");
 
   const [days, setDays] = useState(3);          // 1–10
   const [distanceKm, setDistanceKm] = useState(100); // 20–2000
@@ -207,31 +406,29 @@ export default function Planning() {
   // GET /api/cities
   // GET /api/categories
   useEffect(() => {
-    setCities(FALLBACK_CITIES);
+    setCities(ALL_CITIES);
   }, []);
 
   useEffect(() => {
-    let newDistanceRange;
-    let newDaysRange;
+    const config = CITY_CONFIG[cityId] || {
+      distance: [20, 2000],
+      days: [1, 5],
+    };
 
-    if (cityId === "istanbul") {
-      newDistanceRange = { min: 20, max: 500 };
-      newDaysRange = { min: 1, max: 3 };
-    } else if (cityId === "ankara") {
-      newDistanceRange = { min: 30, max: 800 };
-      newDaysRange = { min: 1, max: 4 };
-    } else if (cityId === "izmir") {
-      newDistanceRange = { min: 25, max: 600 };
-      newDaysRange = { min: 1, max: 3 };
-    } else {
-      newDistanceRange = { min: 20, max: 2000 };
-      newDaysRange = { min: 1, max: 5 };
-    }
+    const newDistanceRange = {
+      min: config.distance[0],
+      max: config.distance[1],
+    };
+
+    const newDaysRange = {
+      min: config.days[0],
+      max: config.days[1],
+    };
 
     setDistanceRange(newDistanceRange);
     setDaysRange(newDaysRange);
 
-    // 🔥 RESET
+    // 🔥 RESET (aynı mantık ama cleaner)
     setDistanceKm(newDistanceRange.min);
     setDays(newDaysRange.min);
 
@@ -273,6 +470,7 @@ export default function Planning() {
 
   const buildPayload = () => ({
     cityId,
+    cityName,
     days,
     distanceKm,
     categories: Array.from(selected),
@@ -320,7 +518,12 @@ const onGenerateRoute = async () => {
               placeholder="Search city..."
               items={cities}
               valueId={cityId}
-              onSelect={setCityId}
+              onSelect={(id) => {
+                setCityId(id);
+
+                const selected = cities.find(c => c.id === id);
+                setCityName(selected?.name ?? null);
+              }}
           />
         </div>
 

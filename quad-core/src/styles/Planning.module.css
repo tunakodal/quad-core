@@ -74,7 +74,7 @@
   background: transparent;
 }
 
-.dropdown{
+.dropdown {
   position: absolute;
   left: 0;
   right: 0;
@@ -83,9 +83,33 @@
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 8px;
   z-index: 20;
   box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+
+  padding: 8px;
+
+}
+
+.dropdownInner {
+  max-height: 110px;
+  overflow-y: auto;
+
+  padding-right: 6px;
+
+  scrollbar-gutter: stable;
+}
+
+.dropdownInner::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dropdownInner::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 999px;
+}
+
+.dropdownInner::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .option{
@@ -401,6 +425,23 @@
   font-weight: 600;
   margin-bottom: 10px;
 }
+
+.mainRow input,
+.subRow input {
+  width: 90px;
+  height: 90px;
+  cursor: pointer;
+
+  accent-color: #475569; /* 🔥 daha güzel mavi-gri */
+}
+
+.mainRow,
+.subRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 
 /* SUB */
 .subList {

@@ -14,7 +14,7 @@ export function Header() {
 
                 <nav className={styles.nav}>
                     <Link to="/planning">Plan</Link>
-                    <Link to="/how-it-works">How it works</Link>
+                    <Link to="/how-it-works">How GUIDE works</Link>
                 </nav>
 
             </div>
