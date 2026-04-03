@@ -8,12 +8,12 @@
 /* LEFT */
 
 .daysPanel{
-    width: 200px;
+    width: 220px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center; /* 🔥 kritik */
-    gap: 18px;
+    gap: 32px;
 }
 
 .dayButton{
@@ -47,6 +47,7 @@
     font-weight: 700;
     letter-spacing: -0.8px;
 }
+
 /* hover (küçük his) */
 .dayButton:hover{
     opacity: 0.75;

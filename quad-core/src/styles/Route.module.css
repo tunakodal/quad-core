@@ -288,11 +288,19 @@
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   gap: 18px;
+  align-items: start;
 }
 
-.mapCard,
-.planCard {
+.mapCard{
   padding: 18px;
+}
+
+.planCard{
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+
+  height: 520px;
 }
 
 .cardHeader {
@@ -332,7 +340,7 @@
 }
 
 .mapWrap {
-  height: 520px;
+  align-items: start;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -360,11 +368,26 @@
   box-shadow: 0 0 0 4px rgba(246, 143, 48, 0.12);
 }
 
-.poiList {
+
+.poiList{
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 420px;
+
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
+}
+
+.poiList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.poiList::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
 }
 
 .poiItem {
