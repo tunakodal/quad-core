@@ -1,8 +1,15 @@
+import httpx
+
 from app.models.enums import RoutingProfile
 from app.models.route import Itinerary, RoutePlan, RouteSegment
 from app.schemas.route_dtos import UserEdits
 from app.schemas.travel import TravelConstraints
-from app.integration.osrm_client import OsrmClient
+from app.integration.osrm_client import OsrmClient, OsrmRouteResponse
+
+
+def _osrm_fallback() -> OsrmRouteResponse:
+    """OSRM'e ulaşılamadığında kullanılan sıfır-değerli fallback."""
+    return OsrmRouteResponse(distance=0, duration=0, geometry_encoded="")
 
 
 class RouteAssembler:
@@ -54,9 +61,14 @@ class RoutingService:
             if not day.pois:
                 continue
             waypoints = [poi.location for poi in day.pois]
-            osrm_result = await self.osrm_client.trip(
-                waypoints, RoutingProfile.DRIVING
-            )
+            try:
+                osrm_result = await self.osrm_client.trip(
+                    waypoints, RoutingProfile.DRIVING
+                )
+            except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPError):
+                # OSRM çalışmıyorsa sıfır-değerli fallback kullan;
+                # güzergah hâlâ döner, mesafe/süre bilgileri boş olur.
+                osrm_result = _osrm_fallback()
             osrm_outputs.append(osrm_result)
 
         route_plan = self.route_assembler.assemble(itinerary, osrm_outputs)
@@ -87,12 +99,11 @@ class RoutingService:
                     result = await self.osrm_client.trip(waypoints, RoutingProfile.DRIVING)
                     osrm_outputs.append(result)
             else:
-                # Reuse existing segment as a mock OSRM response
-                class _Passthrough:
-                    def __init__(self, seg):
-                        self.distance = seg.distance
-                        self.duration = seg.duration
-                        self.geometry_encoded = seg.geometry_encoded
-                osrm_outputs.append(_Passthrough(day.route_segment))
+                # Etkilenmeyen günlerin mevcut segment'ini yeniden kullan
+                osrm_outputs.append(OsrmRouteResponse(
+                    distance=day.route_segment.distance,
+                    duration=day.route_segment.duration,
+                    geometry_encoded=day.route_segment.geometry_encoded,
+                ))
 
         return self.route_assembler.assemble(itinerary, osrm_outputs)
