@@ -227,8 +227,6 @@ const CATEGORY_TREE = [
   },
 ];
 
-
-
 function EditablePillNumber({ value, unitLabel, min, max, onCommit }) {
   const [draft, setDraft] = useState(String(value));
   useEffect(() => setDraft(String(value)), [value]);
@@ -256,34 +254,33 @@ function EditablePillNumber({ value, unitLabel, min, max, onCommit }) {
 
 function RangeRow({ title, value, min, max, step, unitLabel, onChange }) {
   return (
-      <div className={styles.rangeRow}>
-        <div className={styles.rangeHead}>
-          <div className={styles.rangeTitle}>{title}</div>
-          <EditablePillNumber
-              value={value}
-              unitLabel={unitLabel}
-              min={min}
-              max={max}
-              onCommit={onChange}
-          />
-        </div>
-
-        <input
-            className={styles.range}
-            type="range"
-            min={min}
-            max={max}
-            step={step}
-            value={value}
-            onChange={(e) => onChange(toInt(e.target.value, value))}
+    <div className={styles.rangeRow}>
+      <div className={styles.rangeHead}>
+        <div className={styles.rangeTitle}>{title}</div>
+        <EditablePillNumber
+          value={value}
+          unitLabel={unitLabel}
+          min={min}
+          max={max}
+          onCommit={onChange}
         />
-
-        {/* 🔥 SADE MIN MAX */}
-        <div className={styles.minMax}>
-          <span>{min}</span>
-          <span>{max}</span>
-        </div>
       </div>
+
+      <input
+        className={styles.range}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(toInt(e.target.value, value))}
+      />
+
+      <div className={styles.minMax}>
+        <span>{min}</span>
+        <span>{max}</span>
+      </div>
+    </div>
   );
 }
 
@@ -293,22 +290,19 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
   const [q, setQ] = useState("");
 
   const normalize = (str) =>
-      str
-          .toLowerCase()
-          .replace(/ı/g, "i")
-          .replace(/ğ/g, "g")
-          .replace(/ş/g, "s")
-          .replace(/ö/g, "o")
-          .replace(/ç/g, "c")
-          .replace(/ü/g, "u");
+    str
+      .toLowerCase()
+      .replace(/ı/g, "i")
+      .replace(/ğ/g, "g")
+      .replace(/ş/g, "s")
+      .replace(/ö/g, "o")
+      .replace(/ç/g, "c")
+      .replace(/ü/g, "u");
 
   const filtered = useMemo(() => {
     const s = normalize(q.trim());
     if (!s) return items;
-
-    return items.filter((x) =>
-        normalize(x.name).includes(s)
-    );
+    return items.filter((x) => normalize(x.name).includes(s));
   }, [items, q]);
 
   return (
@@ -357,7 +351,6 @@ function InterestPill({ label, checked, onToggle }) {
       onClick={onToggle}
       aria-pressed={checked}
     >
-      {/* ICON SLOT (sonra icon koyacaksın) */}
       <span className={styles.iconSlot} aria-hidden="true" />
       <span className={styles.interestLabel}>{label}</span>
       <span className={`${styles.miniSwitch} ${checked ? styles.miniSwitchOn : ""}`}>
@@ -368,26 +361,18 @@ function InterestPill({ label, checked, onToggle }) {
 }
 
 export default function Planning() {
-  const [distanceRange, setDistanceRange] = useState({
-    min: 20,
-    max: 2000,
-  });
-
-  const [daysRange, setDaysRange] = useState({
-    min: 1,
-    max: 5,
-  });
+  const [distanceRange, setDistanceRange] = useState({ min: 20, max: 2000 });
+  const [daysRange, setDaysRange] = useState({ min: 1, max: 5 });
 
   const [cities, setCities] = useState(ALL_CITIES);
   const [cityId, setCityId] = useState(ALL_CITIES[0]?.id ?? "");
   const [cityName, setCityName] = useState(ALL_CITIES[0]?.name ?? "");
 
-  const [days, setDays] = useState(3);          // 1–10
-  const [distanceKm, setDistanceKm] = useState(100); // 20–2000
+  const [days, setDays] = useState(3);
+  const [distanceKm, setDistanceKm] = useState(100);
 
   const [selected, setSelected] = useState(() => {
     const all = new Set();
-
     CATEGORY_TREE.forEach((cat) => {
       if (cat.sub) {
         cat.sub.forEach((s) => all.add(s.key));
@@ -395,64 +380,46 @@ export default function Planning() {
         all.add(cat.key);
       }
     });
-
     return all;
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   const navigate = useNavigate();
-  // Backend gelince burayı fetch ile değiştireceğiz:
-  // GET /api/cities
-  // GET /api/categories
+
   useEffect(() => {
     setCities(ALL_CITIES);
   }, []);
 
   useEffect(() => {
-    const config = CITY_CONFIG[cityId] || {
-      distance: [20, 2000],
-      days: [1, 5],
-    };
+    const config = CITY_CONFIG[cityId] || { distance: [20, 2000], days: [1, 5] };
 
-    const newDistanceRange = {
-      min: config.distance[0],
-      max: config.distance[1],
-    };
-
-    const newDaysRange = {
-      min: config.days[0],
-      max: config.days[1],
-    };
+    const newDistanceRange = { min: config.distance[0], max: config.distance[1] };
+    const newDaysRange = { min: config.days[0], max: config.days[1] };
 
     setDistanceRange(newDistanceRange);
     setDaysRange(newDaysRange);
-
-    // 🔥 RESET (aynı mantık ama cleaner)
     setDistanceKm(newDistanceRange.min);
     setDays(newDaysRange.min);
-
   }, [cityId]);
 
   const [expanded, setExpanded] = useState(null);
+
   const toggleMain = (cat) => {
     setSelected((prev) => {
       const next = new Set(prev);
-
       if (!cat.sub) {
         if (next.has(cat.key)) next.delete(cat.key);
         else next.add(cat.key);
         return next;
       }
-
       const allSelected = cat.sub.every((s) => next.has(s.key));
-
       if (allSelected) {
         cat.sub.forEach((s) => next.delete(s.key));
       } else {
         cat.sub.forEach((s) => next.add(s.key));
       }
-
       return next;
     });
   };
@@ -460,10 +427,8 @@ export default function Planning() {
   const toggleSub = (key) => {
     setSelected((prev) => {
       const next = new Set(prev);
-
       if (next.has(key)) next.delete(key);
       else next.add(key);
-
       return next;
     });
   };
@@ -476,20 +441,74 @@ export default function Planning() {
     categories: Array.from(selected),
   });
 
-const onGenerateRoute = async () => {
-  setIsGenerating(true);
-  try {
-    const payload = buildPayload();
+  const CATEGORY_MAP = {
+    museums: "Museums",
+    archaeology: "Cultural Heritage",
+    architecture: "Cultural Heritage",
+    fortifications: "Cultural Heritage",
+    infrastructure: "Cultural Heritage",
+    religious: "Cultural Heritage",
+    transport: "Cultural Heritage",
+    monumental: "Cultural Heritage",
+    parks: "Nature",
+    terrain: "Nature",
+    water: "Nature",
+    wildlife: "Nature",
+  };
 
-    // DEV fake wait
-    await new Promise((r) => setTimeout(r, 900));
+  const onGenerateRoute = async () => {
+    setIsGenerating(true);
+    setErrorMsg(null);
+    try {
+      const payload = buildPayload();
 
-    navigate("/route", { state: { planningInput: payload } });
-  } finally {
-    setIsGenerating(false);
-  }
-};
+      const mappedCategories = [...new Set(
+        payload.categories.map((c) => CATEGORY_MAP[c]).filter(Boolean)
+      )];
 
+      const distanceMeters = Math.max(payload.distanceKm * 1000, 1000);
+
+      const requestBody = {
+        preferences: {
+          city: payload.cityId,
+          trip_days: payload.days,
+          categories: mappedCategories,
+          max_distance_per_day: distanceMeters,
+        },
+        constraints: {
+          max_trip_days: payload.days,
+          max_pois_per_day: 9,
+          max_daily_distance: distanceMeters,
+        },
+        language: "EN",
+      };
+
+      const response = await fetch("/api/v1/routes/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.message ?? `Backend error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      navigate("/route", {
+        state: {
+          planningInput: payload,
+          routeResponse: data,
+        },
+      });
+    } catch (err) {
+      console.error("Route generation failed:", err);
+      setErrorMsg(err.message ?? "An unexpected error occurred.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -501,63 +520,55 @@ const onGenerateRoute = async () => {
           </div>
         </div>
       )}
+
       <div className={styles.hero}>
         <div className={styles.inlineQuote}>
           <p className={styles.quoteText}>
-            “By failing to prepare, you are preparing to fail.”
+            "By failing to prepare, you are preparing to fail."
           </p>
-          <p className={styles.quoteAuthor}>
-            — Benjamin Franklin
-          </p>
+          <p className={styles.quoteAuthor}>— Benjamin Franklin</p>
         </div>
 
         {/* City */}
         <div className={styles.block}>
           <div className={styles.rangeTitle}>Select City</div>
           <SearchSelect
-              placeholder="Search city..."
-              items={cities}
-              valueId={cityId}
-              onSelect={(id) => {
-                setCityId(id);
-
-                const selected = cities.find(c => c.id === id);
-                setCityName(selected?.name ?? null);
-              }}
+            placeholder="Search city..."
+            items={cities}
+            valueId={cityId}
+            onSelect={(id) => {
+              setCityId(id);
+              const sel = cities.find((c) => c.id === id);
+              setCityName(sel?.name ?? null);
+            }}
           />
         </div>
 
         {/* Days + Distance */}
         <div className={styles.twoCols}>
-
           <div className={styles.block}>
             <RangeRow
-                title="Days"
-                value={days}
-                min={daysRange.min}
-                max={daysRange.max}
-                step={1}
-                unitLabel="days"
-                onChange={(v) =>
-                    setDays(clamp(v, daysRange.min, daysRange.max))
-                }
+              title="Days"
+              value={days}
+              min={daysRange.min}
+              max={daysRange.max}
+              step={1}
+              unitLabel="days"
+              onChange={(v) => setDays(clamp(v, daysRange.min, daysRange.max))}
             />
           </div>
 
           <div className={styles.block}>
             <RangeRow
-                title="Distance"
-                value={distanceKm}
-                min={distanceRange.min}
-                max={distanceRange.max}
-                step={5}
-                unitLabel="km"
-                onChange={(v) =>
-                    setDistanceKm(clamp(v, distanceRange.min, distanceRange.max))
-                }
+              title="Distance"
+              value={distanceKm}
+              min={distanceRange.min}
+              max={distanceRange.max}
+              step={5}
+              unitLabel="km"
+              onChange={(v) => setDistanceKm(clamp(v, distanceRange.min, distanceRange.max))}
             />
           </div>
-
         </div>
 
         {/* Categories */}
@@ -565,71 +576,67 @@ const onGenerateRoute = async () => {
           <div className={styles.sectionTitle}>Interests</div>
 
           <div className={styles.categoryGrid}>
-
-            {/* ÜST (sub olanlar) */}
             {CATEGORY_TREE.filter((cat) => cat.sub).map((cat) => {
               const isAllSelected = cat.sub.every((s) => selected.has(s.key));
-
               return (
-                  <div key={cat.key} className={styles.categoryBlock}>
+                <div key={cat.key} className={styles.categoryBlock}>
+                  <label className={styles.mainRow}>
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      ref={(el) => {
+                        if (el) {
+                          const someSelected =
+                            cat.sub.some((s) => selected.has(s.key)) && !isAllSelected;
+                          el.indeterminate = someSelected;
+                        }
+                      }}
+                      onChange={() => toggleMain(cat)}
+                    />
+                    <span>{cat.label}</span>
+                  </label>
 
+                  <div className={styles.subList}>
+                    {cat.sub.map((s) => (
+                      <label key={s.key} className={styles.subRow}>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(s.key)}
+                          onChange={() => toggleSub(s.key)}
+                        />
+                        <span>{s.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            {CATEGORY_TREE.filter((cat) => !cat.sub).map((cat) => {
+              const isSelected = selected.has(cat.key);
+              return (
+                <div key={cat.key} className={styles.fullWidth}>
+                  <div className={styles.categoryBlock}>
                     <label className={styles.mainRow}>
                       <input
-                          type="checkbox"
-                          checked={isAllSelected}
-                          ref={(el) => {
-                            if (el) {
-                              const someSelected =
-                                  cat.sub.some((s) => selected.has(s.key)) && !isAllSelected;
-
-                              el.indeterminate = someSelected;
-                            }
-                          }}
-                          onChange={() => toggleMain(cat)}
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleMain(cat)}
                       />
                       <span>{cat.label}</span>
                     </label>
-
-                    <div className={styles.subList}>
-                      {cat.sub.map((s) => (
-                          <label key={s.key} className={styles.subRow}>
-                            <input
-                                type="checkbox"
-                                checked={selected.has(s.key)}
-                                onChange={() => toggleSub(s.key)}
-                            />
-                            <span>{s.label}</span>
-                          </label>
-                      ))}
-                    </div>
                   </div>
+                </div>
               );
             })}
-
-            {/* ALT (sub olmayan → Museums) */}
-            {CATEGORY_TREE.filter((cat) => !cat.sub).map((cat) => {
-              const isSelected = selected.has(cat.key);
-
-              return (
-                  <div key={cat.key} className={styles.fullWidth}>
-                    <div className={styles.categoryBlock}>
-
-                      <label className={styles.mainRow}>
-                        <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleMain(cat)}
-                        />
-                        <span>{cat.label}</span>
-                      </label>
-
-                    </div>
-                  </div>
-              );
-            })}
-
           </div>
         </div>
+
+        {errorMsg && (
+          <div className={styles.errorBanner}>
+            ⚠️ {errorMsg}
+          </div>
+        )}
 
         <div className={styles.cta}>
           <Button
