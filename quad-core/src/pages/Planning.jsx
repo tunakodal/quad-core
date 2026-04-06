@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import styles from "../styles/Planning.module.css";
 import { Button } from "../ui/Button";
 import { useNavigate } from "react-router-dom";
+import { fetchCityCategories } from "../api/supabaseClient";
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const toInt = (v, fallback) => {
@@ -9,11 +10,50 @@ const toInt = (v, fallback) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+// DB enum değeri → frontend sub-kategori key(ler)i
+const DB_TO_FRONTEND = {
+  "Museums": ["museums"], "Museum": ["museums"],
+  "Cultural Heritage": ["archaeology","architecture","fortifications","infrastructure","religious","transport","monumental"],
+  "Nature": ["parks","terrain","water","wildlife"],
+  "Ancient_City": ["archaeology"], "Ancient_Infrastructure": ["infrastructure"],
+  "Ancient_Relief_Art": ["archaeology"], "Ancient_Structure": ["archaeology"],
+  "Aquarium": ["wildlife"], "Aqueduct": ["infrastructure"], "Bath_Hammam": ["religious"],
+  "Bay": ["water"], "Bazaar_Market": ["monumental"], "Beach": ["water"],
+  "Bridge": ["infrastructure"], "Burial_Site": ["archaeology"], "Cable_Car": ["transport"],
+  "Canyon": ["terrain"], "Caravanserai_Inn": ["infrastructure"], "Castle": ["fortifications"],
+  "Cave": ["terrain"], "Cemetery": ["monumental"], "Church": ["religious"],
+  "Cistern": ["archaeology"], "City_Walls_Gates": ["fortifications"], "Complex": ["monumental"],
+  "Dam": ["infrastructure"], "Geological_Site": ["terrain"], "Harbor_Pier": ["transport"],
+  "Island": ["water"], "Lake": ["water"], "Madrasa": ["religious"], "Mansion": ["architecture"],
+  "Monastery": ["religious"], "Monument": ["monumental"], "Mosque": ["religious"],
+  "Mountain": ["terrain"], "Park": ["parks"], "Plateau": ["terrain"],
+  "Railway_Station": ["transport"], "Recreation_Area": ["parks"], "River": ["water"],
+  "Ski_Resort": ["terrain"], "Spring": ["water"], "Square": ["monumental"],
+  "Street": ["monumental"], "Thermal_Spa": ["water"], "Tomb": ["archaeology"],
+  "Tower": ["fortifications"], "Underground_City": ["archaeology"], "Valley": ["terrain"],
+  "Viewpoint": ["parks"], "Waterfall": ["water"], "Zoo": ["wildlife"],
+};
+
+// Frontend kategorileri → backend'e gönderilecek DB kategori adları
+const FRONTEND_TO_DB_CATEGORY = {
+  museums: "Museums",
+  archaeology: "Cultural Heritage",
+  architecture: "Cultural Heritage",
+  fortifications: "Cultural Heritage",
+  infrastructure: "Cultural Heritage",
+  religious: "Cultural Heritage",
+  transport: "Cultural Heritage",
+  monumental: "Cultural Heritage",
+  parks: "Nature",
+  terrain: "Nature",
+  water: "Nature",
+  wildlife: "Nature",
+};
+
 const ALL_CITIES = [
   { id: "istanbul", name: "İstanbul" },
   { id: "ankara", name: "Ankara" },
   { id: "izmir", name: "İzmir" },
-
   { id: "adana", name: "Adana" },
   { id: "adiyaman", name: "Adıyaman" },
   { id: "afyon", name: "Afyonkarahisar" },
@@ -24,7 +64,6 @@ const ALL_CITIES = [
   { id: "ardahan", name: "Ardahan" },
   { id: "artvin", name: "Artvin" },
   { id: "aydin", name: "Aydın" },
-
   { id: "balikesir", name: "Balıkesir" },
   { id: "bartin", name: "Bartın" },
   { id: "batman", name: "Batman" },
@@ -35,31 +74,24 @@ const ALL_CITIES = [
   { id: "bolu", name: "Bolu" },
   { id: "burdur", name: "Burdur" },
   { id: "bursa", name: "Bursa" },
-
   { id: "canakkale", name: "Çanakkale" },
   { id: "cankiri", name: "Çankırı" },
   { id: "corum", name: "Çorum" },
-
   { id: "denizli", name: "Denizli" },
   { id: "diyarbakir", name: "Diyarbakır" },
   { id: "duzce", name: "Düzce" },
-
   { id: "edirne", name: "Edirne" },
   { id: "elazig", name: "Elazığ" },
   { id: "erzincan", name: "Erzincan" },
   { id: "erzurum", name: "Erzurum" },
   { id: "eskisehir", name: "Eskişehir" },
-
   { id: "gaziantep", name: "Gaziantep" },
   { id: "giresun", name: "Giresun" },
   { id: "gumushane", name: "Gümüşhane" },
-
   { id: "hakkari", name: "Hakkâri" },
   { id: "hatay", name: "Hatay" },
-
   { id: "igdir", name: "Iğdır" },
   { id: "isparta", name: "Isparta" },
-
   { id: "kahramanmaras", name: "Kahramanmaraş" },
   { id: "karabuk", name: "Karabük" },
   { id: "karaman", name: "Karaman" },
@@ -73,22 +105,17 @@ const ALL_CITIES = [
   { id: "kocaeli", name: "Kocaeli" },
   { id: "konya", name: "Konya" },
   { id: "kutahya", name: "Kütahya" },
-
   { id: "malatya", name: "Malatya" },
   { id: "manisa", name: "Manisa" },
   { id: "mardin", name: "Mardin" },
   { id: "mersin", name: "Mersin" },
   { id: "mugla", name: "Muğla" },
   { id: "mus", name: "Muş" },
-
   { id: "nevsehir", name: "Nevşehir" },
   { id: "nigde", name: "Niğde" },
-
   { id: "ordu", name: "Ordu" },
   { id: "osmaniye", name: "Osmaniye" },
-
   { id: "rize", name: "Rize" },
-
   { id: "sakarya", name: "Sakarya" },
   { id: "samsun", name: "Samsun" },
   { id: "sanliurfa", name: "Şanlıurfa" },
@@ -96,105 +123,16 @@ const ALL_CITIES = [
   { id: "sinop", name: "Sinop" },
   { id: "sirnak", name: "Şırnak" },
   { id: "sivas", name: "Sivas" },
-
   { id: "tekirdag", name: "Tekirdağ" },
   { id: "tokat", name: "Tokat" },
   { id: "trabzon", name: "Trabzon" },
   { id: "tunceli", name: "Tunceli" },
-
   { id: "usak", name: "Uşak" },
-
   { id: "van", name: "Van" },
-
   { id: "yalova", name: "Yalova" },
   { id: "yozgat", name: "Yozgat" },
-
   { id: "zonguldak", name: "Zonguldak" },
 ];
-
-const CITY_CONFIG = {
-  adana: { distance: [0, 540], days: [1, 3] },
-  adiyaman: { distance: [0, 310], days: [1, 4] },
-  afyonkarahisar: { distance: [0, 385], days: [1, 4] },
-  agri: { distance: [5, 445], days: [1, 2] },
-  aksaray: { distance: [0, 285], days: [1, 4] },
-  amasya: { distance: [0, 135], days: [1, 3] },
-  ankara: { distance: [0, 110], days: [1, 6] },
-  antalya: { distance: [0, 690], days: [1, 8] },
-  ardahan: { distance: [0, 335], days: [1, 2] },
-  artvin: { distance: [30, 410], days: [1, 4] },
-  aydin: { distance: [25, 420], days: [1, 3] },
-  balikesir: { distance: [0, 585], days: [1, 5] },
-  bartin: { distance: [0, 160], days: [1, 4] },
-  batman: { distance: [0, 255], days: [1, 2] },
-  bayburt: { distance: [0, 280], days: [1, 4] },
-  bilecik: { distance: [0, 205], days: [1, 2] },
-  bingol: { distance: [0, 160], days: [1, 3] },
-  bitlis: { distance: [0, 305], days: [1, 4] },
-  bolu: { distance: [0, 385], days: [1, 4] },
-  burdur: { distance: [50, 425], days: [1, 2] },
-  bursa: { distance: [0, 180], days: [1, 5] },
-  canakkale: { distance: [10, 475], days: [1, 6] },
-  cankiri: { distance: [5, 330], days: [1, 3] },
-  corum: { distance: [25, 470], days: [1, 5] },
-  denizli: { distance: [5, 310], days: [1, 3] },
-  diyarbakir: { distance: [0, 260], days: [1, 3] },
-  duzce: { distance: [30, 195], days: [1, 2] },
-  edirne: { distance: [0, 20], days: [1, 2] },
-  elazig: { distance: [0, 210], days: [1, 3] },
-  erzincan: { distance: [0, 520], days: [1, 3] },
-  erzurum: { distance: [0, 400], days: [1, 4] },
-  eskisehir: { distance: [0, 420], days: [1, 3] },
-  gaziantep: { distance: [0, 320], days: [1, 3] },
-  giresun: { distance: [0, 325], days: [1, 4] },
-  gumushane: { distance: [35, 385], days: [1, 2] },
-  hakkari: { distance: [25, 280], days: [1, 2] },
-  hatay: { distance: [0, 255], days: [1, 3] },
-  igdir: { distance: [45, 305], days: [1, 1] },
-  isparta: { distance: [0, 315], days: [1, 4] },
-  istanbul: { distance: [0, 150], days: [1, 8] },
-  izmir: { distance: [0, 370], days: [1, 8] },
-  kahramanmaras: { distance: [10, 450], days: [1, 4] },
-  karabuk: { distance: [0, 130], days: [1, 3] },
-  karaman: { distance: [55, 235], days: [1, 1] },
-  kars: { distance: [10, 410], days: [1, 4] },
-  kastamonu: { distance: [0, 440], days: [1, 3] },
-  kayseri: { distance: [0, 420], days: [1, 5] },
-  kilis: { distance: [0, 55], days: [1, 2] },
-  kirikkale: { distance: [5, 295], days: [1, 3] },
-  kirklareli: { distance: [45, 255], days: [1, 2] },
-  kirsehir: { distance: [15, 290], days: [1, 3] },
-  kocaeli: { distance: [5, 285], days: [1, 2] },
-  konya: { distance: [0, 505], days: [1, 7] },
-  kutahya: { distance: [0, 320], days: [1, 2] },
-  malatya: { distance: [0, 355], days: [1, 4] },
-  manisa: { distance: [0, 380], days: [1, 3] },
-  mardin: { distance: [0, 195], days: [1, 3] },
-  mersin: { distance: [5, 500], days: [1, 5] },
-  mugla: { distance: [25, 645], days: [1, 5] },
-  mus: { distance: [0, 365], days: [1, 4] },
-  nevsehir: { distance: [0, 220], days: [1, 4] },
-  nigde: { distance: [0, 310], days: [1, 2] },
-  ordu: { distance: [0, 290], days: [1, 4] },
-  osmaniye: { distance: [15, 255], days: [1, 3] },
-  rize: { distance: [0, 225], days: [1, 4] },
-  sakarya: { distance: [25, 210], days: [1, 2] },
-  samsun: { distance: [0, 305], days: [1, 4] },
-  sanliurfa: { distance: [0, 420], days: [1, 4] },
-  siirt: { distance: [0, 140], days: [1, 2] },
-  sinop: { distance: [0, 305], days: [1, 4] },
-  sirnak: { distance: [0, 225], days: [1, 2] },
-  sivas: { distance: [0, 460], days: [1, 3] },
-  tekirdag: { distance: [0, 175], days: [1, 2] },
-  tokat: { distance: [0, 315], days: [1, 4] },
-  trabzon: { distance: [0, 275], days: [1, 3] },
-  tunceli: { distance: [0, 310], days: [1, 3] },
-  usak: { distance: [0, 175], days: [1, 3] },
-  van: { distance: [5, 510], days: [1, 5] },
-  yalova: { distance: [5, 125], days: [1, 2] },
-  yozgat: { distance: [0, 325], days: [1, 2] },
-  zonguldak: { distance: [20, 175], days: [1, 1] },
-};
 
 const CATEGORY_TREE = [
   {
@@ -265,7 +203,6 @@ function RangeRow({ title, value, min, max, step, unitLabel, onChange }) {
           onCommit={onChange}
         />
       </div>
-
       <input
         className={styles.range}
         type="range"
@@ -275,7 +212,6 @@ function RangeRow({ title, value, min, max, step, unitLabel, onChange }) {
         value={value}
         onChange={(e) => onChange(toInt(e.target.value, value))}
       />
-
       <div className={styles.minMax}>
         <span>{min}</span>
         <span>{max}</span>
@@ -290,14 +226,9 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
   const [q, setQ] = useState("");
 
   const normalize = (str) =>
-    str
-      .toLowerCase()
-      .replace(/ı/g, "i")
-      .replace(/ğ/g, "g")
-      .replace(/ş/g, "s")
-      .replace(/ö/g, "o")
-      .replace(/ç/g, "c")
-      .replace(/ü/g, "u");
+    str.toLowerCase()
+      .replace(/ı/g, "i").replace(/ğ/g, "g").replace(/ş/g, "s")
+      .replace(/ö/g, "o").replace(/ç/g, "c").replace(/ü/g, "u");
 
   const filtered = useMemo(() => {
     const s = normalize(q.trim());
@@ -319,7 +250,6 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
         />
         <span className={styles.chev} aria-hidden="true">▾</span>
       </div>
-
       {open && (
         <div className={styles.dropdown} role="listbox">
           <div className={styles.dropdownInner}>
@@ -343,68 +273,64 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
   );
 }
 
-function InterestPill({ label, checked, onToggle }) {
-  return (
-    <button
-      type="button"
-      className={`${styles.interestPill} ${checked ? styles.interestOn : ""}`}
-      onClick={onToggle}
-      aria-pressed={checked}
-    >
-      <span className={styles.iconSlot} aria-hidden="true" />
-      <span className={styles.interestLabel}>{label}</span>
-      <span className={`${styles.miniSwitch} ${checked ? styles.miniSwitchOn : ""}`}>
-        <span className={styles.miniKnob} />
-      </span>
-    </button>
-  );
-}
-
 export default function Planning() {
-  const [distanceRange, setDistanceRange] = useState({ min: 20, max: 2000 });
+  const [distanceRange, setDistanceRange] = useState({ min: 0, max: 500 });
   const [daysRange, setDaysRange] = useState({ min: 1, max: 5 });
-
-  const [cities, setCities] = useState(ALL_CITIES);
+  const [cities] = useState(ALL_CITIES);
   const [cityId, setCityId] = useState(ALL_CITIES[0]?.id ?? "");
   const [cityName, setCityName] = useState(ALL_CITIES[0]?.name ?? "");
+  const [days, setDays] = useState(1);
+  const [distanceKm, setDistanceKm] = useState(0);
 
-  const [days, setDays] = useState(3);
-  const [distanceKm, setDistanceKm] = useState(100);
-
-  const [selected, setSelected] = useState(() => {
-    const all = new Set();
-    CATEGORY_TREE.forEach((cat) => {
-      if (cat.sub) {
-        cat.sub.forEach((s) => all.add(s.key));
-      } else {
-        all.add(cat.key);
-      }
-    });
-    return all;
-  });
+  // Seçili kategori key'leri
+  const [selected, setSelected] = useState(() => new Set());
+  // O şehirde mevcut olan key'ler (null = hepsi)
+  const [availableKeys, setAvailableKeys] = useState(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
-
   const navigate = useNavigate();
 
+  // Şehir değişince Supabase'den kategorileri çek
   useEffect(() => {
-    setCities(ALL_CITIES);
-  }, []);
+    fetchCityCategories(cityId).then((result) => {
+      if (!result || result.categories.length === 0) {
+        // DB'de bulunamadı → hepsini göster ve seç
+        setAvailableKeys(null);
+        const all = new Set();
+        CATEGORY_TREE.forEach((cat) => {
+          if (cat.sub) cat.sub.forEach((s) => all.add(s.key));
+          else all.add(cat.key);
+        });
+        setSelected(all);
+        setDaysRange({ min: 1, max: 5 });
+        setDays(1);
+        setDistanceRange({ min: 0, max: 500 });
+        setDistanceKm(0);
+        return;
+      }
 
-  useEffect(() => {
-    const config = CITY_CONFIG[cityId] || { distance: [20, 2000], days: [1, 5] };
+      // DB kategorilerini frontend key'lerine map'le
+      const frontendKeys = new Set();
+      result.categories.forEach((dbCat) => {
+        const keys = DB_TO_FRONTEND[dbCat];
+        if (keys) keys.forEach((k) => frontendKeys.add(k));
+      });
 
-    const newDistanceRange = { min: config.distance[0], max: config.distance[1] };
-    const newDaysRange = { min: config.days[0], max: config.days[1] };
+      setAvailableKeys(frontendKeys.size > 0 ? frontendKeys : null);
+      setSelected(new Set(frontendKeys));
 
-    setDistanceRange(newDistanceRange);
-    setDaysRange(newDaysRange);
-    setDistanceKm(newDistanceRange.min);
-    setDays(newDaysRange.min);
+      // Gün ve mesafe aralığını DB'den güncelle
+      const maxDays = result.maxDays ?? 5;
+      setDaysRange({ min: 1, max: maxDays });
+      setDays(1);
+
+      const minDist = Math.floor(result.minDistanceKm ?? 0);
+      const maxDist = Math.ceil(result.maxDistanceKm ?? 500);
+      setDistanceRange({ min: minDist, max: maxDist });
+      setDistanceKm(minDist);
+    });
   }, [cityId]);
-
-  const [expanded, setExpanded] = useState(null);
 
   const toggleMain = (cat) => {
     setSelected((prev) => {
@@ -414,11 +340,12 @@ export default function Planning() {
         else next.add(cat.key);
         return next;
       }
-      const allSelected = cat.sub.every((s) => next.has(s.key));
+      const visibleSubs = cat.sub.filter((s) => !availableKeys || availableKeys.has(s.key));
+      const allSelected = visibleSubs.every((s) => next.has(s.key));
       if (allSelected) {
-        cat.sub.forEach((s) => next.delete(s.key));
+        visibleSubs.forEach((s) => next.delete(s.key));
       } else {
-        cat.sub.forEach((s) => next.add(s.key));
+        visibleSubs.forEach((s) => next.add(s.key));
       }
       return next;
     });
@@ -441,29 +368,15 @@ export default function Planning() {
     categories: Array.from(selected),
   });
 
-  const CATEGORY_MAP = {
-    museums: "Museums",
-    archaeology: "Cultural Heritage",
-    architecture: "Cultural Heritage",
-    fortifications: "Cultural Heritage",
-    infrastructure: "Cultural Heritage",
-    religious: "Cultural Heritage",
-    transport: "Cultural Heritage",
-    monumental: "Cultural Heritage",
-    parks: "Nature",
-    terrain: "Nature",
-    water: "Nature",
-    wildlife: "Nature",
-  };
-
   const onGenerateRoute = async () => {
     setIsGenerating(true);
     setErrorMsg(null);
     try {
       const payload = buildPayload();
 
+      // Frontend sub-key'lerini backend DB kategorilerine map'le
       const mappedCategories = [...new Set(
-        payload.categories.map((c) => CATEGORY_MAP[c]).filter(Boolean)
+        payload.categories.map((c) => FRONTEND_TO_DB_CATEGORY[c]).filter(Boolean)
       )];
 
       const distanceMeters = Math.max(payload.distanceKm * 1000, 1000);
@@ -510,6 +423,24 @@ export default function Planning() {
     }
   };
 
+  // Kategori ağacını availableKeys'e göre filtrele
+  const visibleCategoryTree = useMemo(() => {
+    if (!availableKeys) return CATEGORY_TREE;
+
+    return CATEGORY_TREE
+      .map((cat) => {
+        if (!cat.sub) {
+          // Leaf kategori (museums) — sadece availableKeys'de varsa göster
+          return availableKeys.has(cat.key) ? cat : null;
+        }
+        // Sub kategorileri filtrele
+        const visibleSubs = cat.sub.filter((s) => availableKeys.has(s.key));
+        if (visibleSubs.length === 0) return null;
+        return { ...cat, sub: visibleSubs };
+      })
+      .filter(Boolean);
+  }, [availableKeys]);
+
   return (
     <div className={styles.page}>
       {isGenerating && (
@@ -539,7 +470,7 @@ export default function Planning() {
             onSelect={(id) => {
               setCityId(id);
               const sel = cities.find((c) => c.id === id);
-              setCityName(sel?.name ?? null);
+              setCityName(sel?.name ?? "");
             }}
           />
         </div>
@@ -557,7 +488,6 @@ export default function Planning() {
               onChange={(v) => setDays(clamp(v, daysRange.min, daysRange.max))}
             />
           </div>
-
           <div className={styles.block}>
             <RangeRow
               title="Distance"
@@ -571,13 +501,15 @@ export default function Planning() {
           </div>
         </div>
 
-        {/* Categories */}
+        {/* Categories — sadece o şehirde olanlar */}
         <div className={styles.block}>
           <div className={styles.sectionTitle}>Interests</div>
 
           <div className={styles.categoryGrid}>
-            {CATEGORY_TREE.filter((cat) => cat.sub).map((cat) => {
-              const isAllSelected = cat.sub.every((s) => selected.has(s.key));
+            {visibleCategoryTree.filter((cat) => cat.sub).map((cat) => {
+              const visibleSubs = cat.sub;
+              const isAllSelected = visibleSubs.every((s) => selected.has(s.key));
+
               return (
                 <div key={cat.key} className={styles.categoryBlock}>
                   <label className={styles.mainRow}>
@@ -586,8 +518,7 @@ export default function Planning() {
                       checked={isAllSelected}
                       ref={(el) => {
                         if (el) {
-                          const someSelected =
-                            cat.sub.some((s) => selected.has(s.key)) && !isAllSelected;
+                          const someSelected = visibleSubs.some((s) => selected.has(s.key)) && !isAllSelected;
                           el.indeterminate = someSelected;
                         }
                       }}
@@ -595,9 +526,8 @@ export default function Planning() {
                     />
                     <span>{cat.label}</span>
                   </label>
-
                   <div className={styles.subList}>
-                    {cat.sub.map((s) => (
+                    {visibleSubs.map((s) => (
                       <label key={s.key} className={styles.subRow}>
                         <input
                           type="checkbox"
@@ -612,23 +542,20 @@ export default function Planning() {
               );
             })}
 
-            {CATEGORY_TREE.filter((cat) => !cat.sub).map((cat) => {
-              const isSelected = selected.has(cat.key);
-              return (
-                <div key={cat.key} className={styles.fullWidth}>
-                  <div className={styles.categoryBlock}>
-                    <label className={styles.mainRow}>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleMain(cat)}
-                      />
-                      <span>{cat.label}</span>
-                    </label>
-                  </div>
+            {visibleCategoryTree.filter((cat) => !cat.sub).map((cat) => (
+              <div key={cat.key} className={styles.fullWidth}>
+                <div className={styles.categoryBlock}>
+                  <label className={styles.mainRow}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(cat.key)}
+                      onChange={() => toggleMain(cat)}
+                    />
+                    <span>{cat.label}</span>
+                  </label>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
 
