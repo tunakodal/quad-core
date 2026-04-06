@@ -1,0 +1,72 @@
+.header{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
+  background: var(--primary);   /* 💥 ANA NOKTA */
+  color: white;
+
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.inner{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.logo{
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.brandText{
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--bg);
+}
+
+.nav{
+  display: flex;
+  gap: 24px;
+}
+
+.nav a{
+  position: relative;
+  color: rgba(255,255,255,0.85);
+  font-size: 14px;
+  padding: 4px 0;
+}
+
+.nav a::after{
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+
+  width: 100%;              /* artık defaultta da var */
+  height: 2px;
+  background: rgba(255,255,255,0.3);  /* normal hali */
+
+  transition: background 200ms ease, width 200ms ease;
+}
+
+/* hover */
+.nav a:hover::after{
+  background: var(--accent);  /* turuncuya dönüyor */
+}
+
+.nav a:hover{
+  color: white;
+}

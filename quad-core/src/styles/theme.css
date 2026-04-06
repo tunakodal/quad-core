@@ -1,0 +1,35 @@
+:root{
+  /* ===== Base ===== */
+  --bg: #f8f6f2;                 /* kırık beyaz */
+  --surface: #ffffff;            /* kartlar */
+  --text: #1e1e1e;               /* ana yazı (soft siyah) */
+  --muted-text: #6b7280;         /* gri yazı */
+  --text-soft: rgba(0, 0, 0, 0.55);
+
+
+  /* ===== Brand ===== */
+  --navy: #03045E;               /* ana lacivert */
+  --navy-soft: #1a1c7a;          /* hover / secondary */
+
+  /* ===== Accent ===== */
+  --accent: #f17720;             /* turuncu */
+  --accent-soft: #f38a3d;        /* hover */
+
+  /* ===== Semantic ===== */
+  --primary: var(--navy);
+  --primary-hover: var(--navy-soft);
+
+  --accent-hover: var(--accent-soft);
+
+  /* ===== Surfaces ===== */
+  --surface-soft: #f1f3f6;       /* section bg */
+  --border: #e2e8f0;
+
+  --surface-card: #f1f3f6;
+  --surface-card-hover: #e9edf2;
+
+  /* ===== Effects ===== */
+  --r-lg: 20px;
+  --r-md: 14px;
+  --shadow: 0 18px 60px rgba(0,0,0,0.08);
+}
