@@ -31,33 +31,18 @@
             height: 72px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             padding: 0 32px;
         }
 
         .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-weight: 700;
-            font-size: 30px;
-            letter-spacing: 0.5px;
         }
 
-        .brand .pin {
-            color: var(--guide-orange);
-            font-size: 30px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 28px;
-            font-size: 16px;
-        }
-
-        .nav-links span {
-            color: white;
-            opacity: 0.95;
+        .logo {
+            height: 38px;
+            object-fit: contain;
+            display: block;
         }
 
         .container {
@@ -77,10 +62,6 @@
             font-weight: 800;
             color: var(--guide-navy);
             letter-spacing: 1px;
-        }
-
-        header h1 .accent {
-            color: var(--guide-orange);
         }
 
         header p {
@@ -114,24 +95,32 @@
             list-style: none;
             padding-left: 0;
             margin: 0;
+            display: grid;
+            gap: 14px;
         }
 
         .reports li {
-            margin-bottom: 14px;
+            margin: 0;
         }
 
         .reports a {
-            display: inline-block;
+            display: block;
             text-decoration: none;
             color: var(--guide-navy);
             font-size: 16px;
-            font-weight: 600;
-            padding: 10px 0;
-            transition: color 0.2s ease;
+            font-weight: 700;
+            padding: 16px 18px;
+            border: 1px solid var(--guide-border);
+            border-radius: 14px;
+            background-color: #ffffff;
+            transition: 0.2s ease;
         }
 
         .reports a:hover {
+            border-color: var(--guide-orange);
             color: var(--guide-orange);
+            background-color: #fff7ef;
+            transform: translateY(-1px);
         }
 
         .actions {
@@ -183,13 +172,7 @@
         @media (max-width: 700px) {
             .topbar {
                 padding: 0 18px;
-                height: auto;
-                min-height: 72px;
-                flex-direction: column;
-                justify-content: center;
-                gap: 10px;
-                padding-top: 12px;
-                padding-bottom: 12px;
+                height: 72px;
             }
 
             header h1 {
@@ -211,20 +194,14 @@
 
     <div class="topbar">
         <div class="brand">
-            <span class="pin">📍</span>
-            <span>GUIDE</span>
-        </div>
-
-        <div class="nav-links">
-            <span>Plan</span>
-            <span>How GUIDE Works</span>
+            <img src="./quad-core/public/logo.png" alt="GUIDE Logo" class="logo">
         </div>
     </div>
 
     <div class="container">
 
         <header>
-            <h1><span class="accent">G</span>UIDE</h1>
+            <h1>GUIDE</h1>
             <p>BIL495 – QUAD-CORE Graduation Project</p>
         </header>
 
