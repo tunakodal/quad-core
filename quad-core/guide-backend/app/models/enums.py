@@ -12,6 +12,5 @@ class Language(str, Enum):
 
 
 class RoutingProfile(str, Enum):
-    """Routing mode used by the OSRM engine."""
+    """Routing mode used by the OSRM engine. The project only supports driving mode"""
     DRIVING = "driving"
-    WALKING = "walking"
