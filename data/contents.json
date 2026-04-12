@@ -1,0 +1,123 @@
+[
+  {
+    "poi_id": "istanbul-hagia-sophia",
+    "language": "EN",
+    "description_text": "Hagia Sophia is a masterpiece of Byzantine architecture, originally built as a cathedral in 537 AD by Emperor Justinian I. For nearly a thousand years it was the largest cathedral in the world. After the Ottoman conquest in 1453, it was converted into a mosque and later became a museum in 1934. In 2020 it was re-designated as a mosque. The massive dome, stunning mosaics, and Islamic calligraphy panels create an extraordinary blend of Christian and Islamic art.",
+    "images": [
+      {"asset_id": "hagia-sophia-01", "url_or_path": "/media/images/istanbul-hagia-sophia/01.jpg", "media_type": "image"},
+      {"asset_id": "hagia-sophia-02", "url_or_path": "/media/images/istanbul-hagia-sophia/02.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "istanbul-hagia-sophia",
+    "language": "TR",
+    "description_text": "Ayasofya, 537 yilinda Imparator Justinianus tarafindan insa ettirilen Bizans mimarisinin baseseridir. Yaklasik bin yil boyunca dunyanin en buyuk katedrali olmustur. 1453'te Osmanli fethinin ardindan camiye donusturulmus, 1934'te muze haline getirilmis ve 2020'de yeniden cami olarak ibadete acilmistir.",
+    "images": [
+      {"asset_id": "hagia-sophia-01", "url_or_path": "/media/images/istanbul-hagia-sophia/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "istanbul-blue-mosque",
+    "language": "EN",
+    "description_text": "The Sultan Ahmed Mosque, popularly known as the Blue Mosque, was built between 1609 and 1616 during the rule of Sultan Ahmed I. It is called the Blue Mosque because of the hand-painted blue tiles adorning the interior walls. It is one of the few mosques in the world with six minarets and remains an active place of worship.",
+    "images": [
+      {"asset_id": "blue-mosque-01", "url_or_path": "/media/images/istanbul-blue-mosque/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "istanbul-blue-mosque",
+    "language": "TR",
+    "description_text": "Sultan Ahmet Camii, 1609-1616 yillari arasinda Sultan I. Ahmet doneminde insa edilmistir. Ic mekanindaki el yapimi mavi ciniler nedeniyle Blue Mosque olarak bilinir. Dunyada alti minareli sayili camilerden biridir.",
+    "images": [
+      {"asset_id": "blue-mosque-01", "url_or_path": "/media/images/istanbul-blue-mosque/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "istanbul-topkapi",
+    "language": "EN",
+    "description_text": "Topkapi Palace served as the primary residence and administrative headquarters of Ottoman sultans for nearly 400 years, from 1465 to 1856. The palace complex includes four main courtyards, the Imperial Harem, a treasury containing the famous Spoonmaker's Diamond and Topkapi Dagger, and a collection of sacred relics.",
+    "images": [
+      {"asset_id": "topkapi-01", "url_or_path": "/media/images/istanbul-topkapi/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "istanbul-grand-bazaar",
+    "language": "EN",
+    "description_text": "The Grand Bazaar is one of the oldest and largest covered markets in the world, with over 4,000 shops spread across 61 covered streets. Built in 1461, it attracts between 250,000 and 400,000 visitors daily. Visitors can find traditional Turkish carpets, ceramics, spices, jewelry, and leather goods.",
+    "images": [
+      {"asset_id": "grand-bazaar-01", "url_or_path": "/media/images/istanbul-grand-bazaar/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "istanbul-basilica-cistern",
+    "language": "EN",
+    "description_text": "The Basilica Cistern is the largest of several hundred ancient underground cisterns beneath Istanbul. Built in the 6th century during the reign of Byzantine Emperor Justinian I, the cistern is supported by 336 marble columns and could store up to 80,000 cubic meters of water. The famous Medusa head column bases add an air of mystery.",
+    "images": [
+      {"asset_id": "basilica-cistern-01", "url_or_path": "/media/images/istanbul-basilica-cistern/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "istanbul-galata-tower",
+    "language": "EN",
+    "description_text": "Galata Tower is a medieval stone tower in the Galata quarter of Istanbul, built by the Genoese in 1348. Standing at 66.9 meters, it offers panoramic views of Istanbul's historic peninsula, the Bosphorus, and the Golden Horn. It has served as a watchtower, a prison, and an observatory throughout its history.",
+    "images": [
+      {"asset_id": "galata-tower-01", "url_or_path": "/media/images/istanbul-galata-tower/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "ankara-anitkabir",
+    "language": "EN",
+    "description_text": "Anitkabir is the mausoleum of Mustafa Kemal Ataturk, the founder and first president of the Republic of Turkey. Completed in 1953, the monumental complex sits on a hilltop and includes the Hall of Honor, the Peace Park with trees from around the world, and a museum documenting Turkey's War of Independence.",
+    "images": [
+      {"asset_id": "anitkabir-01", "url_or_path": "/media/images/ankara-anitkabir/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "ankara-anitkabir",
+    "language": "TR",
+    "description_text": "Anitkabir, Turkiye Cumhuriyeti'nin kurucusu ve ilk cumhurbaskani Mustafa Kemal Ataturk'un mozolesidir. 1953 yilinda tamamlanan anit kompleks, Seref Holunu, dunyanin dort bir yanindan agaclarin bulundugu Baris Parkini ve Kurtulus Savasi muzesini icerir.",
+    "images": [
+      {"asset_id": "anitkabir-01", "url_or_path": "/media/images/ankara-anitkabir/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "ankara-anadolu-medeniyetleri",
+    "language": "EN",
+    "description_text": "The Museum of Anatolian Civilizations is housed in a restored Ottoman-era bazaar and caravanserai near Ankara Castle. It displays artifacts spanning 10,000 years of Anatolian history, from the Paleolithic to the Ottoman period, with outstanding Hittite and Phrygian collections.",
+    "images": [
+      {"asset_id": "anadolu-med-01", "url_or_path": "/media/images/ankara-anadolu-medeniyetleri/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "cappadocia-goreme",
+    "language": "EN",
+    "description_text": "The Goreme Open-Air Museum is a UNESCO World Heritage Site featuring rock-cut churches and monasteries from the 10th to 12th centuries. The frescoes inside these cave churches are among the finest examples of Byzantine art. The surrounding fairy chimney rock formations create a surreal landscape.",
+    "images": [
+      {"asset_id": "goreme-01", "url_or_path": "/media/images/cappadocia-goreme/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "cappadocia-goreme",
+    "language": "TR",
+    "description_text": "Goreme Acik Hava Muzesi, 10. ve 12. yuzyillar arasinda oyulmus kaya kiliseleri ve manastirlarindan olusan UNESCO Dunya Mirasi Alani'dir. Bu magaralarin icindeki freskler Bizans sanatinin en guzel ornekleri arasindadir.",
+    "images": [
+      {"asset_id": "goreme-01", "url_or_path": "/media/images/cappadocia-goreme/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "antalya-old-town",
+    "language": "EN",
+    "description_text": "Kaleici is Antalya's charming historic quarter surrounded by ancient Roman walls. Its narrow cobblestone streets are lined with Ottoman-era houses, boutique hotels, restaurants, and shops. The area includes Hadrian's Gate, the Yivli Minare (Fluted Minaret), and the old harbor.",
+    "images": [
+      {"asset_id": "kaleici-01", "url_or_path": "/media/images/antalya-old-town/01.jpg", "media_type": "image"}
+    ]
+  },
+  {
+    "poi_id": "izmir-ephesus",
+    "language": "EN",
+    "description_text": "Ephesus is one of the best-preserved ancient cities in the Mediterranean region. Founded in the 10th century BC, it was a major center of trade and religion. Key landmarks include the Library of Celsus, the Great Theatre that could seat 25,000 spectators, and the Temple of Artemis ruins.",
+    "images": [
+      {"asset_id": "ephesus-01", "url_or_path": "/media/images/izmir-ephesus/01.jpg", "media_type": "image"}
+    ]
+  }
+]
