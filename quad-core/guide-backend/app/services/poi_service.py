@@ -18,13 +18,7 @@ class PoiService:
             categories=prefs.categories,
         )
 
-    async def filter_by_constraints(
-        self, pois: list[Poi], constraints: TravelConstraints
-    ) -> list[Poi]:
-        """Apply hard feasibility filters (max total POIs etc.)."""
-        max_total = constraints.max_trip_days * constraints.max_pois_per_day
-        return pois[:max_total]
-
     async def count_available_pois(self, city: str, categories: list[str]) -> int:
         pois = await self.poi_repository.find_by_city_and_categories(city, categories)
+        print(len(pois))
         return len(pois)

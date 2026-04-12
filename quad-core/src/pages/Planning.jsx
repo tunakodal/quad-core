@@ -415,72 +415,75 @@ export default function Planning() {
 
       const suggestionRes = await fetchSuggestion(payload);
 
+      // 🔥 ONLY HARD ERROR
+      if (suggestionRes.poi_count === 0) {
+        setErrorMsg("No POIs found for selected categories");
+        return;
+      }
+
+      // 🔥 POPUP CASE
       if (payload.days > suggestionRes.max_recommended_days) {
-        // popup aç
         setSuggestion(suggestionRes);
         setPendingPayload(payload);
         setShowSuggestionModal(true);
         return;
       }
 
+      // 🔥 DIRECT GENERATE
       await generateRoute(payload);
 
     } catch (err) {
-      setErrorMsg(err.message);
+      setErrorMsg(err.message || "Something went wrong");
     } finally {
       setIsGenerating(false);
     }
   };
 
   const generateRoute = async (payload) => {
-    const mappedCategories = [...new Set(
-      payload.categories.map((c) => FRONTEND_TO_DB_CATEGORY[c]).filter(Boolean)
-    )];
+  const mappedCategories = [...new Set(
+    payload.categories
+      .map((c) => FRONTEND_TO_DB_CATEGORY[c])
+      .filter(Boolean)
+  )];
 
-    const distanceMeters = Math.max(payload.distanceKm * 1000, 1000);
+  const distanceMeters = Math.max(payload.distanceKm * 1000, 1000);
 
-    const requestBody = {
-      preferences: {
-        city: payload.cityId,
-        trip_days: payload.days,
-        categories: mappedCategories,
-        max_distance_per_day: distanceMeters,
-      },
-      constraints: {
-        max_trip_days: payload.days,
-        max_pois_per_day: 9,
-        max_daily_distance: distanceMeters,
-      },
-      language: "EN",
-    };
-
-    const response = await fetch("/api/v1/routes/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) throw new Error("Generate failed");
-
-    const data = await response.json();
-
-    // 🔥 CRITICAL FIX
-    if (payload.days > data.effective_trip_days) {
-      setSuggestion({
-        max_recommended_days: data.effective_trip_days
-      });
-      setPendingPayload(payload);
-      setShowSuggestionModal(true);
-      return;
-    }
-
-    navigate("/route", {
-      state: {
-        planningInput: payload,
-        routeResponse: data,
-      },
-    });
+  const requestBody = {
+    preferences: {
+      city: payload.cityId,
+      trip_days: payload.days,
+      categories: mappedCategories,
+      max_distance_per_day: distanceMeters,
+    },
+    constraints: {
+      max_trip_days: payload.days,
+      max_pois_per_day: 9,
+      max_daily_distance: distanceMeters,
+    },
+    language: "EN",
   };
+
+  const response = await fetch("/api/v1/routes/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody),
+  });
+
+  // 🔥 REAL ERROR MESSAGE
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(errText || "Generate failed");
+  }
+
+  const data = await response.json();
+
+  navigate("/route", {
+    state: {
+      planningInput: payload,
+      routeResponse: data,
+    },
+  });
+};
 
   // Kategori ağacını availableKeys'e göre filtrele
   const visibleCategoryTree = useMemo(() => {

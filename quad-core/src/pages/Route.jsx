@@ -317,13 +317,6 @@ export default function Route() {
                   {planningInput?.categories?.length ?? 0}
                 </span>
               </div>
-
-              {routeResponse?.effective_trip_days && (
-                <div className={styles.summaryChip}>
-                  <span className={styles.chipLabel}>Effective Days</span>
-                  <span className={styles.chipValue}>{routeResponse.effective_trip_days}</span>
-                </div>
-              )}
             </div>
           </div>
 
