@@ -46,13 +46,23 @@ class JsonDataSource(AbstractDataSource):
             poi = Poi(
                 id=item["id"],
                 name=item["name"],
-                category=item["category"],
+                category=item.get("category", "Other"),
+
+                main_category_1=item.get("main_category_1"),
+                main_category_2=item.get("main_category_2"),
+                sub_category_1=item.get("sub_category_1"),
+                sub_category_2=item.get("sub_category_2"),
+                sub_category_3=item.get("sub_category_3"),
+                sub_category_4=item.get("sub_category_4"),
+
                 city=item["city"],
                 location=GeoPoint(
                     latitude=item["location"]["latitude"],
                     longitude=item["location"]["longitude"],
                 ),
-                estimated_visit_duration=item["estimated_visit_duration"],
+                estimated_visit_duration=item.get("estimated_visit_duration", 60),
+                google_rating=item.get("google_rating"),
+                google_reviews_total=item.get("google_reviews_total"),
             )
             self._pois.append(poi)
             self._index[poi.id] = poi
@@ -102,18 +112,97 @@ class PoiRepository(AbstractPoiRepository):
 
 # ── Supabase Data API implementasyonu ────────────────────────────
 
-# Supabase'deki pois tablosunda estimated_visit_duration kolonu yok;
-# tüm POI'lar için sabit 60 dakika kullanılır.
-_DEFAULT_VISIT_DURATION = 60
+_POI_COLUMNS = (
+    "id, name, city, latitude, longitude, categories, "
+    "main_category_1, main_category_2, "
+    "sub_category_1, sub_category_2, sub_category_3, sub_category_4, "
+    "google_rating, google_reviews_total"
+)
+def _compute_estimated_visit_duration(row: dict) -> int:
+    """
+    Computes estimated visit duration (minutes) according to the report logic:
 
-# Supabase'den çekilecek kolon listesi — sadece ihtiyaç duyulanlar
-_POI_COLUMNS = "id, name, city, latitude, longitude, categories, main_category_1, google_rating, google_reviews_total"
+    1. Category-based base duration assignment
+    2. Review-count adjustment
+    3. Rating-based adjustment
+    4. Final clipping and rounding
 
+    For multiple categories:
+        category_duration = 0.70 * max_duration + 0.30 * avg_duration
+    """
+
+    SUBCATEGORY_DURATION = {
+        "Ancient & Archaeology": 120,
+        "Museum": 120,
+        "Fortifications": 90,
+        "Civil & Traditional Architecture": 75,
+        "Terrain & Landforms": 75,
+        "Wildlife & Natural Experience": 75,
+        "Parks & Outdoor": 60,
+        "Water & Coastal": 60,
+        "Urban & Monumental Heritage": 60,
+        "Transportation as Heritage": 60,
+        "Historical Infrastructure": 60,
+        "Religious": 45,
+    }
+
+    DEFAULT_DURATION = 60
+
+    categories = [
+        row.get("sub_category_1"),
+        row.get("sub_category_2"),
+        row.get("sub_category_3"),
+        row.get("sub_category_4"),
+    ]
+    categories = [c for c in categories if c]
+
+    if categories:
+        durations = [
+            SUBCATEGORY_DURATION.get(category, DEFAULT_DURATION)
+            for category in categories
+        ]
+        max_duration = max(durations)
+        avg_duration = sum(durations) / len(durations)
+        category_duration = 0.70 * max_duration + 0.30 * avg_duration
+    else:
+        category_duration = DEFAULT_DURATION
+
+    reviews = row.get("google_reviews_total") or 0
+    rating = row.get("google_rating") or 0
+
+    # Review-count multiplier
+    if reviews < 50:
+        m_review = 0.90
+    elif reviews < 200:
+        m_review = 1.00
+    elif reviews < 1000:
+        m_review = 1.10
+    else:
+        m_review = 1.20
+
+    # Rating-based multiplier
+    if rating < 3.5:
+        m_rating = 0.90
+    elif rating < 4.2:
+        m_rating = 1.00
+    elif rating < 4.6:
+        m_rating = 1.10
+    else:
+        m_rating = 1.20
+
+    adjusted_duration = category_duration * m_review * m_rating
+
+    duration = int(round(adjusted_duration / 5) * 5)
+    duration = max(15, min(duration, 360))
+
+    return duration
 
 def _row_to_poi(row: dict) -> Poi:
     raw_cats = row.get("categories") or []
+
     category = (
         row.get("main_category_1")
+        or row.get("sub_category_1")
         or (raw_cats[0] if raw_cats else "Other")
     )
 
@@ -121,18 +210,25 @@ def _row_to_poi(row: dict) -> Poi:
         id=str(row["id"]),
         name=row["name"],
         category=category,
+
+        main_category_1=row.get("main_category_1"),
+        main_category_2=row.get("main_category_2"),
+        sub_category_1=row.get("sub_category_1"),
+        sub_category_2=row.get("sub_category_2"),
+        sub_category_3=row.get("sub_category_3"),
+        sub_category_4=row.get("sub_category_4"),
+
         city=row["city"],
         location=GeoPoint(
             latitude=row["latitude"],
             longitude=row["longitude"],
         ),
-        estimated_visit_duration=_DEFAULT_VISIT_DURATION,
 
-        # 🔥 YENİ EKLENENLER
+        estimated_visit_duration=_compute_estimated_visit_duration(row),
+
         google_rating=row.get("google_rating"),
         google_reviews_total=row.get("google_reviews_total"),
     )
-
 
 class PostgresPoiRepository(AbstractPoiRepository):
     """

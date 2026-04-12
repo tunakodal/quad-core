@@ -3,7 +3,6 @@ Point of Interest (POI) domain entities.
 """
 from __future__ import annotations
 from typing import Optional
-
 from pydantic import BaseModel
 
 from app.models.enums import Language
@@ -15,12 +14,22 @@ class Poi(BaseModel):
     """Represents a Point of Interest in the dataset."""
     id: str
     name: str
+
+    # existing simple category field for UI/filter compatibility
     category: str
+
+    # richer taxonomy fields
+    main_category_1: str | None = None
+    main_category_2: str | None = None
+    sub_category_1: str | None = None
+    sub_category_2: str | None = None
+    sub_category_3: str | None = None
+    sub_category_4: str | None = None
+
     city: str
     location: GeoPoint
     estimated_visit_duration: int  # minutes
 
-    # 🔥 YENİ EKLENENLER
     google_rating: float | None = None
     google_reviews_total: int | None = None
 
