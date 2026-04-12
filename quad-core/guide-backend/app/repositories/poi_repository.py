@@ -7,7 +7,9 @@ POI data source and repository implementations.
 
 DB ↔ domain model farkları (PostgresPoiRepository tarafından çözülür):
   pois.id              INTEGER  → domain Poi.id: str   (str() ile dönüştürülür)
-  pois.categories      TEXT[]   → domain Poi.category: str  (main_category_1 kullanılır)
+  pois.categories, main_category_1/2, sub_category_1/2/3/4
+    → domain Poi taxonomy fields
+    category alanı compatibility/display amaçlı tutulur.
   estimated_visit_duration       → tabloda yok, sabit 60 dk kullanılır
 """
 from __future__ import annotations
@@ -93,17 +95,18 @@ class PoiRepository(AbstractPoiRepository):
         return [p for p in all_pois if p.city.lower() == city.lower()]
 
     async def find_by_city_and_categories(
-        self, city: str, categories: list[str]
+            self, city: str, categories: list[str]
     ) -> list[Poi]:
         """
-        Şehir ve kategori listesine göre POI filtreler.
-        categories boşsa şehirdeki tüm POI'lar döner.
+        Filters POIs by city and requested categories.
+        If categories is empty, returns all POIs in the city.
+        Category filtering is based on POI subcategories.
         """
         city_pois = await self.find_by_city(city)
         if not categories:
             return city_pois
-        cat_lower = {c.lower() for c in categories}
-        return [p for p in city_pois if p.category.lower() in cat_lower]
+
+        return [p for p in city_pois if _poi_matches_categories(p, categories)]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
         """ID'ye göre tek POI döner; bulunamazsa None."""
@@ -230,6 +233,28 @@ def _row_to_poi(row: dict) -> Poi:
         google_reviews_total=row.get("google_reviews_total"),
     )
 
+def _extract_poi_subcategories(poi: Poi) -> set[str]:
+    return {
+        c.lower()
+        for c in [
+            poi.sub_category_1,
+            poi.sub_category_2,
+            poi.sub_category_3,
+            poi.sub_category_4,
+        ]
+        if c
+    }
+
+
+def _poi_matches_categories(poi: Poi, categories: list[str]) -> bool:
+    if not categories:
+        return True
+
+    wanted = {c.lower() for c in categories}
+    poi_subs = _extract_poi_subcategories(poi)
+
+    return not wanted.isdisjoint(poi_subs)
+
 class PostgresPoiRepository(AbstractPoiRepository):
     """
     Supabase Data API (PostgREST) üzerinden POI erişimi sağlar.
@@ -253,18 +278,18 @@ class PostgresPoiRepository(AbstractPoiRepository):
         return [_row_to_poi(r) for r in response.data]
 
     async def find_by_city_and_categories(
-        self, city: str, categories: list[str]
+            self, city: str, categories: list[str]
     ) -> list[Poi]:
         """
-        Şehir ve kategori listesine göre POI filtreler.
-        categories boşsa şehirdeki tüm POI'lar döner.
-        Filtreleme Python tarafında yapılır (büyük/küçük harf duyarsız).
+        Filters POIs by city and requested categories.
+        If categories is empty, returns all POIs in the city.
+        Category filtering is based on POI subcategories.
         """
         all_pois = await self.find_by_city(city)
         if not categories:
             return all_pois
-        cat_lower = {c.lower() for c in categories}
-        return [p for p in all_pois if p.category.lower() in cat_lower]
+
+        return [p for p in all_pois if _poi_matches_categories(p, categories)]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
         """ID'ye göre tek POI döner; bulunamazsa None."""

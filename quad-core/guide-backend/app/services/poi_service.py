@@ -22,3 +22,4 @@ class PoiService:
         pois = await self.poi_repository.find_by_city_and_categories(city, categories)
         print(len(pois))
         return len(pois)
+
