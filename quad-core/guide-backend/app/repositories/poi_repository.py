@@ -107,23 +107,16 @@ class PoiRepository(AbstractPoiRepository):
 _DEFAULT_VISIT_DURATION = 60
 
 # Supabase'den çekilecek kolon listesi — sadece ihtiyaç duyulanlar
-_POI_COLUMNS = "id, name, city, latitude, longitude, categories, main_category_1"
+_POI_COLUMNS = "id, name, city, latitude, longitude, categories, main_category_1, google_rating, google_reviews_total"
 
 
 def _row_to_poi(row: dict) -> Poi:
-    """
-    Supabase'den dönen satır dict'ini Poi domain nesnesine dönüştürür.
-
-    Alan dönüşümleri:
-      id             → str()  (tabloda INTEGER, domain'de str)
-      main_category_1 → Poi.category  (yoksa categories[0], o da yoksa 'Other')
-      estimated_visit_duration → tabloda yok, _DEFAULT_VISIT_DURATION sabiti kullanılır
-    """
     raw_cats = row.get("categories") or []
     category = (
         row.get("main_category_1")
         or (raw_cats[0] if raw_cats else "Other")
     )
+
     return Poi(
         id=str(row["id"]),
         name=row["name"],
@@ -134,6 +127,10 @@ def _row_to_poi(row: dict) -> Poi:
             longitude=row["longitude"],
         ),
         estimated_visit_duration=_DEFAULT_VISIT_DURATION,
+
+        # 🔥 YENİ EKLENENLER
+        google_rating=row.get("google_rating"),
+        google_reviews_total=row.get("google_reviews_total"),
     )
 
 

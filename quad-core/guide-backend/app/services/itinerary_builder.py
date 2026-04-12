@@ -16,22 +16,25 @@ class ItineraryBuilder:
     çeşitli aday planlar üretir.
     """
 
-    def allocate_to_days(
-        self, pois: list[Poi], constraints: TravelConstraints
+    def build_day_plan(
+            self,
+            pois: list[Poi],
+            day_index: int,
+    ) -> DayPlan:
+        """
+        Seçilmiş bir günlük POI listesinden DayPlan oluşturur.
+        Günlere bölme kararı burada verilmez.
+        """
+        return DayPlan(
+            day_index=day_index,
+            pois=pois,
+        )
+
+    def build_itinerary_from_days(
+            self,
+            day_plans: list[DayPlan],
     ) -> Itinerary:
         """
-        POI listesini günlere bölerek Itinerary döner.
-
-        Her gün en fazla max_pois_per_day POI alır.
-        Toplam gün sayısı max_trip_days'i geçemez; fazla POI'lar atlanır.
+        Hazır DayPlan listesinden Itinerary oluşturur.
         """
-        days: list[DayPlan] = []
-        chunk_size = constraints.max_pois_per_day
-
-        for day_idx, start in enumerate(range(0, len(pois), chunk_size), start=1):
-            if day_idx > constraints.max_trip_days:
-                break
-            chunk = pois[start : start + chunk_size]
-            days.append(DayPlan(day_index=day_idx, pois=chunk))
-
-        return Itinerary(days=days)
+        return Itinerary(days=day_plans)

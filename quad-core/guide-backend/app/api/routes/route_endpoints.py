@@ -82,6 +82,7 @@ class RouteController:
         itinerary = await self._itinerary_service.build_itinerary(
             pois, req.constraints, req.preferences
         )
+
         route_plan = await self._routing_service.generate_route(itinerary, req.constraints)
 
         return RouteResponse(
