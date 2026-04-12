@@ -365,8 +365,6 @@ export default function Route() {
                     {day.modified && <span className={styles.modifiedDot} />}
                   </div>
 
-                  <div className={styles.dayTabDate}>{day.dateLabel}</div>
-
                   <div className={styles.dayTabStatus}>
                     {day.modified ? "Modified" : "Original"}
                   </div>
