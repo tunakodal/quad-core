@@ -165,14 +165,18 @@ const CATEGORY_TREE = [
   },
 ];
 
-function EditablePillNumber({ value, unitLabel, min, max, onCommit }) {
+function EditablePillNumber({ value, unitLabel, min, max, onCommit, disabled }) {
   const [draft, setDraft] = useState(String(value));
-  useEffect(() => setDraft(String(value)), [value]);
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
 
   return (
     <div className={styles.valuePill}>
       <input
         className={styles.pillInput}
+        disabled={disabled}
         value={draft}
         inputMode="numeric"
         onChange={(e) => setDraft(e.target.value)}
@@ -183,45 +187,51 @@ function EditablePillNumber({ value, unitLabel, min, max, onCommit }) {
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur();
         }}
-        aria-label={`Set ${unitLabel}`}
       />
       <span className={styles.pillUnit}>{unitLabel}</span>
     </div>
   );
 }
 
-function RangeRow({ title, value, min, max, step, unitLabel, onChange }) {
+function RangeRow({ title, value, min, max, step, unitLabel, onChange, disabled }) {
   return (
     <div className={styles.rangeRow}>
+
       <div className={styles.rangeHead}>
         <div className={styles.rangeTitle}>{title}</div>
+
         <EditablePillNumber
           value={value}
           unitLabel={unitLabel}
           min={min}
           max={max}
           onCommit={onChange}
+          disabled={disabled}
         />
       </div>
+
       <input
         className={styles.range}
         type="range"
+        disabled={disabled}
         min={min}
         max={max}
         step={step}
         value={value}
         onChange={(e) => onChange(toInt(e.target.value, value))}
       />
+
       <div className={styles.minMax}>
         <span>{min}</span>
         <span>{max}</span>
       </div>
+
     </div>
   );
 }
 
 function SearchSelect({ placeholder, items, valueId, onSelect }) {
-  const selected = items.find((x) => x.id === valueId) || null;
+  const selected = items?.find((x) => x.id === valueId) || null;
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
 
@@ -274,43 +284,53 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
 }
 
 export default function Planning() {
-  const [distanceRange, setDistanceRange] = useState({ min: 0, max: 500 });
-  const [daysRange, setDaysRange] = useState({ min: 1, max: 5 });
-  const [cities] = useState(ALL_CITIES);
-  const [cityId, setCityId] = useState(ALL_CITIES[0]?.id ?? "");
-  const [cityName, setCityName] = useState(ALL_CITIES[0]?.name ?? "");
-  const [days, setDays] = useState(1);
+  const [cityId, setCityId] = useState("");
+  const [cityName, setCityName] = useState("");
+
+  const [daysRange, setDaysRange] = useState({ min: 0, max: 0 });
+  const [distanceRange, setDistanceRange] = useState({ min: 0, max: 0 });
+
+  const [days, setDays] = useState(0);
   const [distanceKm, setDistanceKm] = useState(0);
 
-  // Seçili kategori key'leri
-  const [selected, setSelected] = useState(() => new Set());
-  // O şehirde mevcut olan key'ler (null = hepsi)
+  const [selected, setSelected] = useState(new Set());
   const [availableKeys, setAvailableKeys] = useState(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const navigate = useNavigate();
 
+  const [suggestion, setSuggestion] = useState(null);
+  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState(null);
+
+  const [cities] = useState(ALL_CITIES);
+
+
+
   // Şehir değişince Supabase'den kategorileri çek
   useEffect(() => {
+    if (!cityId) {
+      setAvailableKeys(null);
+      setSelected(new Set());
+      setDaysRange({ min: 0, max: 0 });
+      setDistanceRange({ min: 0, max: 0 });
+      setDays(0);
+      setDistanceKm(0);
+      return;
+    }
+
     fetchCityCategories(cityId).then((result) => {
-      if (!result || result.categories.length === 0) {
-        // DB'de bulunamadı → hepsini göster ve seç
+      if (!result || !result.categories || result.categories.length === 0) {
         setAvailableKeys(null);
-        const all = new Set();
-        CATEGORY_TREE.forEach((cat) => {
-          if (cat.sub) cat.sub.forEach((s) => all.add(s.key));
-          else all.add(cat.key);
-        });
-        setSelected(all);
-        setDaysRange({ min: 1, max: 5 });
-        setDays(1);
-        setDistanceRange({ min: 0, max: 500 });
+        setSelected(new Set());
+        setDaysRange({ min: 0, max: 0 });
+        setDays(0);
+        setDistanceRange({ min: 0, max: 0 });
         setDistanceKm(0);
         return;
       }
 
-      // DB kategorilerini frontend key'lerine map'le
       const frontendKeys = new Set();
       result.categories.forEach((dbCat) => {
         const keys = DB_TO_FRONTEND[dbCat];
@@ -320,7 +340,6 @@ export default function Planning() {
       setAvailableKeys(frontendKeys.size > 0 ? frontendKeys : null);
       setSelected(new Set(frontendKeys));
 
-      // Gün ve mesafe aralığını DB'den güncelle
       const maxDays = result.maxDays ?? 5;
       setDaysRange({ min: 1, max: maxDays });
       setDays(1);
@@ -368,59 +387,99 @@ export default function Planning() {
     categories: Array.from(selected),
   });
 
+  const fetchSuggestion = async (payload) => {
+  const mappedCategories = [...new Set(
+      payload.categories.map((c) => FRONTEND_TO_DB_CATEGORY[c]).filter(Boolean)
+    )];
+
+    const res = await fetch("/api/v1/routes/suggest-days", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        city: payload.cityId,
+        categories: mappedCategories
+      }),
+    });
+
+    if (!res.ok) throw new Error("Suggestion failed");
+
+    return res.json();
+  };
+
   const onGenerateRoute = async () => {
     setIsGenerating(true);
     setErrorMsg(null);
+
     try {
       const payload = buildPayload();
 
-      // Frontend sub-key'lerini backend DB kategorilerine map'le
-      const mappedCategories = [...new Set(
-        payload.categories.map((c) => FRONTEND_TO_DB_CATEGORY[c]).filter(Boolean)
-      )];
+      const suggestionRes = await fetchSuggestion(payload);
 
-      const distanceMeters = Math.max(payload.distanceKm * 1000, 1000);
-
-      const requestBody = {
-        preferences: {
-          city: payload.cityId,
-          trip_days: payload.days,
-          categories: mappedCategories,
-          max_distance_per_day: distanceMeters,
-        },
-        constraints: {
-          max_trip_days: payload.days,
-          max_pois_per_day: 9,
-          max_daily_distance: distanceMeters,
-        },
-        language: "EN",
-      };
-
-      const response = await fetch("/api/v1/routes/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.message ?? `Backend error: ${response.status}`);
+      if (payload.days > suggestionRes.max_recommended_days) {
+        // popup aç
+        setSuggestion(suggestionRes);
+        setPendingPayload(payload);
+        setShowSuggestionModal(true);
+        return;
       }
 
-      const data = await response.json();
+      await generateRoute(payload);
 
-      navigate("/route", {
-        state: {
-          planningInput: payload,
-          routeResponse: data,
-        },
-      });
     } catch (err) {
-      console.error("Route generation failed:", err);
-      setErrorMsg(err.message ?? "An unexpected error occurred.");
+      setErrorMsg(err.message);
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const generateRoute = async (payload) => {
+    const mappedCategories = [...new Set(
+      payload.categories.map((c) => FRONTEND_TO_DB_CATEGORY[c]).filter(Boolean)
+    )];
+
+    const distanceMeters = Math.max(payload.distanceKm * 1000, 1000);
+
+    const requestBody = {
+      preferences: {
+        city: payload.cityId,
+        trip_days: payload.days,
+        categories: mappedCategories,
+        max_distance_per_day: distanceMeters,
+      },
+      constraints: {
+        max_trip_days: payload.days,
+        max_pois_per_day: 9,
+        max_daily_distance: distanceMeters,
+      },
+      language: "EN",
+    };
+
+    const response = await fetch("/api/v1/routes/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) throw new Error("Generate failed");
+
+    const data = await response.json();
+
+    // 🔥 CRITICAL FIX
+    if (payload.days > data.effective_trip_days) {
+      setSuggestion({
+        max_recommended_days: data.effective_trip_days
+      });
+      setPendingPayload(payload);
+      setShowSuggestionModal(true);
+      return;
+    }
+
+    navigate("/route", {
+      state: {
+        planningInput: payload,
+        routeResponse: data,
+      },
+    });
   };
 
   // Kategori ağacını availableKeys'e göre filtrele
@@ -443,6 +502,60 @@ export default function Planning() {
 
   return (
     <div className={styles.page}>
+      {showSuggestionModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalCard}>
+            <h3 className={styles.modalTitle}>
+              Maximum Trip Duration Reached
+            </h3>
+
+            <p className={styles.modalText}>
+              Based on your selected categories, the maximum feasible trip duration is{" "}
+              <strong>{suggestion.max_recommended_days} days</strong>.
+            </p>
+
+            <p className={styles.modalSubText}>
+              Your current selection exceeds the available POIs. You can continue with the suggested duration or modify your preferences.
+            </p>
+
+            <div className={styles.modalActions}>
+              <button
+                className={styles.primaryBtn}
+                onClick={async () => {
+                try {
+                  setIsGenerating(true); // 🔥 tekrar başlat
+
+                  const newPayload = {
+                    ...pendingPayload,
+                    days: suggestion.max_recommended_days,
+                  };
+
+                  setShowSuggestionModal(false);
+
+                  await generateRoute(newPayload);
+
+                } catch (err) {
+                  console.error(err);
+                  setErrorMsg(err.message);
+                } finally {
+                  setIsGenerating(false); // 🔥 garanti kapat
+                }
+              }}
+              >
+                Continue
+              </button>
+
+              <button
+                className={styles.secondaryBtn}
+                onClick={() => setShowSuggestionModal(false)}
+              >
+                Modify Selection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isGenerating && (
         <div className={styles.blockingOverlay} role="alert" aria-live="polite">
           <div className={styles.loadingCard}>
@@ -475,105 +588,109 @@ export default function Planning() {
           />
         </div>
 
-        {/* Days + Distance */}
-        <div className={styles.twoCols}>
-          <div className={styles.block}>
-            <RangeRow
-              title="Days"
-              value={days}
-              min={daysRange.min}
-              max={daysRange.max}
-              step={1}
-              unitLabel="days"
-              onChange={(v) => setDays(clamp(v, daysRange.min, daysRange.max))}
-            />
+        <div className={`${styles.hero} ${!cityId ? styles.disabledSection : ""}`}>
+          {/* Days + Distance */}
+          <div className={styles.twoCols}>
+            <div className={styles.block}>
+              <RangeRow
+                title="Days"
+                value={days}
+                min={daysRange.min}
+                max={daysRange.max}
+                step={1}
+                unitLabel="days"
+                onChange={(v) => setDays(clamp(v, daysRange.min, daysRange.max))}
+                disabled={!cityId}
+              />
+            </div>
+            <div className={styles.block}>
+              <RangeRow
+                title="Distance"
+                value={distanceKm}
+                min={distanceRange.min}
+                max={distanceRange.max}
+                step={5}
+                unitLabel="km"
+                onChange={(v) => setDistanceKm(clamp(v, distanceRange.min, distanceRange.max))}
+                disabled={!cityId}
+              />
+            </div>
           </div>
+
+          {/* Categories — sadece o şehirde olanlar */}
           <div className={styles.block}>
-            <RangeRow
-              title="Distance"
-              value={distanceKm}
-              min={distanceRange.min}
-              max={distanceRange.max}
-              step={5}
-              unitLabel="km"
-              onChange={(v) => setDistanceKm(clamp(v, distanceRange.min, distanceRange.max))}
-            />
-          </div>
-        </div>
+            <div className={styles.sectionTitle}>Interests</div>
 
-        {/* Categories — sadece o şehirde olanlar */}
-        <div className={styles.block}>
-          <div className={styles.sectionTitle}>Interests</div>
+            <div className={styles.categoryGrid}>
+              {visibleCategoryTree.filter((cat) => cat.sub).map((cat) => {
+                const visibleSubs = cat.sub;
+                const isAllSelected = visibleSubs.every((s) => selected.has(s.key));
 
-          <div className={styles.categoryGrid}>
-            {visibleCategoryTree.filter((cat) => cat.sub).map((cat) => {
-              const visibleSubs = cat.sub;
-              const isAllSelected = visibleSubs.every((s) => selected.has(s.key));
+                return (
+                  <div key={cat.key} className={styles.categoryBlock}>
+                    <label className={styles.mainRow}>
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        ref={(el) => {
+                          if (el) {
+                            const someSelected = visibleSubs.some((s) => selected.has(s.key)) && !isAllSelected;
+                            el.indeterminate = someSelected;
+                          }
+                        }}
+                        onChange={() => toggleMain(cat)}
+                      />
+                      <span>{cat.label}</span>
+                    </label>
+                    <div className={styles.subList}>
+                      {visibleSubs.map((s) => (
+                        <label key={s.key} className={styles.subRow}>
+                          <input
+                            type="checkbox"
+                            disabled={!cityId}
+                            checked={selected.has(s.key)}
+                            onChange={() => toggleSub(s.key)}
+                          />
+                          <span>{s.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
 
-              return (
-                <div key={cat.key} className={styles.categoryBlock}>
-                  <label className={styles.mainRow}>
-                    <input
-                      type="checkbox"
-                      checked={isAllSelected}
-                      ref={(el) => {
-                        if (el) {
-                          const someSelected = visibleSubs.some((s) => selected.has(s.key)) && !isAllSelected;
-                          el.indeterminate = someSelected;
-                        }
-                      }}
-                      onChange={() => toggleMain(cat)}
-                    />
-                    <span>{cat.label}</span>
-                  </label>
-                  <div className={styles.subList}>
-                    {visibleSubs.map((s) => (
-                      <label key={s.key} className={styles.subRow}>
-                        <input
-                          type="checkbox"
-                          checked={selected.has(s.key)}
-                          onChange={() => toggleSub(s.key)}
-                        />
-                        <span>{s.label}</span>
-                      </label>
-                    ))}
+              {visibleCategoryTree.filter((cat) => !cat.sub).map((cat) => (
+                <div key={cat.key} className={styles.fullWidth}>
+                  <div className={styles.categoryBlock}>
+                    <label className={styles.mainRow}>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(cat.key)}
+                        onChange={() => toggleMain(cat)}
+                      />
+                      <span>{cat.label}</span>
+                    </label>
                   </div>
                 </div>
-              );
-            })}
-
-            {visibleCategoryTree.filter((cat) => !cat.sub).map((cat) => (
-              <div key={cat.key} className={styles.fullWidth}>
-                <div className={styles.categoryBlock}>
-                  <label className={styles.mainRow}>
-                    <input
-                      type="checkbox"
-                      checked={selected.has(cat.key)}
-                      onChange={() => toggleMain(cat)}
-                    />
-                    <span>{cat.label}</span>
-                  </label>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+          <div className={styles.cta}>
+            <Button
+              variant="primary"
+              onClick={onGenerateRoute}
+              disabled={isGenerating || !cityId}
+            >
+              Generate Route
+            </Button>
+          </div>
+         </div>
 
         {errorMsg && (
           <div className={styles.errorBanner}>
             ⚠️ {errorMsg}
           </div>
         )}
-
-        <div className={styles.cta}>
-          <Button
-            variant="primary"
-            onClick={onGenerateRoute}
-            disabled={isGenerating}
-          >
-            Generate Route
-          </Button>
-        </div>
       </div>
     </div>
   );

@@ -1,19 +1,24 @@
-.page{
+.page {
   width: 100%;
   padding: 44px 16px;
+
+  min-height: 100vh;              /* 🔥 kritik */
+  display: flex;
+  flex-direction: column;
 }
 
-.hero{
+.hero {
   width: 100%;
   max-width: 980px;
   margin: 0 auto;
+
+  flex: 1;                       /* 🔥 kritik */
 
   display: flex;
   flex-direction: column;
   gap: 18px;
 
   position: relative;
-  overflow: visible;
 }
 
 .brand{
@@ -136,6 +141,105 @@
 .optionPin{
   opacity: 0.9;
 }
+/* 🔥 Overlay (blur aynen kalsın) */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+/* 🔥 Card (tam beyaz) */
+.modalCard {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px;
+  width: 420px;
+
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  text-align: center;
+
+  animation: modalPop 0.25s ease;
+}
+
+/* 🔥 Title */
+.modalTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a237e; /* lacivert */
+  margin-bottom: 12px;
+}
+
+/* 🔥 Main text */
+.modalText {
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+/* 🔥 Sub text */
+.modalSubText {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 22px;
+  line-height: 1.4;
+}
+
+/* 🔥 Buttons */
+.modalActions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* 🟠 Continue */
+.primaryBtn {
+  background: #f17720;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 500;
+
+  transition: all 0.2s ease;
+}
+
+.primaryBtn:hover {
+  background: #f38a3d;
+}
+
+/* ⚪ Modify (GRİ) */
+.secondaryBtn {
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.secondaryBtn:hover {
+  background: #e5e7eb;
+}
+
+/* ✨ Animation */
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
 
 .empty{
   padding: 10px;
@@ -168,10 +272,39 @@
 }
 
 /* --- Range --- */
+.disabledSection {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* slider disabled görünüm */
+.rangeRow input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* slider interaction kapalı */
+.rangeRow input[type="range"]:disabled {
+  pointer-events: none;
+}
+
+/* number input disabled */
+.valuePill input:disabled {
+  background: transparent;
+  color: var(--muted-text);
+}
+
 .rangeRow{
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 90px;
 }
 
 .rangeHead{
@@ -325,12 +458,14 @@
 }
 
 /* CTA */
-.cta{
+.cta {
   display: flex;
   justify-content: center;
-  padding: 4px 0 0;
 }
 
+.cta button {
+  width: fit-content;
+}
 
 .inlineQuote{
   margin: -4px 0 8px;
