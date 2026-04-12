@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BIL495 - QUAD-CORE | GUIDE Project</title>
+    <title>QUAD-CORE | GUIDE Project</title>
 
     <style>
+        
         :root {
             --guide-navy: #050a78;
             --guide-orange: #f58220;
@@ -160,6 +161,18 @@
             background-color: #fff7ef;
         }
 
+        .hero-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+        
+        .hero-logo {
+            height: 48px;
+            object-fit: contain;
+        }
+
         footer {
             margin-top: 64px;
             padding: 24px 16px;
@@ -200,10 +213,13 @@
 
     <div class="container">
 
-        <header>
+    <header>
+        <div class="hero-title">
+            <img src="./quad-core/public/logo.png" alt="GUIDE Logo" class="hero-logo">
             <h1>GUIDE</h1>
-            <p>BIL495 – QUAD-CORE Graduation Project</p>
-        </header>
+        </div>
+        <p>BIL495 – QUAD-CORE Graduation Project</p>
+    </header>
 
         <section class="section-box">
             <h3>Team Members</h3>
@@ -229,10 +245,6 @@
             </ul>
         </section>
 
-        <div class="actions">
-            <a href="#" class="btn btn-primary">Start Planning</a>
-            <a href="#" class="btn btn-secondary">How GUIDE Works</a>
-        </div>
 
     </div>
 
