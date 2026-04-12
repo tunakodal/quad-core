@@ -26,23 +26,6 @@ _ERROR_RESPONSES = {
 }
 
 
-def _calculate_days_from_poi_count(poi_count: int) -> int:
-    THRESHOLDS = [
-        (9, 1),
-        (18, 2),
-        (30, 3),
-        (45, 4),
-        (63, 5),
-        (81, 6),
-        (100, 7),
-    ]
-
-    for limit, days in THRESHOLDS:
-        if poi_count <= limit:
-            return days
-    return 8  # fallback (100+)
-
-
 class RouteController:
     """
     Handles route generation and replanning endpoints by validating requests,
@@ -64,7 +47,6 @@ class RouteController:
         self._itinerary_service = itinerary_service
         self._routing_service = routing_service
 
-
     async def generate_route(self, req: RouteRequest) -> RouteResponse:
         """Generate a multi-day itinerary from user preferences."""
         validation = self._validator.validate_route_request(req)
@@ -72,6 +54,7 @@ class RouteController:
             raise HTTPException(status_code=422, detail=validation.errors)
 
         pois = await self._poi_service.get_candidate_pois(req.preferences)
+        pois = await self._poi_service.filter_by_constraints(pois, req.constraints)
 
         if len(pois) < 2:
             raise HTTPException(
@@ -82,7 +65,6 @@ class RouteController:
         itinerary = await self._itinerary_service.build_itinerary(
             pois, req.constraints, req.preferences
         )
-
         route_plan = await self._routing_service.generate_route(itinerary, req.constraints)
 
         return RouteResponse(
@@ -127,26 +109,19 @@ class RouteController:
         self, req: TripDaySuggestionRequest
     ) -> TripDaySuggestionResponse:
         """Suggest max feasible trip days based on available POIs."""
-
-        # 🔹 validation
         validation = self._validator.validate_trip_day_suggestion_request(req)
         if not validation.is_valid:
             raise HTTPException(status_code=422, detail=validation.errors)
 
-        # 🔹 count POIs
-        count = await self._poi_service.count_available_pois(
-            req.city,
-            req.categories
+        count = await self._poi_service.count_available_pois(req.city, req.categories)
+
+        max_days = min(
+            count // settings.pois_per_day_baseline,
+            settings.max_trip_days
         )
 
-        # 🔹 NEW: threshold-based day calculation
-        max_days = _calculate_days_from_poi_count(count)
-
-        # 🔹 clamp to system max
-        max_days = min(max_days, settings.max_trip_days)
-
         return TripDaySuggestionResponse(
-            max_recommended_days=max(max_days, 1),  # safety
+            max_recommended_days=max(max_days, 1),
             poi_count=count,
             warnings=validation.warnings,
         )

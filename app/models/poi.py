@@ -20,10 +20,6 @@ class Poi(BaseModel):
     location: GeoPoint
     estimated_visit_duration: int  # minutes
 
-    # 🔥 YENİ EKLENENLER
-    google_rating: float | None = None
-    google_reviews_total: int | None = None
-
 
 class PoiContent(BaseModel):
     """Content package for a POI: text description, images, and optional audio."""

@@ -144,11 +144,6 @@
   padding: 16px;
 }
 
-.daysBar {
-  display: flex;
-  gap: 10px;
-}
-
 /* ===== DAYS SECTION ===== */
 
 .daysSection {
@@ -185,8 +180,8 @@
 
 .daysBar {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 12px; /* varsa */
 }
 
 /* Card */
@@ -207,6 +202,8 @@
   cursor: pointer;
 
   transition: all 160ms ease;
+
+  flex: 1;
 }
 
 /* Hover */
@@ -236,7 +233,7 @@
 /* Title */
 
 .dayTabLabel {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 540;
   color: var(--primary);
 }

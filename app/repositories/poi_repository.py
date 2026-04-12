@@ -88,12 +88,13 @@ class PoiRepository(AbstractPoiRepository):
         """
         Şehir ve kategori listesine göre POI filtreler.
         categories boşsa şehirdeki tüm POI'lar döner.
+        Frontend key'leri DB değerlerine normalize edilir.
         """
         city_pois = await self.find_by_city(city)
         if not categories:
             return city_pois
-        cat_lower = {c.lower() for c in categories}
-        return [p for p in city_pois if p.category.lower() in cat_lower]
+        db_cats = _normalize_categories(categories)
+        return [p for p in city_pois if p.category.lower() in db_cats]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
         """ID'ye göre tek POI döner; bulunamazsa None."""
@@ -102,21 +103,64 @@ class PoiRepository(AbstractPoiRepository):
 
 # ── Supabase Data API implementasyonu ────────────────────────────
 
+# Frontend CATEGORY_TREE key'lerinden DB'deki main_category_1 değerlerine eşleme.
+# Alt kategoriler (archaeology, religious vb.) üst kategoriye yönlendirilir.
+_CATEGORY_KEY_TO_DB: dict[str, str] = {
+    # Üst kategoriler
+    "museums":   "museums",
+    "cultural":  "cultural heritage",
+    "nature":    "nature",
+    # Cultural Heritage alt kategorileri
+    "archaeology":   "cultural heritage",
+    "architecture":  "cultural heritage",
+    "fortifications": "cultural heritage",
+    "infrastructure": "cultural heritage",
+    "religious":     "cultural heritage",
+    "transport":     "cultural heritage",
+    "monumental":    "cultural heritage",
+    # Nature alt kategorileri
+    "parks":    "nature",
+    "terrain":  "nature",
+    "water":    "nature",
+    "wildlife": "nature",
+}
+
+
+def _normalize_categories(categories: list[str]) -> set[str]:
+    """
+    Frontend'den gelen kategori key'lerini DB'deki değerlere dönüştürür.
+    Bilinmeyen key'ler olduğu gibi lowercase olarak bırakılır (gelecekteki
+    yeni kategorilere karşı toleranslı davranmak için).
+    """
+    result = set()
+    for cat in categories:
+        lower = cat.lower()
+        result.add(_CATEGORY_KEY_TO_DB.get(lower, lower))
+    return result
+
+
 # Supabase'deki pois tablosunda estimated_visit_duration kolonu yok;
 # tüm POI'lar için sabit 60 dakika kullanılır.
 _DEFAULT_VISIT_DURATION = 60
 
 # Supabase'den çekilecek kolon listesi — sadece ihtiyaç duyulanlar
-_POI_COLUMNS = "id, name, city, latitude, longitude, categories, main_category_1, google_rating, google_reviews_total"
+_POI_COLUMNS = "id, name, city, latitude, longitude, categories, main_category_1"
 
 
 def _row_to_poi(row: dict) -> Poi:
+    """
+    Supabase'den dönen satır dict'ini Poi domain nesnesine dönüştürür.
+
+    Alan dönüşümleri:
+      id             → str()  (tabloda INTEGER, domain'de str)
+      main_category_1 → Poi.category  (yoksa categories[0], o da yoksa 'Other')
+      estimated_visit_duration → tabloda yok, _DEFAULT_VISIT_DURATION sabiti kullanılır
+    """
     raw_cats = row.get("categories") or []
     category = (
         row.get("main_category_1")
         or (raw_cats[0] if raw_cats else "Other")
     )
-
     return Poi(
         id=str(row["id"]),
         name=row["name"],
@@ -127,10 +171,6 @@ def _row_to_poi(row: dict) -> Poi:
             longitude=row["longitude"],
         ),
         estimated_visit_duration=_DEFAULT_VISIT_DURATION,
-
-        # 🔥 YENİ EKLENENLER
-        google_rating=row.get("google_rating"),
-        google_reviews_total=row.get("google_reviews_total"),
     )
 
 
@@ -162,13 +202,14 @@ class PostgresPoiRepository(AbstractPoiRepository):
         """
         Şehir ve kategori listesine göre POI filtreler.
         categories boşsa şehirdeki tüm POI'lar döner.
-        Filtreleme Python tarafında yapılır (büyük/küçük harf duyarsız).
+        Frontend key'leri DB değerlerine normalize edilir; filtreleme
+        Python tarafında uygulanır.
         """
         all_pois = await self.find_by_city(city)
         if not categories:
             return all_pois
-        cat_lower = {c.lower() for c in categories}
-        return [p for p in all_pois if p.category.lower() in cat_lower]
+        db_cats = _normalize_categories(categories)
+        return [p for p in all_pois if p.category.lower() in db_cats]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
         """ID'ye göre tek POI döner; bulunamazsa None."""
