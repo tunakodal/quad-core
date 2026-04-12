@@ -37,7 +37,7 @@ class OsrmClient:
 
         Args:
             waypoints: Ordered list of GeoPoints to route through.
-            profile: Routing profile (DRIVING or WALKING).
+            profile: Routing profile (DRIVING).
 
         Returns:
             OsrmRouteResponse with distance, duration, and encoded geometry.
@@ -68,7 +68,7 @@ class OsrmClient:
 
         Args:
             waypoints: List of GeoPoints to include in the trip.
-            profile: Routing profile (DRIVING or WALKING).
+            profile: Routing profile (DRIVING).
 
         Returns:
             OsrmRouteResponse with distance, duration, and encoded geometry.

@@ -1,113 +1,223 @@
-	<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BIL495 - QUAD-CORE | GUIDE Project</title>
+    <title>QUAD-CORE | GUIDE Project</title>
 
     <style>
+        
+        :root {
+            --guide-navy: #050a78;
+            --guide-orange: #f58220;
+            --guide-bg: #f3f3f1;
+            --guide-text: #1f2937;
+            --guide-muted: #6b7280;
+            --guide-border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             font-family: Helvetica, Arial, sans-serif;
-            background: linear-gradient(180deg, #2c5aa0 0%, #4fa3d1 45%, #f7f9fc 45%);
-            color: #1f2933;
+            background-color: var(--guide-bg);
+            color: var(--guide-text);
+        }
+
+        .topbar {
+            background-color: var(--guide-navy);
+            color: white;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            padding: 0 32px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            height: 38px;
+            object-fit: contain;
+            display: block;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 920px;
             margin: 0 auto;
-            padding: 60px 24px 80px 24px;
+            padding: 72px 24px 80px;
+            text-align: center;
         }
 
         header {
-            text-align: center;
-            color: white;
-            margin-bottom: 80px;
+            margin-bottom: 56px;
         }
 
         header h1 {
-            font-size: 42px;
-            letter-spacing: 1.5px;
+            font-size: 64px;
             margin: 0;
-            font-weight: 700;
+            font-weight: 800;
+            color: var(--guide-navy);
+            letter-spacing: 1px;
         }
 
-        header .divider {
-            width: 120px;
-            height: 2px;
-            background-color: rgba(255,255,255,0.7);
-            margin: 24px auto;
-        }
-
-        header h2 {
+        header p {
+            margin-top: 20px;
             font-size: 22px;
-            font-weight: 400;
-            margin: 0;
-            opacity: 0.9;
+            color: var(--guide-muted);
         }
 
-        section {
+        .section-box {
             background-color: white;
-            border-radius: 12px;
-            padding: 36px 40px;
-            margin-bottom: 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid var(--guide-border);
+            border-radius: 20px;
+            padding: 32px 36px;
+            margin-bottom: 28px;
+            text-align: left;
         }
 
-        section h3 {
+        .section-box h3 {
             margin-top: 0;
-            font-size: 20px;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 12px;
             margin-bottom: 20px;
+            font-size: 22px;
+            color: var(--guide-navy);
         }
 
         .team {
-            font-size: 16px;
-            line-height: 1.8;
+            font-size: 17px;
+            line-height: 1.9;
         }
 
         .reports ul {
             list-style: none;
             padding-left: 0;
             margin: 0;
+            display: grid;
+            gap: 14px;
         }
 
         .reports li {
-            margin-bottom: 14px;
-            font-size: 16px;
+            margin: 0;
         }
 
         .reports a {
+            display: block;
             text-decoration: none;
-            color: #2563eb;
-            font-weight: 500;
+            color: var(--guide-navy);
+            font-size: 16px;
+            font-weight: 700;
+            padding: 16px 18px;
+            border: 1px solid var(--guide-border);
+            border-radius: 14px;
+            background-color: #ffffff;
+            transition: 0.2s ease;
         }
 
         .reports a:hover {
-            text-decoration: underline;
+            border-color: var(--guide-orange);
+            color: var(--guide-orange);
+            background-color: #fff7ef;
+            transform: translateY(-1px);
+        }
+
+        .actions {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 30px;
+            border-radius: 999px;
+            font-size: 16px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--guide-orange);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.92;
+        }
+
+        .btn-secondary {
+            border: 1.5px solid var(--guide-orange);
+            color: var(--guide-orange);
+            background-color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #fff7ef;
+        }
+
+        .hero-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+        
+        .hero-logo {
+            height: 90px;
+            object-fit: contain;
         }
 
         footer {
+            margin-top: 64px;
+            padding: 24px 16px;
+            background-color: var(--guide-navy);
+            color: white;
             text-align: center;
             font-size: 14px;
-            color: #6b7280;
-            margin-top: 60px;
+        }
+
+        @media (max-width: 700px) {
+            .topbar {
+                padding: 0 18px;
+                height: 72px;
+            }
+
+            header h1 {
+                font-size: 44px;
+            }
+
+            header p {
+                font-size: 18px;
+            }
+
+            .section-box {
+                padding: 24px;
+            }
         }
     </style>
 </head>
 
 <body>
 
+    <div class="topbar"></div>
+    
     <div class="container">
 
-        <header>
-            <h1>BIL495 – QUAD-CORE</h1>
-            <div class="divider"></div>
-            <h2>GUIDE Project</h2>
-        </header>
+    <header>
+        <div class="hero-title">
+            <img src="./quad-core/public/logo.png" alt="GUIDE Logo" class="hero-logo">
+            <h1>GUIDE</h1>
+        </div>
+        <p>QUAD-CORE Graduation Project</p>
+    </header>
 
-        <section>
+        <section class="section-box">
             <h3>Team Members</h3>
             <div class="team">
                 Ebrar Sude Doğan<br>
@@ -117,25 +227,26 @@
             </div>
         </section>
 
-        <section class="reports">
+        <section class="section-box reports">
             <h3>Reports</h3>
             <ul>
                 <li><a href="https://prism.openai.com/?u=d73f7893-3f69-4f01-993e-6cf2c81fde60&pg=1&m=main.tex&d=7">Project Proposal</a></li>
                 <li><a href="https://prism.openai.com/?u=bfdb1182-e9a2-4a67-9eb1-1652d98e749e&pg=1&m=main.tex&d=7">Project Specifications Report</a></li>
                 <li><a href="https://prism.openai.com/?u=cd302634-f3dc-43ab-8999-2a1979115d13&pg=1&m=main.tex&d=7">Analysis Report</a></li>
                 <li><a href="https://prism.openai.com/?u=6ae9e170-5330-4dec-a098-ecd39a396b2a&pg=1&m=main.tex&d=7">High-Level Design Report</a></li>
-				<li><a href="https://prism.openai.com/?u=bf41c171-acbc-4c02-93d3-288e1200907b&pg=1&m=main.tex&d=7">Low-Level Design Report</a></li>
-				<li><a href="https://prism.openai.com/?u=93126d1e-e18b-46ea-93f8-de1d5ba735e8&pg=1&m=main.tex&d=7">Test Plan Report</a></li>
-				<li><a href="https://prism.openai.com/?u=dcebe4f0-814d-479c-a3f6-fd7cf6ba357c&pg=1&m=main.tex&d=7">Final Report</a></li>
-				<li><a href="https://prism.openai.com/?u=0a6b0a07-6ab0-4dc8-8788-63cd5f863588&pg=1&m=main.tex&d=7">Proje Kısıt ve Etkiler Dokümanı (PKE)</a></li>
+                <li><a href="https://prism.openai.com/?u=bf41c171-acbc-4c02-93d3-288e1200907b&pg=1&m=main.tex&d=7">Low-Level Design Report</a></li>
+                <li><a href="https://prism.openai.com/?u=93126d1e-e18b-46ea-93f8-de1d5ba735e8&pg=1&m=main.tex&d=7">Test Plan Report</a></li>
+                <li><a href="https://prism.openai.com/?u=dcebe4f0-814d-479c-a3f6-fd7cf6ba357c&pg=1&m=main.tex&d=7">Final Report</a></li>
+                <li><a href="https://docs.google.com/document/d/1FOpZnFoKdS-1kO1vym2xl-j9ib39Y3YZpwbQVH9tx2A/edit?usp=share_link">Proje Kısıt ve Etkiler Dokümanı (PKE)</a></li>
             </ul>
         </section>
 
-        <footer>
-            BIL495 – Graduation Project | 2025–2026
-        </footer>
 
     </div>
+
+    <footer>
+        © 2026 GUIDE QUAD-CORE. All rights reserved.
+    </footer>
 
 </body>
 </html>
