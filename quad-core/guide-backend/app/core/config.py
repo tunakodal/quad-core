@@ -1,8 +1,14 @@
-from pydantic_settings import BaseSettings
 from typing import Optional
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
     # ── Supabase ──────────────────────────────────────────────────
     supabase_url: Optional[str] = None
     supabase_key: Optional[str] = None  # anon/publishable key
@@ -21,10 +27,6 @@ class Settings(BaseSettings):
     min_daily_distance_meters: int = 1000
     max_category_count: int = 10
     pois_per_day_baseline: int = 3
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 settings = Settings()

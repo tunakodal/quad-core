@@ -68,9 +68,15 @@ class RoutingService:
         return route_plan
 
     async def update_route_after_edits(
-        self, itinerary: Itinerary, edits: UserEdits
+            self, itinerary: Itinerary, edits: UserEdits
     ) -> RoutePlan:
-        """Recompute only the days affected by user edits."""
+        """
+        Recompute only the days affected by user edits.
+
+        For edited days, the current POI order in the itinerary is treated as
+        authoritative and routed with the ordered OSRM route endpoint.
+        Unaffected days reuse their existing route segments.
+        """
         affected_days = {op.day_index for op in edits.reorder_operations}
         affected_days |= {
             day.day_index
@@ -80,19 +86,23 @@ class RoutingService:
         }
 
         osrm_outputs = []
+
         for day in itinerary.days:
             if day.day_index in affected_days or not day.route_segment:
                 waypoints = [poi.location for poi in day.pois]
                 if waypoints:
-                    result = await self.osrm_client.trip(waypoints, RoutingProfile.DRIVING)
+                    result = await self.osrm_client.route(
+                        waypoints,
+                        RoutingProfile.DRIVING,
+                    )
                     osrm_outputs.append(result)
             else:
-                # Reuse existing segment as a mock OSRM response
                 class _Passthrough:
                     def __init__(self, seg):
                         self.distance = seg.distance
                         self.duration = seg.duration
                         self.geometry_encoded = seg.geometry_encoded
+
                 osrm_outputs.append(_Passthrough(day.route_segment))
 
         return self.route_assembler.assemble(itinerary, osrm_outputs)

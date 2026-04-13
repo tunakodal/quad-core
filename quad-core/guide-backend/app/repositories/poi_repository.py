@@ -1,17 +1,31 @@
 """
 POI data source and repository implementations.
 
-İki strateji:
-  JsonDataSource / PoiRepository      — JSON dosyasından okur (geliştirme / fallback)
-  PostgresPoiRepository               — Supabase Data API üzerinden okur (production)
+Two strategies:
+  JsonDataSource / PoiRepository      — reads from JSON (development / fallback)
+  PostgresPoiRepository               — reads from Supabase Data API (production)
 
-DB ↔ domain model farkları (PostgresPoiRepository tarafından çözülür):
-  pois.id              INTEGER  → domain Poi.id: str   (str() ile dönüştürülür)
+DB ↔ domain model mapping (handled in PostgresPoiRepository):
+  pois.id              INTEGER  → Poi.id: str   (converted using str())
+
+Taxonomy fields:
   pois.categories, main_category_1/2, sub_category_1/2/3/4
-    → domain Poi taxonomy fields
-    category alanı compatibility/display amaçlı tutulur.
-  estimated_visit_duration       → tabloda yok, sabit 60 dk kullanılır
+    → mapped to Poi taxonomy fields
+    category is retained for compatibility and display purposes.
+
+IMPORTANT:
+  - Filtering and diversity logic rely on sub_category_* fields as the source of truth.
+  - The category field is no longer the primary classification source.
+
+Estimated visit duration:
+  - Not stored in the database.
+  - Computed dynamically via `_compute_estimated_visit_duration(...)`.
+  - Calculation is based on:
+      - subcategory-based base durations
+      - review count multiplier
+      - rating multiplier
 """
+
 from __future__ import annotations
 
 import json

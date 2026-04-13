@@ -12,6 +12,8 @@ from app.schemas.dtos import TravelConstraints, TravelPreferences
 from app.services.poi_service import PoiService
 
 
+pytestmark = pytest.mark.asyncio
+
 # ── In-memory stub repository ──────────────────────────────────────────────────
 
 class InMemoryPoiRepository(AbstractPoiRepository):
