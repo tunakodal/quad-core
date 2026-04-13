@@ -106,7 +106,7 @@ class StubItineraryService:
 class StubRoutingService:
     async def generate_route(self, itinerary, constraints):
         return RoutePlan(
-            days=[
+            segments=[
                 RouteSegment(
                     day_index=1,
                     distance=5000,

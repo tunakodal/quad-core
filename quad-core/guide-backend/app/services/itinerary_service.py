@@ -10,6 +10,7 @@ from app.models.route import Itinerary, DayPlan
 from app.schemas.route_dtos import UserEdits
 from app.schemas.travel import TravelConstraints, TravelPreferences
 from app.services.itinerary_planner import MonteCarloItineraryPlanner
+from app.repositories.interfaces import AbstractPoiRepository
 
 
 class ItineraryService:
@@ -18,8 +19,13 @@ class ItineraryService:
     Planlama kararlarını MonteCarloItineraryPlanner'a devreder.
     """
 
-    def __init__(self, planner: MonteCarloItineraryPlanner):
+    def __init__(
+            self,
+            planner: MonteCarloItineraryPlanner,
+            poi_repository: AbstractPoiRepository,
+    ):
         self.planner = planner
+        self.poi_repository = poi_repository
 
     async def build_itinerary(
         self, pois: list[Poi], constraints: TravelConstraints, prefs: TravelPreferences
@@ -37,30 +43,75 @@ class ItineraryService:
             constraints: TravelConstraints,
             prefs: TravelPreferences,
     ) -> Itinerary:
-        """
-        Applies user edits to an existing itinerary.
 
-        Current behavior:
-        - removes POIs listed in removed_poi_ids
-        - applies intra-day reorder operations exactly as requested
-        - preserves unaffected days as-is
+        existing_map = {
+            poi.id: poi
+            for day in existing.days
+            for poi in day.pois
+        }
 
-        Route recomputation is handled separately by RoutingService.
-        """
-        # 1) remove
+        if edits.ordered_poi_ids_by_day:
+            new_days: list[DayPlan] = []
+
+            for day in existing.days:
+                requested_ids = edits.ordered_poi_ids_by_day.get(day.day_index)
+
+                if requested_ids is None:
+                    new_days.append(day)
+                    continue
+
+                pois: list[Poi] = []
+                seen: set[str] = set()
+
+                for pid in requested_ids:
+                    if pid in seen:
+                        continue
+                    seen.add(pid)
+
+                    poi = existing_map.get(pid)
+
+                    if poi is None:
+                        poi = await self.poi_repository.find_by_id(pid)
+
+                    if poi is None:
+                        raise ValueError(f"Unknown POI id in replanning request: {pid}")
+
+                    pois.append(poi)
+
+                new_days.append(
+                    DayPlan(day_index=day.day_index, pois=pois)
+                )
+
+            return Itinerary(days=new_days)
+
+        if edits.selected_poi_ids:
+            selected_ids = set(edits.selected_poi_ids)
+
+            new_days: list[DayPlan] = []
+
+            for day in existing.days:
+                filtered = [
+                    poi for poi in day.pois
+                    if poi.id in selected_ids
+                ]
+                new_days.append(
+                    DayPlan(day_index=day.day_index, pois=filtered)
+                )
+
+            return Itinerary(days=new_days)
+
         new_days: list[DayPlan] = []
         removed_ids = set(edits.removed_poi_ids)
 
         for day in existing.days:
-            remaining_pois = [
+            remaining = [
                 poi for poi in day.pois
                 if poi.id not in removed_ids
             ]
             new_days.append(
-                DayPlan(day_index=day.day_index, pois=remaining_pois)
+                DayPlan(day_index=day.day_index, pois=remaining)
             )
 
-        # 2) reorder
         reorder_map = {
             op.day_index: op.ordered_poi_ids
             for op in edits.reorder_operations
@@ -70,22 +121,21 @@ class ItineraryService:
             if day.day_index not in reorder_map:
                 continue
 
-            requested_order = reorder_map[day.day_index]
-            poi_by_id = {poi.id: poi for poi in day.pois}
+            order = reorder_map[day.day_index]
+            poi_by_id = {p.id: p for p in day.pois}
 
-            # keep only IDs that still exist after removal
             reordered = [
-                poi_by_id[poi_id]
-                for poi_id in requested_order
-                if poi_id in poi_by_id
+                poi_by_id[i]
+                for i in order
+                if i in poi_by_id
             ]
 
-            # append any leftover POIs not mentioned in the reorder request
             leftover = [
-                poi for poi in day.pois
-                if poi.id not in requested_order
+                p for p in day.pois
+                if p.id not in order
             ]
 
             day.pois = reordered + leftover
-        
+
         return Itinerary(days=new_days)
+

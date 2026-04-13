@@ -276,7 +276,7 @@ def test_poi_query_rejects_missing_city(validator):
 
 
 def test_poi_query_valid(validator):
-    query = PoiQuery(city="Istanbul", categories=["Historical"])
+    query = PoiQuery(city="Istanbul", categories=["Museum"])
     result = validator.validate_poi_query(query)
 
     assert result.is_valid

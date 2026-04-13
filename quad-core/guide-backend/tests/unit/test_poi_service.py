@@ -160,7 +160,7 @@ async def test_get_candidates_nonexistent_category_returns_empty(service):
 
 async def test_count_available_pois_matches_filter_result(service):
     """count_available_pois must agree with get_candidate_pois for the same inputs."""
-    city, categories = "Istanbul", ["Historical"]
+    city, categories = "Istanbul", ["Museum"]
     prefs = TravelPreferences(city=city, trip_days=1, categories=categories, max_distance_per_day=50_000)
 
     pois = await service.get_candidate_pois(prefs)
@@ -170,5 +170,5 @@ async def test_count_available_pois_matches_filter_result(service):
 
 
 async def test_count_available_pois_unknown_city_returns_zero(service):
-    count = await service.count_available_pois("Nowhere", ["Historical"])
+    count = await service.count_available_pois("Nowhere", ["Museum"])
     assert count == 0

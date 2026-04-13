@@ -118,7 +118,10 @@ async def create_container() -> AppContainer:
     itinerary_builder = ItineraryBuilder()
     plan_ranker = HeuristicPlanRanker()
     planner = MonteCarloItineraryPlanner(itinerary_builder, plan_ranker)
-    itinerary_service = ItineraryService(planner)
+    itinerary_service = ItineraryService(
+        planner=planner,
+        poi_repository=poi_repository,
+    )
 
     # ── API Boundary ──────────────────────────────────────────────
     validator = RequestValidator()

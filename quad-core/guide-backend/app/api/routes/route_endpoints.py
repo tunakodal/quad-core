@@ -124,31 +124,62 @@ class RouteController:
         )
 
     async def suggest_trip_days(
-        self, req: TripDaySuggestionRequest
+            self, req: TripDaySuggestionRequest
     ) -> TripDaySuggestionResponse:
-        """Suggest max feasible trip days based on available POIs."""
+        """
+        Suggests the maximum feasible number of trip days based on the
+        number of available POIs for the given city and categories.
 
-        # 🔹 validation
+        Behavior:
+        - Validates the incoming request.
+        - Retrieves the number of eligible POIs.
+        - Computes a recommended trip duration using a heuristic.
+        - Ensures the recommendation does not exceed system limits.
+        - Returns non-fatal warnings when the POI pool is likely insufficient.
+
+        The method does not alter core planning logic; warnings are added
+        as supplementary information for client guidance.
+        """
+
+        # Validate request
         validation = self._validator.validate_trip_day_suggestion_request(req)
         if not validation.is_valid:
             raise HTTPException(status_code=422, detail=validation.errors)
 
-        # 🔹 count POIs
+        # Count eligible POIs
         count = await self._poi_service.count_available_pois(
             req.city,
-            req.categories
+            req.categories,
         )
 
-        # 🔹 NEW: threshold-based day calculation
+        # Compute recommended days based on POI count
         max_days = _calculate_days_from_poi_count(count)
 
-        # 🔹 clamp to system max
+        # Clamp to system-wide maximum
         max_days = min(max_days, settings.max_trip_days)
 
+        # Preserve existing validation warnings
+        warnings = list(validation.warnings)
+
+        # Add guidance if POI pool is likely insufficient
+        # This does not affect the recommendation itself.
+        if count < 10:
+            warnings.append(
+                ApiWarning(
+                    code="INSUFFICIENT_POIS",
+                    severity=Severity.WARN,
+                    message=(
+                        "The number of available POIs may be insufficient for the "
+                        "requested planning scope. Consider reducing trip duration "
+                        "or adjusting selected categories."
+                    ),
+                )
+            )
+
         return TripDaySuggestionResponse(
-            max_recommended_days=max(max_days, 1),  # safety
+            max_recommended_days=max(max_days, 1),  # Ensure at least 1 day
             poi_count=count,
-            warnings=validation.warnings,
+            warnings=warnings,
         )
 
 

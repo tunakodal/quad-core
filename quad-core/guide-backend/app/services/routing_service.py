@@ -78,12 +78,16 @@ class RoutingService:
         Unaffected days reuse their existing route segments.
         """
         affected_days = {op.day_index for op in edits.reorder_operations}
+
         affected_days |= {
             day.day_index
             for day in itinerary.days
             for poi in day.pois
             if poi.id in edits.removed_poi_ids
         }
+
+        if edits.ordered_poi_ids_by_day:
+            affected_days |= set(edits.ordered_poi_ids_by_day.keys())
 
         osrm_outputs = []
 
@@ -105,4 +109,9 @@ class RoutingService:
 
                 osrm_outputs.append(_Passthrough(day.route_segment))
 
-        return self.route_assembler.assemble(itinerary, osrm_outputs)
+        route_plan = self.route_assembler.assemble(itinerary, osrm_outputs)
+
+        for day, seg in zip(itinerary.days, route_plan.segments):
+            day.route_segment = seg
+
+        return route_plan
