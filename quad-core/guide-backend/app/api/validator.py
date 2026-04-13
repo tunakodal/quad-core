@@ -17,30 +17,52 @@ class RequestValidator:
     def validate_route_request(self, req: RouteRequest) -> ValidationResult:
         errors, warnings = [], []
 
-        if req.preferences.trip_days < 1:
-            errors.append("trip_days must be at least 1.")
-        if req.preferences.trip_days > self.max_trip_days:
-            errors.append(f"trip_days cannot exceed {self.max_trip_days}.")
-        if req.preferences.max_distance_per_day < self.min_daily_distance:
-            errors.append(
-                f"max_distance_per_day must be >= {self.min_daily_distance} meters."
-            )
-        if not req.preferences.city:
+        trip_days = req.preferences.trip_days
+        max_distance = req.preferences.max_distance_per_day
+        city = req.preferences.city
+        categories = req.preferences.categories
+
+        if not city:
             errors.append("city is required.")
-        if len(req.preferences.categories) > self.max_category_count:
+
+        if not categories:
+            errors.append("categories must not be empty.")
+
+        if len(categories) > self.max_category_count:
             errors.append(
                 f"categories cannot exceed {self.max_category_count} items."
             )
-        if not req.preferences.categories:
-            warnings.append(
-                ApiWarning(
-                    code="NO_CATEGORIES",
-                    severity=Severity.WARN,
-                    message="No categories specified; all POIs will be considered.",
-                )
+
+        # TC-UT-03: at least one planning constraint must exist
+        if trip_days is None and max_distance is None:
+            errors.append(
+                "At least one planning constraint must be provided: trip_days or max_distance_per_day."
             )
 
-        return ValidationResult(is_valid=len(errors) == 0, errors=errors, warnings=warnings)
+        if trip_days is not None:
+            if trip_days < 1:
+                errors.append("trip_days must be at least 1.")
+            if trip_days > self.max_trip_days:
+                errors.append(f"trip_days cannot exceed {self.max_trip_days}.")
+
+        if max_distance is not None:
+            if max_distance < self.min_daily_distance:
+                errors.append(
+                    f"max_distance_per_day must be >= {self.min_daily_distance} meters."
+                )
+
+            city_limit = self._get_city_max_distance(city)
+
+            if city_limit is not None and max_distance > city_limit:
+                errors.append(
+                    f"max_distance_per_day cannot exceed {city_limit} meters for city={city}."
+                )
+
+        return ValidationResult(
+            is_valid=len(errors) == 0,
+            errors=errors,
+            warnings=warnings,
+        )
 
     def validate_replan_request(self, req: ReplanRequest) -> ValidationResult:
         errors = []
@@ -72,3 +94,11 @@ class RequestValidator:
         if not req.city:
             errors.append("city is required.")
         return ValidationResult(is_valid=len(errors) == 0, errors=errors)
+
+
+    def _get_city_max_distance(self, city: str) -> int | None:
+        """
+        Hook for city-based maximum daily distance.
+        Returns None by default; tests or higher-level integrations may override this.
+        """
+        return None

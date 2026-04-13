@@ -52,6 +52,17 @@ class HeuristicPlanRanker(PlanRanker):
                     penalty += 1.0
 
         # Çeşitlilik bonusu: güzergah genelinde kaç farklı kategori var
-        diversity = len({poi.category for day in candidate.days for poi in day.pois})
+        diversity = len({
+            c
+            for day in candidate.days
+            for poi in day.pois
+            for c in [
+                poi.sub_category_1,
+                poi.sub_category_2,
+                poi.sub_category_3,
+                poi.sub_category_4,
+            ]
+            if c
+        })
 
         return diversity - penalty

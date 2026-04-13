@@ -1,15 +1,31 @@
 """
 POI data source and repository implementations.
 
-İki strateji:
-  JsonDataSource / PoiRepository      — JSON dosyasından okur (geliştirme / fallback)
-  PostgresPoiRepository               — Supabase Data API üzerinden okur (production)
+Two strategies:
+  JsonDataSource / PoiRepository      — reads from JSON (development / fallback)
+  PostgresPoiRepository               — reads from Supabase Data API (production)
 
-DB ↔ domain model farkları (PostgresPoiRepository tarafından çözülür):
-  pois.id              INTEGER  → domain Poi.id: str   (str() ile dönüştürülür)
-  pois.categories      TEXT[]   → domain Poi.category: str  (main_category_1 kullanılır)
-  estimated_visit_duration       → tabloda yok, sabit 60 dk kullanılır
+DB ↔ domain model mapping (handled in PostgresPoiRepository):
+  pois.id              INTEGER  → Poi.id: str   (converted using str())
+
+Taxonomy fields:
+  pois.categories, main_category_1/2, sub_category_1/2/3/4
+    → mapped to Poi taxonomy fields
+    category is retained for compatibility and display purposes.
+
+IMPORTANT:
+  - Filtering and diversity logic rely on sub_category_* fields as the source of truth.
+  - The category field is no longer the primary classification source.
+
+Estimated visit duration:
+  - Not stored in the database.
+  - Computed dynamically via `_compute_estimated_visit_duration(...)`.
+  - Calculation is based on:
+      - subcategory-based base durations
+      - review count multiplier
+      - rating multiplier
 """
+
 from __future__ import annotations
 
 import json
@@ -46,13 +62,23 @@ class JsonDataSource(AbstractDataSource):
             poi = Poi(
                 id=item["id"],
                 name=item["name"],
-                category=item["category"],
+                category=item.get("category", "Other"),
+
+                main_category_1=item.get("main_category_1"),
+                main_category_2=item.get("main_category_2"),
+                sub_category_1=item.get("sub_category_1"),
+                sub_category_2=item.get("sub_category_2"),
+                sub_category_3=item.get("sub_category_3"),
+                sub_category_4=item.get("sub_category_4"),
+
                 city=item["city"],
                 location=GeoPoint(
                     latitude=item["location"]["latitude"],
                     longitude=item["location"]["longitude"],
                 ),
-                estimated_visit_duration=item["estimated_visit_duration"],
+                estimated_visit_duration=item.get("estimated_visit_duration", 60),
+                google_rating=item.get("google_rating"),
+                google_reviews_total=item.get("google_reviews_total"),
             )
             self._pois.append(poi)
             self._index[poi.id] = poi
@@ -83,17 +109,18 @@ class PoiRepository(AbstractPoiRepository):
         return [p for p in all_pois if p.city.lower() == city.lower()]
 
     async def find_by_city_and_categories(
-        self, city: str, categories: list[str]
+            self, city: str, categories: list[str]
     ) -> list[Poi]:
         """
-        Şehir ve kategori listesine göre POI filtreler.
-        categories boşsa şehirdeki tüm POI'lar döner.
+        Filters POIs by city and requested categories.
+        If categories is empty, returns all POIs in the city.
+        Category filtering is based on POI subcategories.
         """
         city_pois = await self.find_by_city(city)
         if not categories:
             return city_pois
-        cat_lower = {c.lower() for c in categories}
-        return [p for p in city_pois if p.category.lower() in cat_lower]
+
+        return [p for p in city_pois if _poi_matches_categories(p, categories)]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
         """ID'ye göre tek POI döner; bulunamazsa None."""
@@ -102,18 +129,97 @@ class PoiRepository(AbstractPoiRepository):
 
 # ── Supabase Data API implementasyonu ────────────────────────────
 
-# Supabase'deki pois tablosunda estimated_visit_duration kolonu yok;
-# tüm POI'lar için sabit 60 dakika kullanılır.
-_DEFAULT_VISIT_DURATION = 60
+_POI_COLUMNS = (
+    "id, name, city, latitude, longitude, categories, "
+    "main_category_1, main_category_2, "
+    "sub_category_1, sub_category_2, sub_category_3, sub_category_4, "
+    "google_rating, google_reviews_total"
+)
+def _compute_estimated_visit_duration(row: dict) -> int:
+    """
+    Computes estimated visit duration (minutes) according to the report logic:
 
-# Supabase'den çekilecek kolon listesi — sadece ihtiyaç duyulanlar
-_POI_COLUMNS = "id, name, city, latitude, longitude, categories, main_category_1, google_rating, google_reviews_total"
+    1. Category-based base duration assignment
+    2. Review-count adjustment
+    3. Rating-based adjustment
+    4. Final clipping and rounding
 
+    For multiple categories:
+        category_duration = 0.70 * max_duration + 0.30 * avg_duration
+    """
+
+    SUBCATEGORY_DURATION = {
+        "Ancient & Archaeology": 120,
+        "Museum": 120,
+        "Fortifications": 90,
+        "Civil & Traditional Architecture": 75,
+        "Terrain & Landforms": 75,
+        "Wildlife & Natural Experience": 75,
+        "Parks & Outdoor": 60,
+        "Water & Coastal": 60,
+        "Urban & Monumental Heritage": 60,
+        "Transportation as Heritage": 60,
+        "Historical Infrastructure": 60,
+        "Religious": 45,
+    }
+
+    DEFAULT_DURATION = 60
+
+    categories = [
+        row.get("sub_category_1"),
+        row.get("sub_category_2"),
+        row.get("sub_category_3"),
+        row.get("sub_category_4"),
+    ]
+    categories = [c for c in categories if c]
+
+    if categories:
+        durations = [
+            SUBCATEGORY_DURATION.get(category, DEFAULT_DURATION)
+            for category in categories
+        ]
+        max_duration = max(durations)
+        avg_duration = sum(durations) / len(durations)
+        category_duration = 0.70 * max_duration + 0.30 * avg_duration
+    else:
+        category_duration = DEFAULT_DURATION
+
+    reviews = row.get("google_reviews_total") or 0
+    rating = row.get("google_rating") or 0
+
+    # Review-count multiplier
+    if reviews < 50:
+        m_review = 0.90
+    elif reviews < 200:
+        m_review = 1.00
+    elif reviews < 1000:
+        m_review = 1.10
+    else:
+        m_review = 1.20
+
+    # Rating-based multiplier
+    if rating < 3.5:
+        m_rating = 0.90
+    elif rating < 4.2:
+        m_rating = 1.00
+    elif rating < 4.6:
+        m_rating = 1.10
+    else:
+        m_rating = 1.20
+
+    adjusted_duration = category_duration * m_review * m_rating
+
+    duration = int(round(adjusted_duration / 5) * 5)
+    duration = max(15, min(duration, 360))
+
+    return duration
 
 def _row_to_poi(row: dict) -> Poi:
     raw_cats = row.get("categories") or []
+
     category = (
         row.get("main_category_1")
+        or row.get("sub_category_1")
         or (raw_cats[0] if raw_cats else "Other")
     )
 
@@ -121,18 +227,47 @@ def _row_to_poi(row: dict) -> Poi:
         id=str(row["id"]),
         name=row["name"],
         category=category,
+
+        main_category_1=row.get("main_category_1"),
+        main_category_2=row.get("main_category_2"),
+        sub_category_1=row.get("sub_category_1"),
+        sub_category_2=row.get("sub_category_2"),
+        sub_category_3=row.get("sub_category_3"),
+        sub_category_4=row.get("sub_category_4"),
+
         city=row["city"],
         location=GeoPoint(
             latitude=row["latitude"],
             longitude=row["longitude"],
         ),
-        estimated_visit_duration=_DEFAULT_VISIT_DURATION,
 
-        # 🔥 YENİ EKLENENLER
+        estimated_visit_duration=_compute_estimated_visit_duration(row),
+
         google_rating=row.get("google_rating"),
         google_reviews_total=row.get("google_reviews_total"),
     )
 
+def _extract_poi_subcategories(poi: Poi) -> set[str]:
+    return {
+        c.lower()
+        for c in [
+            poi.sub_category_1,
+            poi.sub_category_2,
+            poi.sub_category_3,
+            poi.sub_category_4,
+        ]
+        if c
+    }
+
+
+def _poi_matches_categories(poi: Poi, categories: list[str]) -> bool:
+    if not categories:
+        return True
+
+    wanted = {c.lower() for c in categories}
+    poi_subs = _extract_poi_subcategories(poi)
+
+    return not wanted.isdisjoint(poi_subs)
 
 class PostgresPoiRepository(AbstractPoiRepository):
     """
@@ -157,18 +292,18 @@ class PostgresPoiRepository(AbstractPoiRepository):
         return [_row_to_poi(r) for r in response.data]
 
     async def find_by_city_and_categories(
-        self, city: str, categories: list[str]
+            self, city: str, categories: list[str]
     ) -> list[Poi]:
         """
-        Şehir ve kategori listesine göre POI filtreler.
-        categories boşsa şehirdeki tüm POI'lar döner.
-        Filtreleme Python tarafında yapılır (büyük/küçük harf duyarsız).
+        Filters POIs by city and requested categories.
+        If categories is empty, returns all POIs in the city.
+        Category filtering is based on POI subcategories.
         """
         all_pois = await self.find_by_city(city)
         if not categories:
             return all_pois
-        cat_lower = {c.lower() for c in categories}
-        return [p for p in all_pois if p.category.lower() in cat_lower]
+
+        return [p for p in all_pois if _poi_matches_categories(p, categories)]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
         """ID'ye göre tek POI döner; bulunamazsa None."""
