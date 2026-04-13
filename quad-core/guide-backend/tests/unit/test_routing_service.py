@@ -8,12 +8,15 @@ from app.schemas.route_dtos import UserEdits, DayReorderOperation
 
 
 class StubOsrmClient:
-    async def trip(self, waypoints, profile=None):
+    async def route(self, waypoints, profile=None):
         return OsrmRouteResponse(
-            distance=1000,
-            duration=300,
-            geometry_encoded="encoded"
+            distance=1000 * max(len(waypoints) - 1, 1),
+            duration=300 * max(len(waypoints) - 1, 1),
+            geometry_encoded="test_geometry",
         )
+
+    async def trip(self, waypoints, profile=None):
+        return await self.route(waypoints, profile)
 
 
 @pytest.fixture

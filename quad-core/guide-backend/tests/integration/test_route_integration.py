@@ -816,6 +816,9 @@ def test_osrm_failure_returns_stable_error_response():
     """
 
     class FailingOsrmClient:
+        async def route(self, waypoints, profile=None):
+            raise httpx.ConnectError("OSRM unavailable")
+
         async def trip(self, waypoints, profile=None):
             raise httpx.ConnectError("OSRM unavailable")
 
