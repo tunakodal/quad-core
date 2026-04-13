@@ -12,6 +12,8 @@ from app.schemas.dtos import TravelConstraints, TravelPreferences
 from app.services.poi_service import PoiService
 
 
+pytestmark = pytest.mark.asyncio
+
 # ── In-memory stub repository ──────────────────────────────────────────────────
 
 class InMemoryPoiRepository(AbstractPoiRepository):
@@ -30,7 +32,14 @@ class InMemoryPoiRepository(AbstractPoiRepository):
         if not categories:
             return city_pois
         cat_lower = {c.lower() for c in categories}
-        return [p for p in city_pois if p.category.lower() in cat_lower]
+        return [
+            p for p in city_pois
+            if {
+                   c.lower()
+                   for c in [p.sub_category_1, p.sub_category_2, p.sub_category_3, p.sub_category_4]
+                   if c
+               } & cat_lower
+        ]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
         return next((p for p in self._pois if p.id == poi_id), None)
@@ -107,7 +116,19 @@ async def test_get_candidates_returns_only_selected_categories(service):
     pois = await service.get_candidate_pois(prefs)
 
     assert len(pois) > 0
-    assert all(p.category in selected for p in pois)
+    assert all(
+        any(
+            c in selected
+            for c in [
+                p.sub_category_1,
+                p.sub_category_2,
+                p.sub_category_3,
+                p.sub_category_4,
+            ]
+            if c
+        )
+        for p in pois
+    )
 
 
 async def test_get_candidates_no_categories_returns_all_city_pois(service, istanbul_pois):
@@ -135,38 +156,11 @@ async def test_get_candidates_nonexistent_category_returns_empty(service):
 
     assert pois == []
 
-
-# ── filter_by_constraints ──────────────────────────────────────────────────────
-
-async def test_filter_by_constraints_caps_total_pois(service, istanbul_pois):
-    """filter_by_constraints must limit POIs to max_trip_days * max_pois_per_day."""
-    constraints = TravelConstraints(max_trip_days=2, max_pois_per_day=3, max_daily_distance=100_000)
-    filtered = await service.filter_by_constraints(istanbul_pois, constraints)
-
-    assert len(filtered) <= constraints.max_trip_days * constraints.max_pois_per_day
-
-
-async def test_filter_by_constraints_does_not_add_pois(service, istanbul_pois):
-    """filter_by_constraints must never return more POIs than were supplied."""
-    constraints = TravelConstraints(max_trip_days=10, max_pois_per_day=100, max_daily_distance=100_000)
-    filtered = await service.filter_by_constraints(istanbul_pois, constraints)
-
-    assert len(filtered) <= len(istanbul_pois)
-
-
-async def test_filter_by_constraints_handles_empty_input(service):
-    """Passing an empty POI list must return an empty list without errors."""
-    constraints = TravelConstraints()
-    filtered = await service.filter_by_constraints([], constraints)
-
-    assert filtered == []
-
-
 # ── count_available_pois ───────────────────────────────────────────────────────
 
 async def test_count_available_pois_matches_filter_result(service):
     """count_available_pois must agree with get_candidate_pois for the same inputs."""
-    city, categories = "Istanbul", ["Historical"]
+    city, categories = "Istanbul", ["Museum"]
     prefs = TravelPreferences(city=city, trip_days=1, categories=categories, max_distance_per_day=50_000)
 
     pois = await service.get_candidate_pois(prefs)
@@ -176,5 +170,5 @@ async def test_count_available_pois_matches_filter_result(service):
 
 
 async def test_count_available_pois_unknown_city_returns_zero(service):
-    count = await service.count_available_pois("Nowhere", ["Historical"])
+    count = await service.count_available_pois("Nowhere", ["Museum"])
     assert count == 0

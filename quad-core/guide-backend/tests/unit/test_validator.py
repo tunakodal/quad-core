@@ -31,7 +31,7 @@ def _make_route_request(
     max_distance_per_day: int = 50_000,
 ) -> RouteRequest:
     if categories is None:
-        categories = ["Historical"]
+        categories = ["Museum"]
     return RouteRequest(
         preferences=TravelPreferences(
             city=city,
@@ -46,9 +46,20 @@ def _make_route_request(
 
 def _make_minimal_itinerary() -> Itinerary:
     poi = Poi(
-        id="p1", name="Test POI", category="Historical", city="Istanbul",
+        id="p1",
+        name="Test POI",
+        category="Cultural Heritage",
+        main_category_1="Cultural Heritage",
+        main_category_2=None,
+        sub_category_1="Religious",
+        sub_category_2=None,
+        sub_category_3=None,
+        sub_category_4=None,
+        city="Istanbul",
         location=GeoPoint(latitude=41.0, longitude=28.9),
         estimated_visit_duration=60,
+        google_rating=None,
+        google_reviews_total=None,
     )
     return Itinerary(days=[DayPlan(day_index=1, pois=[poi])])
 
@@ -71,21 +82,37 @@ def test_reject_empty_city(validator):
     assert any("city" in e.lower() for e in result.errors)
 
 
-# ── TC-UT-02: Empty categories → WARNING (not a hard error) ──────────────────
-# NOTE: The test plan (TC-UT-02) says this should produce valid=False.
-# Current validator.py implementation treats empty categories as a non-fatal
-# warning (NO_CATEGORIES) so the request is still considered valid.
-# This test documents the *actual* behaviour; update the validator if the
-# stricter spec is desired.
-
-def test_empty_categories_produces_warning_not_error(validator):
-    """TC-UT-02 (adjusted) — empty categories → warning, request still valid."""
+# ── TC-UT-02: Empty categories must be rejected ──────────────────────────────
+# Category selection is mandatory according to the test plan.
+# An empty category list must result in valid=False.
+def test_reject_empty_categories(validator):
     req = _make_route_request(categories=[])
     result = validator.validate_route_request(req)
 
-    assert result.is_valid
-    assert any(w.code == "NO_CATEGORIES" for w in result.warnings)
+    assert not result.is_valid
+    assert any("categor" in e.lower() for e in result.errors)
 
+# ── TC-UT-03: At least one planning constraint must be provided ──────────────
+# The request must include at least one planning constraint.
+# In the current DTO design, missing trip_days and max_distance_per_day
+# are rejected at model-construction time by Pydantic.
+
+def test_reject_missing_planning_constraints():
+    with pytest.raises(ValidationError) as exc_info:
+        RouteRequest(
+            preferences=TravelPreferences(
+                city="Istanbul",
+                trip_days=None,
+                categories=["Museum"],
+                max_distance_per_day=None,
+            ),
+            constraints=TravelConstraints(),
+            language=Language.EN,
+        )
+
+    errors = exc_info.value.errors()
+    assert any(e["loc"] == ("trip_days",) for e in errors)
+    assert any(e["loc"] == ("max_distance_per_day",) for e in errors)
 
 # ── TC-UT-04: trip_days upper bound ───────────────────────────────────────────
 # NOTE: TravelPreferences DTO enforces the upper bound via Pydantic field
@@ -133,6 +160,18 @@ def test_reject_daily_distance_below_minimum(validator):
     assert any(e["loc"] == ("max_distance_per_day",) for e in errors)
 
 
+def test_reject_daily_distance_above_city_limit(validator):
+    validator._get_city_max_distance = lambda city: 100000 if city == "Istanbul" else None
+    assert validator._get_city_max_distance("Istanbul") == 100000
+    req = _make_route_request(
+        city="Istanbul",
+        max_distance_per_day=100001,
+    )
+    result = validator.validate_route_request(req)
+
+    assert not result.is_valid
+    assert any("max_distance_per_day" in e for e in result.errors)
+
 def test_accept_daily_distance_at_minimum(validator):
     """Boundary: exactly at min_daily_distance_meters must be accepted."""
     req = _make_route_request(max_distance_per_day=settings.min_daily_distance_meters)
@@ -140,7 +179,16 @@ def test_accept_daily_distance_at_minimum(validator):
 
     assert result.is_valid
 
+def test_accept_daily_distance_at_city_limit(validator):
+    validator._get_city_max_distance = lambda city: 100_000 if city == "Istanbul" else None
 
+    req = _make_route_request(
+        city="Istanbul",
+        max_distance_per_day=100_000,
+    )
+    result = validator.validate_route_request(req)
+
+    assert result.is_valid
 # ── Additional: max category count ────────────────────────────────────────────
 
 def test_reject_too_many_categories(validator):
@@ -228,7 +276,7 @@ def test_poi_query_rejects_missing_city(validator):
 
 
 def test_poi_query_valid(validator):
-    query = PoiQuery(city="Istanbul", categories=["Historical"])
+    query = PoiQuery(city="Istanbul", categories=["Museum"])
     result = validator.validate_poi_query(query)
 
     assert result.is_valid
@@ -256,3 +304,4 @@ def test_trip_day_suggestion_valid(validator):
     result = validator.validate_trip_day_suggestion_request(req)
 
     assert result.is_valid
+

@@ -205,7 +205,17 @@ class MonteCarloItineraryPlanner:
         # -------------------------
         # 6. CATEGORY DIVERSITY
         # -------------------------
-        categories = {poi.category for poi in route}
+        categories = {
+            c
+            for poi in route
+            for c in [
+                poi.sub_category_1,
+                poi.sub_category_2,
+                poi.sub_category_3,
+                poi.sub_category_4,
+            ]
+            if c
+        }
         diversity_score = len(categories) / len(route)
 
         # -------------------------

@@ -19,8 +19,10 @@ class DayReorderOperation(BaseModel):
 
 class UserEdits(BaseModel):
     removed_poi_ids: list[str] = []
+    selected_poi_ids: list[str] = []
     locked_pois_by_day: dict[int, list[str]] = {}
     reorder_operations: list[DayReorderOperation] = []
+    ordered_poi_ids_by_day: dict[int, list[str]] = {}
 
 
 class RouteRequest(BaseModel):
