@@ -16,6 +16,7 @@ from app.services.itinerary_service import ItineraryService
 from app.services.routing_service import RoutingService
 from app.services.poi_service import PoiService
 from app.core.config import settings
+from app.models.route import Itinerary, RoutePlan
 
 router = APIRouter(prefix="/routes", tags=["Routes"])
 
@@ -75,9 +76,28 @@ class RouteController:
         pois = await self._poi_service.get_candidate_pois(req.preferences)
 
         if len(pois) < 2:
-            raise HTTPException(
-                status_code=400,
-                detail="Not enough POIs match the given filters. Try adjusting categories or city.",
+            warnings = [
+                *validation.warnings,
+                ApiWarning(
+                    code="INSUFFICIENT_POIS",
+                    severity=Severity.WARN,
+                    message=(
+                        "Not enough POIs match the given filters to build the requested plan. "
+                        "Please adjust categories or city, or accept a reduced plan."
+                    ),
+                ),
+            ]
+
+            return RouteResponse(
+                itinerary=Itinerary(days=[]),
+                route_plan=RoutePlan(
+                    segments=[],
+                    total_distance=0,
+                    total_duration=0,
+                    geometry_encoded="",
+                ),
+                warnings=warnings,
+                effective_trip_days=0,
             )
 
         itinerary, itinerary_warnings = await self._itinerary_service.build_itinerary(

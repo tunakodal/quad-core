@@ -1,6 +1,5 @@
 """
 Unit tests for PoiService and PoiRepository filtering logic.
-Covers TC-UT-06 and TC-UT-07 from the GUIDE Test Plan.
 
 Repositories are replaced with in-memory stubs — no filesystem access.
 """

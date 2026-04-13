@@ -54,7 +54,7 @@ class RoutingService:
             if not day.pois:
                 continue
             waypoints = [poi.location for poi in day.pois]
-            osrm_result = await self.osrm_client.trip(
+            osrm_result = await self.osrm_client.route(
                 waypoints, RoutingProfile.DRIVING
             )
             osrm_outputs.append(osrm_result)

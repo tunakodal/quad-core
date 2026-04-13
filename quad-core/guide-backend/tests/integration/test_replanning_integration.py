@@ -1,4 +1,6 @@
 import asyncio
+import pytest
+
 from fastapi.testclient import TestClient
 
 from main import app
@@ -31,7 +33,22 @@ def make_poi_dict(pid: str):
     }
 
 
-def test_replanning_pipeline_applies_remove_reorder_and_add_consistently():
+import asyncio
+from fastapi.testclient import TestClient
+
+from app.core.containers import create_container
+from main import app
+
+
+import pytest
+import httpx
+
+from app.core.containers import create_container
+from main import app
+
+
+@pytest.mark.asyncio
+async def test_replanning_pipeline_applies_remove_reorder_and_add_consistently():
     """
     IT-13 — Replanning pipeline: client itinerary snapshot and mixed edits
     (remove, reorder, add) are applied consistently.
@@ -47,90 +64,96 @@ def test_replanning_pipeline_applies_remove_reorder_and_add_consistently():
     - No unintended duplication or POI loss occurs
     """
 
-    async def _setup():
-        container = await create_container()
-        app.state.container = container
+    container = await create_container()
+    app.state.container = container
 
-    asyncio.run(_setup())
+    transport = httpx.ASGITransport(app=app)
 
-    client = TestClient(app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        base_payload = {
+            "preferences": {
+                "city": "Istanbul",
+                "trip_days": 1,
+                "categories": ["Museum"],
+                "max_distance_per_day": 10000,
+            },
+            "constraints": {
+                "max_trip_days": 1,
+                "max_pois_per_day": 5,
+                "max_daily_distance": 10000,
+            },
+            "language": "EN",
+        }
 
-    base_payload = {
-        "preferences": {
+        generate_response = await client.post(
+            "/api/v1/routes/generate",
+            json=base_payload,
+        )
+        assert generate_response.status_code == 200
+
+        generated_data = generate_response.json()
+        original_itinerary = generated_data["itinerary"]
+        original_pois = original_itinerary["days"][0]["pois"]
+
+        assert len(original_pois) >= 2
+
+        original_ids = [poi["id"] for poi in original_pois]
+        kept_id = original_ids[0]
+        removed_id = original_ids[1]
+
+        search_payload = {
             "city": "Istanbul",
-            "trip_days": 1,
             "categories": ["Museum"],
-            "max_distance_per_day": 10000,
-        },
-        "constraints": {
-            "max_trip_days": 1,
-            "max_pois_per_day": 5,
-            "max_daily_distance": 10000,
-        },
-        "language": "EN",
-    }
+        }
 
-    generate_response = client.post("/api/v1/routes/generate", json=base_payload)
-    assert generate_response.status_code == 200
+        search_response = await client.post(
+            "/api/v1/pois/search",
+            json=search_payload,
+        )
+        assert search_response.status_code == 200
 
-    generated_data = generate_response.json()
-    original_itinerary = generated_data["itinerary"]
-    original_pois = original_itinerary["days"][0]["pois"]
+        search_data = search_response.json()
+        candidate_ids = [poi["id"] for poi in search_data["pois"]]
 
-    assert len(original_pois) >= 2
+        add_id = next(pid for pid in candidate_ids if pid not in original_ids)
 
-    original_ids = [poi["id"] for poi in original_pois]
-    kept_id = original_ids[0]
-    removed_id = original_ids[1]
+        replan_payload = {
+            "existing_itinerary": original_itinerary,
+            "constraints": base_payload["constraints"],
+            "edits": {
+                "removed_poi_ids": [removed_id],
+                "ordered_poi_ids_by_day": {
+                    "1": [add_id, kept_id]
+                }
+            },
+        }
 
-    container = app.state.container
-    prefs = type(
-        "Prefs",
-        (),
-        {
-            "city": "Istanbul",
-            "trip_days": 1,
-            "categories": ["Museum"],
-            "max_distance_per_day": 10000,
-        },
-    )()
+        replan_response = await client.post(
+            "/api/v1/routes/replan",
+            json=replan_payload,
+        )
+        assert replan_response.status_code == 200
 
-    candidate_pois = asyncio.run(container.poi_service.get_candidate_pois(prefs))
-    candidate_ids = [poi.id for poi in candidate_pois]
+        data = replan_response.json()
 
-    add_id = next(pid for pid in candidate_ids if pid not in original_ids)
+        assert "itinerary" in data
+        assert "route_plan" in data
 
-    replan_payload = {
-        "existing_itinerary": original_itinerary,
-        "constraints": base_payload["constraints"],
-        "edits": {
-            "removed_poi_ids": [removed_id],
-            "ordered_poi_ids_by_day": {
-                "1": [add_id, kept_id]
-            }
-        },
-    }
+        updated_days = data["itinerary"]["days"]
+        assert len(updated_days) > 0
 
-    replan_response = client.post("/api/v1/routes/replan", json=replan_payload)
-    assert replan_response.status_code == 200
+        updated_pois = updated_days[0]["pois"]
+        updated_ids = [poi["id"] for poi in updated_pois]
 
-    data = replan_response.json()
+        assert removed_id not in updated_ids
+        assert kept_id in updated_ids
+        assert add_id in updated_ids
 
-    assert "itinerary" in data
-    assert "route_plan" in data
-
-    updated_days = data["itinerary"]["days"]
-    assert len(updated_days) > 0
-
-    updated_pois = updated_days[0]["pois"]
-    updated_ids = [poi["id"] for poi in updated_pois]
-
-    assert removed_id not in updated_ids
-    assert kept_id in updated_ids
-    assert add_id in updated_ids
-
-    assert updated_ids[:2] == [add_id, kept_id]
-    assert len(updated_ids) == len(set(updated_ids))
+        assert updated_ids[:2] == [add_id, kept_id]
+        assert len(updated_ids) == len(set(updated_ids))
 
 
 def test_replanning_recomputes_only_affected_day_segments():
