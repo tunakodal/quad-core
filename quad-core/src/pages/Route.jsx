@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import RouteMap from "./RouteMap";
 import styles from "../styles/Route.module.css";
 
-// DEV fallback data — backend bağlı değilken test için
 const DEV_DAY_ROUTES = [
   {
     dayIndex: 0,
@@ -87,7 +86,6 @@ export default function Route() {
   const navigate = useNavigate();
   const { state } = useLocation();
 
-  // Backend'den gelen routeResponse (Planning.jsx'ten navigate ile gelir)
   const routeResponse = state?.routeResponse ?? null;
 
   const planningInput = state?.planningInput ?? {
@@ -99,7 +97,6 @@ export default function Route() {
   };
 
   const initialDays = useMemo(() => {
-    // Backend'den gerçek veri geldiyse onu kullan
     if (routeResponse?.itinerary?.days?.length) {
       return routeResponse.itinerary.days.map((day) => {
         const pois = day.pois.map((p) => ({
@@ -120,7 +117,6 @@ export default function Route() {
       });
     }
 
-    // DEV fallback — backend çalışmıyorsa hâlâ test edebilirsin
     if (import.meta.env.DEV) {
       return DEV_DAY_ROUTES.map((day) => ({
         dayIndex: day.dayIndex,
@@ -137,7 +133,11 @@ export default function Route() {
   const [days, setDays] = useState(initialDays);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
   const [activePoiIndex, setActivePoiIndex] = useState(-1);
-  const [draggingPoiId, setDraggingPoiId] = useState(null);
+  const [dragState, setDragState] = useState({
+    dragging: false,
+    fromIndex: -1,
+    overIndex: -1,
+  });
 
   const availablePois = useMemo(() => DEV_AVAILABLE_POIS, []);
 
@@ -206,29 +206,37 @@ export default function Route() {
     updateActiveDayPois(next);
   }
 
-  function handleDragStart(poiId) {
-    setDraggingPoiId(poiId);
-  }
-
-  function handleDragOver(e) {
+  function handlePointerDown(e, idx) {
     e.preventDefault();
-  }
+    setDragState({ dragging: true, fromIndex: idx, overIndex: idx });
 
-  function handleDrop(targetPoiId) {
-    if (!activeDay || !draggingPoiId || draggingPoiId === targetPoiId) {
-      setDraggingPoiId(null);
-      return;
-    }
+    const handleMove = (moveE) => {
+      const elements = document.querySelectorAll(`.${styles.poiItem}`);
+      const y = moveE.clientY ?? moveE.touches?.[0]?.clientY;
 
-    const fromIndex = activeDay.pois.findIndex((poi) => poi.id === draggingPoiId);
-    const toIndex = activeDay.pois.findIndex((poi) => poi.id === targetPoiId);
+      for (let i = 0; i < elements.length; i++) {
+        const rect = elements[i].getBoundingClientRect();
+        if (y >= rect.top && y <= rect.bottom) {
+          setDragState((prev) => ({ ...prev, overIndex: i }));
+          break;
+        }
+      }
+    };
 
-    movePoi(fromIndex, toIndex);
-    setDraggingPoiId(null);
-  }
+    const handleUp = () => {
+      setDragState((prev) => {
+        if (prev.fromIndex !== prev.overIndex && prev.fromIndex >= 0 && prev.overIndex >= 0) {
+          movePoi(prev.fromIndex, prev.overIndex);
+        }
+        return { dragging: false, fromIndex: -1, overIndex: -1 };
+      });
 
-  function handleDragEnd() {
-    setDraggingPoiId(null);
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
   }
 
   function handleDiscardChanges() {
@@ -262,20 +270,7 @@ export default function Route() {
       state: {
         planningInput,
         days,
-      },
-    });
-  }
-
-  function handleOpenPoi(poi, idx) {
-    if (!poi) return;
-
-    navigate(`/poi/${poi.id}`, {
-      state: {
-        poi,
-        pois: activeDayPois,
-        index: idx,
-        planningInput,
-        activeDayIndex,
+        routeResponse,
       },
     });
   }
@@ -329,7 +324,6 @@ export default function Route() {
           </button>
         </section>
 
-        {/* Backend warnings */}
         {routeResponse?.warnings?.length > 0 && (
           <section className={styles.warningsBar}>
             {routeResponse.warnings.map((w, i) => (
@@ -385,11 +379,13 @@ export default function Route() {
                 cityId={planningInput?.cityId}
                 stops={activeDayPois}
                 geometry={
-                  routeResponse?.route_plan?.segments?.[activeDayIndex]?.geometry_encoded ?? null
+                  activeDay?.modified
+                    ? null
+                    : routeResponse?.route_plan?.segments?.[activeDayIndex]?.geometry_encoded ?? null
                 }
                 activeIndex={activePoiIndex}
                 onHoverStop={setActivePoiIndex}
-                onSelectStop={(idx) => handleOpenPoi(activeDayPois[idx], idx)}
+                onSelectStop={null}
               />
             </div>
           </div>
@@ -426,37 +422,39 @@ export default function Route() {
                 <div className={styles.emptyState}>No POIs in this day yet.</div>
               ) : (
                 activeDayPois.map((poi, idx) => {
-                  const isDragging = draggingPoiId === poi.id;
+                  const isDragged = dragState.dragging && dragState.fromIndex === idx;
+                  const isOver = dragState.dragging && dragState.overIndex === idx && dragState.fromIndex !== idx;
+
                   return (
                     <div
                       key={poi.id}
-                      className={`${styles.poiItem} ${isDragging ? styles.poiItemDragging : ""}`}
-                      draggable
-                      onDragStart={() => handleDragStart(poi.id)}
-                      onDragOver={handleDragOver}
-                      onDrop={() => handleDrop(poi.id)}
-                      onDragEnd={handleDragEnd}
+                      className={`
+                        ${styles.poiItem}
+                        ${isDragged ? styles.poiItemDragging : ""}
+                        ${isOver ? styles.poiItemOver : ""}
+                      `}
                       onMouseEnter={() => setActivePoiIndex(idx)}
                       onMouseLeave={() => setActivePoiIndex(-1)}
                     >
-                      <button
-                        type="button"
-                        className={styles.poiOrder}
-                        onClick={() => handleOpenPoi(poi, idx)}
-                        title="Open POI details"
-                      >
-                        {idx + 1}
-                      </button>
-
                       <div
-                        className={styles.poiMain}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleOpenPoi(poi, idx)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleOpenPoi(poi, idx);
-                        }}
+                        className={styles.poiDragHandle}
+                        onPointerDown={(e) => handlePointerDown(e, idx)}
                       >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <circle cx="5" cy="3" r="1.5" fill="#8494a7"/>
+                          <circle cx="11" cy="3" r="1.5" fill="#8494a7"/>
+                          <circle cx="5" cy="8" r="1.5" fill="#8494a7"/>
+                          <circle cx="11" cy="8" r="1.5" fill="#8494a7"/>
+                          <circle cx="5" cy="13" r="1.5" fill="#8494a7"/>
+                          <circle cx="11" cy="13" r="1.5" fill="#8494a7"/>
+                        </svg>
+                      </div>
+
+                      <div className={styles.poiOrder}>
+                        {idx + 1}
+                      </div>
+
+                      <div className={styles.poiMain}>
                         <div className={styles.poiName}>{poi.name}</div>
 
                         <div className={styles.poiMeta}>

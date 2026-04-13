@@ -7,6 +7,8 @@ Dependencies are resolved from the application container at request time.
 from fastapi import APIRouter, HTTPException, Request
 import httpx
 from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
+
 from app.schemas.common import ApiErrorResponse, ApiWarning, Severity
 from app.schemas.route_dtos import ReplanRequest, RouteRequest, RouteResponse
 from app.schemas.suggestion_dtos import TripDaySuggestionRequest, TripDaySuggestionResponse
@@ -67,7 +69,7 @@ class RouteController:
         self._routing_service = routing_service
 
 
-    async def generate_route(self, req: RouteRequest) -> RouteResponse:
+    async def generate_route(self, req: RouteRequest) -> JSONResponse | RouteResponse:
         """Generate a multi-day itinerary from user preferences."""
         validation = self._validator.validate_route_request(req)
         if not validation.is_valid:
@@ -131,7 +133,7 @@ class RouteController:
             effective_trip_days=len(itinerary.days),
         )
 
-    async def replan_route(self, req: ReplanRequest) -> RouteResponse:
+    async def replan_route(self, req: ReplanRequest) -> JSONResponse | RouteResponse:
         """Replan an existing itinerary after user edits (stateless)."""
         validation = self._validator.validate_replan_request(req)
         if not validation.is_valid:

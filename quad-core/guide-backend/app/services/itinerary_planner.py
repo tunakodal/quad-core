@@ -2,6 +2,7 @@
 Monte Carlo güzergah planlayıcı — rastgele örnekleme ile aday planlar üretir
 ve en yüksek puanlıyı PlanRanker aracılığıyla seçer.
 """
+
 from app.models.poi import Poi
 from app.models.route import Itinerary
 from app.schemas.travel import TravelConstraints, TravelPreferences
@@ -14,15 +15,7 @@ from statistics import variance
 from math import radians, sin, cos, sqrt, atan2
 
 
-
 class MonteCarloItineraryPlanner:
-    """
-    Birden fazla aday güzergah üretir ve en iyisini seçer.
-
-    generate_candidates() şu an deterministik tek plan döndürmektedir.
-    Monte Carlo sampling implementasyonu bu metodun içine yazılacak;
-    dışarıya açık arayüz (parametre ve dönüş tipleri) sabit kalacaktır.
-    """
 
     def __init__(
         self,
@@ -37,14 +30,10 @@ class MonteCarloItineraryPlanner:
         self.random_seed = random_seed
 
     def generate_candidates(
-            self,
-            pois: list[Poi],
-            constraints: TravelConstraints,
+        self,
+        pois: list[Poi],
+        constraints: TravelConstraints,
     ) -> list[list[Poi]]:
-        """
-        Tek bir gün için 500 adet random candidate üretir.
-        Her candidate 4–9 arası POI içerir.
-        """
 
         if len(pois) < 4:
             return []
@@ -62,14 +51,11 @@ class MonteCarloItineraryPlanner:
         return candidates
 
     def select_best(
-            self,
-            pois: list[Poi],
-            constraints: TravelConstraints,
-            prefs: TravelPreferences,
+        self,
+        pois: list[Poi],
+        constraints: TravelConstraints,
+        prefs: TravelPreferences,
     ) -> Itinerary:
-        """
-        Gün gün candidate üretir, en iyi planı oluşturur.
-        """
 
         remaining_pois = list(pois)
         day_plans: list[DayPlan] = []
@@ -79,20 +65,15 @@ class MonteCarloItineraryPlanner:
             if len(remaining_pois) < 4:
                 break
 
-            # 🔹 candidate üret
-            candidates: list[list[Poi]] = self.generate_candidates(
-                remaining_pois, constraints
-            )
+            candidates = self.generate_candidates(remaining_pois, constraints)
 
-            # 🔹 best seç
-            best_candidate: list[Poi] = self.select_best_from_candidates(
+            best_candidate = self.select_best_from_candidates(
                 candidates, constraints, prefs
             )
 
             if not best_candidate:
                 break
 
-            # 🔹 DayPlan oluştur
             day_plan = self.itinerary_builder.build_day_plan(
                 pois=best_candidate,
                 day_index=day_index,
@@ -100,7 +81,6 @@ class MonteCarloItineraryPlanner:
 
             day_plans.append(day_plan)
 
-            # havuzdan çıkar
             selected_ids = {poi.id for poi in best_candidate}
             remaining_pois = [
                 poi for poi in remaining_pois if poi.id not in selected_ids
@@ -109,42 +89,43 @@ class MonteCarloItineraryPlanner:
         return self.itinerary_builder.build_itinerary_from_days(day_plans)
 
     def select_best_from_candidates(
-            self,
-            candidates: list[list[Poi]],
-            constraints: TravelConstraints,
-            prefs: TravelPreferences,
+        self,
+        candidates: list[list[Poi]],
+        constraints: TravelConstraints,
+        prefs: TravelPreferences,
     ) -> list[Poi]:
-        """
-        Candidate'leri skorlar ve en yüksek skorlu olanı döner.
-        """
 
         if not candidates:
             return None
 
-        # 🔹 score hesapla (tek sefer)
         scored_candidates = [
-            (cand, self._score(cand, constraints, prefs))
+            (cand, *self._score(cand, constraints, prefs))
             for cand in candidates
         ]
 
-        # 🔹 en yüksek skoru seç
-        best_candidate, best_score = max(
-            scored_candidates,
-            key=lambda x: x[1]
-        )
+        # (original_cand, score, sorted_route)
+        best = max(scored_candidates, key=lambda x: x[1])
 
-        return best_candidate
+        return best[2]  # sıralı route
 
     def _score(self, candidate, constraints, prefs):
 
         if len(candidate) < 2:
-            return 0
+            return 0, candidate
 
         # -------------------------
-        # 1. ROUTE ORDER (nearest neighbor)
+        # 1. ROUTE ORDER
         # -------------------------
-        remaining = candidate[:]
-        route = [remaining.pop(0)]
+        n = len(candidate)
+        avg_lat = sum(p.location.latitude for p in candidate) / n
+        avg_lng = sum(p.location.longitude for p in candidate) / n
+
+        start = max(candidate, key=lambda p: self._distance_raw(
+            avg_lat, avg_lng, p.location.latitude, p.location.longitude
+        ))
+
+        remaining = [p for p in candidate if p.id != start.id]
+        route = [start]
 
         while remaining:
             last = route[-1]
@@ -166,44 +147,57 @@ class MonteCarloItineraryPlanner:
             segment_distances.append(d)
             total_distance += d
 
-        # OSRM approx
         total_distance *= 1.65
 
         # -------------------------
-        # 3. DISTANCE SCORE (target proximity)
+        # 3. HARD CAP — target'ın 2 katını aşarsa direkt ele
         # -------------------------
-        target = constraints.max_daily_distance / 1000  # metre → km
+        target = constraints.max_daily_distance / 1000
 
-        distance_diff = abs(target - total_distance)
-        distance_score = 1 / (1 + distance_diff)
+        if total_distance > target * 2:
+            return 0, route
 
         # -------------------------
-        # 4. VARIANCE SCORE
+        # 4. DISTANCE SCORE — gaussian
+        # -------------------------
+        sigma = target * 0.3
+        distance_score = math.exp(-((total_distance - target) ** 2) / (2 * sigma ** 2))
+
+        # -------------------------
+        # 5. VARIANCE SCORE
         # -------------------------
         if len(segment_distances) > 1:
-            var = variance(segment_distances)
+            mean_seg = sum(segment_distances) / len(segment_distances)
+            if mean_seg > 0:
+                std_seg = math.sqrt(variance(segment_distances))
+                cv = std_seg / mean_seg
+                variance_score = 1 / (1 + cv)
+            else:
+                variance_score = 1.0
         else:
-            var = 0
-
-        variance_score = 1 / (1 + var)
+            variance_score = 1.0
 
         # -------------------------
-        # 5. POPULARITY SCORE
+        # 6. POPULARITY SCORE
         # -------------------------
         pop_scores = []
         for poi in route:
             rating = poi.google_rating or 0
             reviews = poi.google_reviews_total or 0
-            pop = rating + math.log(1 + reviews)
+            pop = rating * math.log(1 + reviews)
             pop_scores.append(pop)
 
-        avg_popularity = sum(pop_scores) / len(pop_scores)
-
-        # normalize (soft cap)
-        popularity_score = avg_popularity / 10
+        min_pop = min(pop_scores)
+        max_pop = max(pop_scores)
+        if max_pop > min_pop:
+            popularity_score = (
+                    (sum(pop_scores) / len(pop_scores) - min_pop) / (max_pop - min_pop)
+            )
+        else:
+            popularity_score = 1.0
 
         # -------------------------
-        # 6. CATEGORY DIVERSITY
+        # 7. CATEGORY DIVERSITY
         # -------------------------
         categories = {
             c
@@ -216,36 +210,38 @@ class MonteCarloItineraryPlanner:
             ]
             if c
         }
-        diversity_score = len(categories) / len(route)
+        max_possible_cats = len(route) * 4
+        diversity_score = min(len(categories) / max_possible_cats, 1.0)
 
         # -------------------------
-        # 7. POI COUNT
+        # 8. POI COUNT
         # -------------------------
         count_score = len(route) / constraints.max_pois_per_day
 
         # -------------------------
-        # 8. FINAL SCORE
+        # 9. FINAL SCORE — distance ağırlığı artırıldı
         # -------------------------
         score = (
-            0.30 * distance_score +
-            0.15 * variance_score +
-            0.25 * popularity_score +
-            0.15 * diversity_score +
-            0.15 * count_score
+                0.40 * distance_score +
+                0.10 * variance_score +
+                0.25 * popularity_score +
+                0.10 * diversity_score +
+                0.15 * count_score
         )
 
-        return score
+        return score, route
+
+    @staticmethod
+    def _distance_raw(lat1, lng1, lat2, lng2):
+        R = 6371
+        dlat = radians(lat2 - lat1)
+        dlng = radians(lng2 - lng1)
+        a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlng / 2) ** 2
+        c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return R * c
 
     def _distance(self, p1, p2):
-        R = 6371
-
-        lat1, lon1 = p1.location.latitude, p1.location.longitude
-        lat2, lon2 = p2.location.latitude, p2.location.longitude
-
-        dlat = radians(lat2 - lat1)
-        dlon = radians(lon2 - lon1)
-
-        a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
-        c = 2 * atan2(sqrt(a), sqrt(1 - a))
-
-        return R * c  # km
+        return self._distance_raw(
+            p1.location.latitude, p1.location.longitude,
+            p2.location.latitude, p2.location.longitude,
+        )

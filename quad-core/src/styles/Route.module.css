@@ -389,20 +389,43 @@
 
 .poiItem {
   display: grid;
-  grid-template-columns: 44px 1fr 36px;
+  grid-template-columns: 28px 44px 1fr 36px;
+  align-items: center;
   gap: 10px;
   padding: 10px;
   border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--surface-soft);
-}
-
-.poiItem:hover {
-  background: var(--surface-card);
+  transition: transform 200ms ease, box-shadow 200ms ease, background 150ms ease;
 }
 
 .poiItemDragging {
-  opacity: 0.55;
+  opacity: 0.5;
+  transform: scale(0.97);
+  box-shadow: 0 8px 24px rgba(3, 4, 94, 0.12);
+}
+
+.poiItemOver {
+  border-color: var(--accent);
+  background: rgba(241, 119, 32, 0.06);
+}
+
+.poiDragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  opacity: 0.4;
+  transition: opacity 150ms ease;
+  touch-action: none;
+}
+
+.poiDragHandle:hover {
+  opacity: 0.8;
+}
+
+.poiDragHandle:active {
+  cursor: grabbing;
 }
 
 .poiOrder {
@@ -414,12 +437,14 @@
   color: white;
   font-size: 16px;
   font-weight: 540;
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .poiMain {
   min-width: 0;
-  cursor: pointer;
 }
 
 .poiName {

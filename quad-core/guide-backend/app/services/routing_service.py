@@ -54,10 +54,21 @@ class RoutingService:
             if not day.pois:
                 continue
             waypoints = [poi.location for poi in day.pois]
-            osrm_result = await self.osrm_client.route(
+            osrm_result = await self.osrm_client.trip(
                 waypoints, RoutingProfile.DRIVING
             )
+
+            # Sıralamayı uygula
+            order = osrm_result.waypoint_order
+            day.pois = [day.pois[i] for i in order]
+
             osrm_outputs.append(osrm_result)
+
+            print(f"\n=== Day {day.day_index} ===")
+            print(f"Distance: {osrm_result.distance / 1000:.1f} km")
+            print(f"Duration: {osrm_result.duration / 60:.0f} min")
+            for i, poi in enumerate(day.pois):
+                print(f"  {i + 1}. {poi.name}")
 
         route_plan = self.route_assembler.assemble(itinerary, osrm_outputs)
 

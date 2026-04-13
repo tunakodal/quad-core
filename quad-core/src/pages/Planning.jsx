@@ -10,46 +10,6 @@ const toInt = (v, fallback) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-// DB enum değeri → frontend sub-kategori key(ler)i
-const DB_TO_FRONTEND = {
-  "Museums": ["museums"], "Museum": ["museums"],
-  "Cultural Heritage": ["archaeology","architecture","fortifications","infrastructure","religious","transport","monumental"],
-  "Nature": ["parks","terrain","water","wildlife"],
-  "Ancient_City": ["archaeology"], "Ancient_Infrastructure": ["infrastructure"],
-  "Ancient_Relief_Art": ["archaeology"], "Ancient_Structure": ["archaeology"],
-  "Aquarium": ["wildlife"], "Aqueduct": ["infrastructure"], "Bath_Hammam": ["religious"],
-  "Bay": ["water"], "Bazaar_Market": ["monumental"], "Beach": ["water"],
-  "Bridge": ["infrastructure"], "Burial_Site": ["archaeology"], "Cable_Car": ["transport"],
-  "Canyon": ["terrain"], "Caravanserai_Inn": ["infrastructure"], "Castle": ["fortifications"],
-  "Cave": ["terrain"], "Cemetery": ["monumental"], "Church": ["religious"],
-  "Cistern": ["archaeology"], "City_Walls_Gates": ["fortifications"], "Complex": ["monumental"],
-  "Dam": ["infrastructure"], "Geological_Site": ["terrain"], "Harbor_Pier": ["transport"],
-  "Island": ["water"], "Lake": ["water"], "Madrasa": ["religious"], "Mansion": ["architecture"],
-  "Monastery": ["religious"], "Monument": ["monumental"], "Mosque": ["religious"],
-  "Mountain": ["terrain"], "Park": ["parks"], "Plateau": ["terrain"],
-  "Railway_Station": ["transport"], "Recreation_Area": ["parks"], "River": ["water"],
-  "Ski_Resort": ["terrain"], "Spring": ["water"], "Square": ["monumental"],
-  "Street": ["monumental"], "Thermal_Spa": ["water"], "Tomb": ["archaeology"],
-  "Tower": ["fortifications"], "Underground_City": ["archaeology"], "Valley": ["terrain"],
-  "Viewpoint": ["parks"], "Waterfall": ["water"], "Zoo": ["wildlife"],
-};
-
-// Frontend kategorileri → backend'e gönderilecek DB kategori adları
-const FRONTEND_TO_DB_CATEGORY = {
-  museums: "Museums",
-  archaeology: "Cultural Heritage",
-  architecture: "Cultural Heritage",
-  fortifications: "Cultural Heritage",
-  infrastructure: "Cultural Heritage",
-  religious: "Cultural Heritage",
-  transport: "Cultural Heritage",
-  monumental: "Cultural Heritage",
-  parks: "Nature",
-  terrain: "Nature",
-  water: "Nature",
-  wildlife: "Nature",
-};
-
 const ALL_CITIES = [
   { id: "istanbul", name: "İstanbul" },
   { id: "ankara", name: "Ankara" },
@@ -136,31 +96,31 @@ const ALL_CITIES = [
 
 const CATEGORY_TREE = [
   {
-    key: "museums",
+    key: "Museum",
     label: "Museums",
     sub: null,
   },
   {
-    key: "cultural",
+    key: "Cultural Heritage",
     label: "Cultural Heritage",
     sub: [
-      { key: "archaeology", label: "Ancient & Archaeology" },
-      { key: "architecture", label: "Civil & Traditional Architecture" },
-      { key: "fortifications", label: "Fortifications" },
-      { key: "infrastructure", label: "Historical Infrastructure" },
-      { key: "religious", label: "Religious" },
-      { key: "transport", label: "Transportation as Heritage" },
-      { key: "monumental", label: "Urban & Monumental Heritage" },
+      { key: "Ancient & Archaeology", label: "Ancient & Archaeology" },
+      { key: "Civil & Traditional Architecture", label: "Civil & Traditional Architecture" },
+      { key: "Fortifications", label: "Fortifications" },
+      { key: "Historical Infrastructure", label: "Historical Infrastructure" },
+      { key: "Religious", label: "Religious" },
+      { key: "Transportation as Heritage", label: "Transportation as Heritage" },
+      { key: "Urban & Monumental Heritage", label: "Urban & Monumental Heritage" },
     ],
   },
   {
-    key: "nature",
+    key: "Nature",
     label: "Nature",
     sub: [
-      { key: "parks", label: "Parks & Outdoor" },
-      { key: "terrain", label: "Terrain & Landforms" },
-      { key: "water", label: "Water & Coastal" },
-      { key: "wildlife", label: "Wildlife & Natural Experience" },
+      { key: "Parks & Outdoor", label: "Parks & Outdoor" },
+      { key: "Terrain & Landforms", label: "Terrain & Landforms" },
+      { key: "Water & Coastal", label: "Water & Coastal" },
+      { key: "Wildlife & Natural Experience", label: "Wildlife & Natural Experience" },
     ],
   },
 ];
@@ -331,11 +291,7 @@ export default function Planning() {
         return;
       }
 
-      const frontendKeys = new Set();
-      result.categories.forEach((dbCat) => {
-        const keys = DB_TO_FRONTEND[dbCat];
-        if (keys) keys.forEach((k) => frontendKeys.add(k));
-      });
+      const frontendKeys = new Set(result.categories);
 
       setAvailableKeys(frontendKeys.size > 0 ? frontendKeys : null);
       setSelected(new Set(frontendKeys));
@@ -388,18 +344,14 @@ export default function Planning() {
   });
 
   const fetchSuggestion = async (payload) => {
-  const mappedCategories = [...new Set(
-      payload.categories.map((c) => FRONTEND_TO_DB_CATEGORY[c]).filter(Boolean)
-    )];
-
     const res = await fetch("/api/v1/routes/suggest-days", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         city: payload.cityId,
-        categories: mappedCategories
-      }),
-    });
+        categories: payload.categories
+    }),
+  });
 
     if (!res.ok) throw new Error("Suggestion failed");
 
@@ -440,11 +392,6 @@ export default function Planning() {
   };
 
   const generateRoute = async (payload) => {
-  const mappedCategories = [...new Set(
-    payload.categories
-      .map((c) => FRONTEND_TO_DB_CATEGORY[c])
-      .filter(Boolean)
-  )];
 
   const distanceMeters = Math.max(payload.distanceKm * 1000, 1000);
 
@@ -452,9 +399,9 @@ export default function Planning() {
     preferences: {
       city: payload.cityId,
       trip_days: payload.days,
-      categories: mappedCategories,
+      categories: payload.categories,
       max_distance_per_day: distanceMeters,
-    },
+  },
     constraints: {
       max_trip_days: payload.days,
       max_pois_per_day: 9,
@@ -468,8 +415,7 @@ export default function Planning() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(requestBody),
   });
-
-  // 🔥 REAL ERROR MESSAGE
+  
   if (!response.ok) {
     const errText = await response.text();
     throw new Error(errText || "Generate failed");
