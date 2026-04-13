@@ -65,7 +65,7 @@ async def test_replan_remove_pois():
         poi_repository=StubPoiRepository(),
     )
 
-    new_itinerary = await service.replan(
+    new_itinerary, warnings = await service.replan(
         existing,
         edits,
         constraints,
@@ -120,7 +120,7 @@ async def test_replan_reorders_pois_within_a_day():
         max_distance_per_day=100_000,
     )
 
-    replanned = await service.replan(
+    replanned, warnings = await service.replan(
         existing=existing,
         edits=edits,
         constraints=constraints,
@@ -163,7 +163,7 @@ async def test_replan_respects_selected_poi_ids():
         max_distance_per_day=100_000,
     )
 
-    replanned = await service.replan(
+    replanned, warnings = await service.replan(
         existing,
         edits,
         constraints,
@@ -212,7 +212,7 @@ async def test_replan_does_not_modify_unaffected_days():
         max_distance_per_day=100_000,
     )
 
-    replanned = await service.replan(
+    replanned, warnings = await service.replan(
         existing,
         edits,
         constraints,
@@ -265,7 +265,7 @@ async def test_replan_preserves_valid_day_structure_and_no_duplicates():
         max_distance_per_day=100_000,
     )
 
-    replanned = await service.replan(
+    replanned, warnings = await service.replan(
         existing,
         edits,
         constraints,

@@ -11,7 +11,8 @@ from app.schemas.route_dtos import UserEdits
 from app.schemas.travel import TravelConstraints, TravelPreferences
 from app.services.itinerary_planner import MonteCarloItineraryPlanner
 from app.repositories.interfaces import AbstractPoiRepository
-
+from app.schemas.common import ApiWarning
+from app.schemas.common import Severity
 
 class ItineraryService:
     """
@@ -28,13 +29,20 @@ class ItineraryService:
         self.poi_repository = poi_repository
 
     async def build_itinerary(
-        self, pois: list[Poi], constraints: TravelConstraints, prefs: TravelPreferences
-    ) -> Itinerary:
-        """
-        Verilen POI listesinden kısıtlar ve tercihler doğrultusunda
-        en iyi güzergahı oluşturur.
-        """
-        return self.planner.select_best(pois, constraints, prefs)
+            self, pois: list[Poi], constraints: TravelConstraints, prefs: TravelPreferences
+    ) -> tuple[Itinerary, list[ApiWarning]]:
+
+        itinerary = self.planner.select_best(pois, constraints, prefs)
+        warnings: list[ApiWarning] = []
+        if len(itinerary.days) < prefs.trip_days:
+            warnings.append(
+                ApiWarning(
+                    code="PARTIAL_ITINERARY",
+                    severity=Severity.WARN,
+                    message="Requested trip duration could not be fully satisfied with available POIs.",
+                )
+            )
+        return itinerary, warnings
 
     async def replan(
             self,
@@ -42,7 +50,9 @@ class ItineraryService:
             edits: UserEdits,
             constraints: TravelConstraints,
             prefs: TravelPreferences,
-    ) -> Itinerary:
+    ) -> tuple[Itinerary, list[ApiWarning]]:
+
+        warnings: list[ApiWarning] = []
 
         existing_map = {
             poi.id: poi
@@ -82,7 +92,7 @@ class ItineraryService:
                     DayPlan(day_index=day.day_index, pois=pois)
                 )
 
-            return Itinerary(days=new_days)
+            return Itinerary(days=new_days), warnings
 
         if edits.selected_poi_ids:
             selected_ids = set(edits.selected_poi_ids)
@@ -98,7 +108,7 @@ class ItineraryService:
                     DayPlan(day_index=day.day_index, pois=filtered)
                 )
 
-            return Itinerary(days=new_days)
+            return Itinerary(days=new_days), warnings
 
         new_days: list[DayPlan] = []
         removed_ids = set(edits.removed_poi_ids)
@@ -137,5 +147,4 @@ class ItineraryService:
 
             day.pois = reordered + leftover
 
-        return Itinerary(days=new_days)
-
+        return Itinerary(days=new_days), warnings

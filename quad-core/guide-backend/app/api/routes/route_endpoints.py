@@ -5,8 +5,9 @@ Aligned with GUIDE LLD: RouteController class (Appendix A.1.1).
 Dependencies are resolved from the application container at request time.
 """
 from fastapi import APIRouter, HTTPException, Request
-
-from app.schemas.common import ApiErrorResponse
+import httpx
+from fastapi.responses import JSONResponse
+from app.schemas.common import ApiErrorResponse, ApiWarning, Severity
 from app.schemas.route_dtos import ReplanRequest, RouteRequest, RouteResponse
 from app.schemas.suggestion_dtos import TripDaySuggestionRequest, TripDaySuggestionResponse
 from app.schemas.travel import TravelPreferences
@@ -79,16 +80,34 @@ class RouteController:
                 detail="Not enough POIs match the given filters. Try adjusting categories or city.",
             )
 
-        itinerary = await self._itinerary_service.build_itinerary(
+        itinerary, itinerary_warnings = await self._itinerary_service.build_itinerary(
             pois, req.constraints, req.preferences
         )
 
-        route_plan = await self._routing_service.generate_route(itinerary, req.constraints)
+        try:
+            route_plan, routing_warnings = await self._routing_service.generate_route(
+                itinerary, req.constraints
+            )
+        except httpx.HTTPError:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "message": "Route computation failed.",
+                    "error_code": "ROUTING_UNAVAILABLE",
+                    "details": ["OSRM service is unavailable or unreachable."],
+                },
+            )
+
+        warnings = [
+            *validation.warnings,
+            *itinerary_warnings,
+            *routing_warnings,
+        ]
 
         return RouteResponse(
             itinerary=itinerary,
             route_plan=route_plan,
-            warnings=validation.warnings,
+            warnings=warnings,
             effective_trip_days=len(itinerary.days),
         )
 
@@ -112,15 +131,34 @@ class RouteController:
             max_distance_per_day=req.constraints.max_daily_distance,
         )
 
-        itinerary = await self._itinerary_service.replan(
+        itinerary, itinerary_warnings = await self._itinerary_service.replan(
             req.existing_itinerary, req.edits, req.constraints, prefs
         )
-        route_plan = await self._routing_service.update_route_after_edits(itinerary, req.edits)
+
+        try:
+            route_plan, routing_warnings = await self._routing_service.update_route_after_edits(
+                itinerary, req.edits
+            )
+        except httpx.HTTPError:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "message": "Route recomputation failed.",
+                    "error_code": "ROUTING_UNAVAILABLE",
+                    "details": ["OSRM service is unavailable or unreachable."],
+                },
+            )
+
+        warnings = [
+            *validation.warnings,
+            *itinerary_warnings,
+            *routing_warnings,
+        ]
 
         return RouteResponse(
             itinerary=itinerary,
             route_plan=route_plan,
-            warnings=validation.warnings,
+            warnings=warnings,
         )
 
     async def suggest_trip_days(

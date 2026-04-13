@@ -96,28 +96,34 @@ class StubPoiServiceForGenerate:
 
 class StubItineraryService:
     async def build_itinerary(self, pois, constraints, prefs):
-        return Itinerary(
-            days=[
-                DayPlan(day_index=1, pois=pois)
-            ]
+        return (
+            Itinerary(
+                days=[
+                    DayPlan(day_index=1, pois=pois)
+                ]
+            ),
+            [],
         )
 
 
 class StubRoutingService:
     async def generate_route(self, itinerary, constraints):
-        return RoutePlan(
-            segments=[
-                RouteSegment(
-                    day_index=1,
-                    distance=5000,
-                    duration=900,
-                    geometry_encoded="encoded_polyline_here",
-                )
-            ],
-            total_distance=5000,
-            total_duration=900,
+        return (
+            RoutePlan(
+                segments=[
+                    RouteSegment(
+                        day_index=1,
+                        distance=5000,
+                        duration=900,
+                        geometry_encoded="encoded_polyline_here",
+                    )
+                ],
+                total_distance=5000,
+                total_duration=900,
+                geometry_encoded="encoded_polyline_here",
+            ),
+            [],
         )
-
 
 @pytest.mark.asyncio
 async def test_generate_route_final_output_satisfies_request_constraints():

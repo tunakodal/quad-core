@@ -56,7 +56,7 @@ async def test_route_segments_are_mapped_to_correct_days(routing_service):
 
     constraints = TravelConstraints()
 
-    route_plan = await routing_service.generate_route(itinerary, constraints)
+    route_plan, warnings = await routing_service.generate_route(itinerary, constraints)
 
     # segment sayısı = gün sayısı
     assert len(route_plan.segments) == len(itinerary.days)
@@ -77,7 +77,7 @@ async def test_route_plan_totals_equal_sum_of_segments(routing_service):
 
     constraints = TravelConstraints()
 
-    route_plan = await routing_service.generate_route(itinerary, constraints)
+    route_plan, warnings = await routing_service.generate_route(itinerary, constraints)
 
     segment_distance_sum = sum(seg.distance for seg in route_plan.segments)
     segment_duration_sum = sum(seg.duration for seg in route_plan.segments)
@@ -150,7 +150,7 @@ async def test_update_route_after_edits_recomputes_only_affected_days():
         ]
     )
 
-    route_plan = await routing_service.update_route_after_edits(itinerary, edits)
+    route_plan, warnings = await routing_service.update_route_after_edits(itinerary, edits)
 
     assert len(route_plan.segments) == 2
 
