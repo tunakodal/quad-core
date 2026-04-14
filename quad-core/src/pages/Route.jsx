@@ -518,45 +518,43 @@ export default function Route() {
               )}
             </div>
 
-            <div className={styles.addRow} ref={addRef}>
-              <div className={styles.selectWrap}>
-                <div
-                  className={styles.selectTop}
-                  onClick={() => setAddOpen(!addOpen)}
-                >
-                  <span className={styles.searchIcon}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="11" cy="11" r="8"/>
-                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                  </span>
+            {availablePoiList.length > 0 && (
+              <div className={styles.addRow} ref={addRef}>
+                <div className={styles.selectWrap}>
+                  <div
+                    className={styles.selectTop}
+                    onClick={() => setAddOpen(!addOpen)}
+                  >
+                    <span className={styles.searchIcon}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                      </svg>
+                    </span>
 
-                  <input
-                    className={styles.selectInput}
-                    type="text"
-                    placeholder="Search place to add..."
-                    value={addSearch}
-                    onChange={(e) => {
-                      setAddSearch(e.target.value);
-                      setAddOpen(true);
-                    }}
-                    onFocus={() => setAddOpen(true)}
-                  />
+                    <input
+                      className={styles.selectInput}
+                      type="text"
+                      placeholder="Search place to add..."
+                      value={addSearch}
+                      onChange={(e) => {
+                        setAddSearch(e.target.value);
+                        setAddOpen(true);
+                      }}
+                      onFocus={() => setAddOpen(true)}
+                    />
 
-                  <span className={styles.chev}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                  </span>
-                </div>
+                    <span className={styles.chev}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </span>
+                  </div>
 
-                {addOpen && (
-                  <div className={styles.dropdown}>
-                    <div className={styles.dropdownInner}>
-                      {filteredAddPois.length === 0 ? (
-                        <div className={styles.empty}>No places available</div>
-                      ) : (
-                        filteredAddPois.map((poi) => (
+                  {addOpen && (
+                    <div className={styles.dropdown}>
+                      <div className={styles.dropdownInner}>
+                        {filteredAddPois.map((poi) => (
                           <button
                             key={poi.id}
                             type="button"
@@ -566,13 +564,13 @@ export default function Route() {
                             <span className={styles.optionPin}>•</span>
                             {poi.name}
                           </button>
-                        ))
-                      )}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className={styles.poiList}>
               {activeDayPois.length === 0 ? (
