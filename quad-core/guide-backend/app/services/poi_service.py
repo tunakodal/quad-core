@@ -22,3 +22,7 @@ class PoiService:
         pois = await self.poi_repository.find_by_city_and_categories(city, categories)
         return len(pois)
 
+
+    async def get_random_pois(self, limit: int) -> list[Poi]:
+        return await self.poi_repository.find_random(limit)
+

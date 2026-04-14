@@ -49,7 +49,6 @@ class OsrmClient:
         waypoints: list[GeoPoint],
         profile: RoutingProfile = RoutingProfile.DRIVING,
     ) -> OsrmRouteResponse:
-        """Geliş sırasıyla direkt /route al — sıralama Monte Carlo'da yapıldı."""
 
         n = len(waypoints)
 
@@ -60,6 +59,11 @@ class OsrmClient:
                 geometry_encoded="",
                 waypoint_order=list(range(n)),
             )
+
+        # Kuş uçuşu mesafe hesapla
+        crow_total = 0
+        for i in range(n - 1):
+            crow_total += self._haversine(waypoints[i], waypoints[i + 1])
 
         route_coords = self._coords_str(waypoints)
         route_url = f"{self.base_url}/route/v1/{profile.value}/{route_coords}"
@@ -74,10 +78,20 @@ class OsrmClient:
             route_data = resp.json()
 
         route = route_data["routes"][0]
+        osrm_distance = int(route["distance"])
+        osrm_duration = int(route["duration"])
+
+        # Log
+        print(f"\n=== OSRM Route ===")
+        print(f"  Waypoints: {n}")
+        print(f"  Crow-fly total: {crow_total / 1000:.1f} km")
+        print(f"  OSRM distance:  {osrm_distance / 1000:.1f} km")
+        print(f"  OSRM duration:  {osrm_duration / 60:.0f} min")
+        print(f"  Ratio (road/crow): {osrm_distance / crow_total:.2f}x" if crow_total > 0 else "")
 
         return OsrmRouteResponse(
-            distance=int(route["distance"]),
-            duration=int(route["duration"]),
+            distance=osrm_distance,
+            duration=osrm_duration,
             geometry_encoded=route["geometry"],
             waypoint_order=list(range(n)),
         )
@@ -87,5 +101,4 @@ class OsrmClient:
         waypoints: list[GeoPoint],
         profile: RoutingProfile = RoutingProfile.DRIVING,
     ) -> OsrmRouteResponse:
-        """Verilen sırayla /route — replan için."""
         return await self.trip(waypoints, profile)

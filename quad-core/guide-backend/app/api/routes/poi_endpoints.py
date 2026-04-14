@@ -6,6 +6,7 @@ Dependencies are resolved from the application container at request time.
 """
 from fastapi import APIRouter, HTTPException, Request
 
+from app.models.poi import RandomPoiResponse, RandomPoiItem
 from app.schemas.common import ApiErrorResponse
 from app.schemas.poi_dtos import PoiContentRequest, PoiContentResponse, PoiQuery, PoiQueryResponse
 from app.schemas.travel import TravelPreferences
@@ -71,6 +72,33 @@ class PoiController:
         )
         return PoiContentResponse(content=content, warnings=warnings)
 
+    async def get_random_pois(self, limit: int) -> RandomPoiResponse:
+        pois = await self._poi_service.get_random_pois(limit)
+
+        items = [
+            RandomPoiItem(
+                id=p.id,
+                name=p.name,
+                city=p.city,
+
+                main_category_1=p.main_category_1,
+                main_category_2=p.main_category_2,
+                sub_category_1=p.sub_category_1,
+                sub_category_2=p.sub_category_2,
+                sub_category_3=p.sub_category_3,
+                sub_category_4=p.sub_category_4,
+
+                lat=p.location.latitude,
+                lng=p.location.longitude,
+
+                google_rating=p.google_rating,
+                google_reviews_total=p.google_reviews_total,
+            )
+            for p in pois
+        ]
+
+        return RandomPoiResponse(items=items)
+
 
 # ── Lazy controller accessor (resolved from app.state.container) ──
 
@@ -108,6 +136,15 @@ async def get_poi_content(req: PoiContentRequest, request: Request):
 
 
 @router.get(
+    "/random",
+    response_model=RandomPoiResponse,
+    summary="Get random POIs",
+)
+async def get_random_pois(request: Request, limit: int = 20):
+    return await _get_controller(request).get_random_pois(limit)
+
+
+@router.get(
     "/{poi_id}",
     response_model=PoiQueryResponse,
     responses=_ERROR_RESPONSES,
@@ -115,3 +152,6 @@ async def get_poi_content(req: PoiContentRequest, request: Request):
 )
 async def get_poi_by_id(poi_id: str, request: Request):
     return await _get_controller(request).get_poi_by_id(poi_id)
+
+
+

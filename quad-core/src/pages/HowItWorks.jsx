@@ -1,251 +1,74 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../styles/HowItWorks.module.css";
 import { Button } from "../ui/Button";
 
-/**
- * Backend plan (wire-in ready):
- * GET /api/poi-samples?limit=20&random=1
- * -> { items: [{ id, name, city, category, lat, lng, bestSeason, estVisitMin, source }, ...] }
- */
-
-const DEV_SAMPLE_ROWS = Array.from({ length: 30 }).map((_, i) => ({
-  id: `poi_${String(i + 1).padStart(2, "0")}`,
-  name: [
-    "Hagia Sophia",
-    "Topkapi Palace",
-    "Galata Tower",
-    "Grand Bazaar",
-    "Bosphorus Viewpoint",
-    "Dolmabahce Palace",
-    "Suleymaniye Mosque",
-    "Istiklal Street",
-    "Gulhane Park",
-    "Spice Bazaar",
-    "Maiden’s Tower",
-    "Ortakoy",
-    "Pierre Loti Hill",
-    "Kadikoy Market",
-    "Balat Streets",
-    "Archaeology Museum",
-    "Basilica Cistern",
-    "Chora Church",
-    "Emirgan Grove",
-    "Rumeli Fortress",
-    "Princes’ Islands",
-    "Karakoy",
-    "Taksim Square",
-    "Fener",
-    "Camlica Hill",
-    "Yildiz Park",
-    "Kuzguncuk",
-    "Sirkeci",
-    "Moda Coast",
-    "Golden Horn",
-  ][i] ?? `Sample POI ${i + 1}`,
-  city: "Istanbul",
-  category: ["Landmark", "Museum", "Viewpoint", "Shopping", "Nature"][i % 5],
-  estVisitMin: [30, 45, 60, 75, 90][i % 5],
-  bestSeason: ["Spring", "Summer", "Autumn", "All-year"][i % 4],
-  lat: (41.0082 + i * 0.0011).toFixed(4),
-  lng: (28.9784 + i * 0.0010).toFixed(4),
-  source: ["OSM", "Curated", "Municipal"][i % 3],
-}));
-
-function pickRandomN(arr, n) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a.slice(0, n);
-}
-
-/**
- * Icons: placeholder bırakıyoruz.
- * iconUrl ileride sizden gelecek (svg/png/jpg).
- */
 const API_LIST = [
-  {
-    key: "osrm",
-    name: "OSRM (Routing Engine)",
-    desc: "Orders POIs and generates route geometry based on road networks.",
-    href: "https://project-osrm.org/docs/v5.24.0/api/",
-    iconUrl: "/apis/osrm.png",
-  },
-  {
-    key: "leaflet",
-    name: "Leaflet",
-    desc: "Map renderer.",
-    href: "https://leafletjs.com",
-    iconUrl: "/apis/leaflet.jpeg",
-  },
-  {
-    key: "osm-data",
-    name: "OpenStreetMap Data",
-    desc: "Road network + geographic base data used by routing and map layers.",
-    href: "https://www.openstreetmap.org/copyright",
-    iconUrl: "/apis/osm.jpeg",
-  },
-  {
-    key: "sentence-similarity",
-    name: "E5 Sentence Similarity Model",
-    desc: "Computes semantic similarity between user preferences and POI descriptions to support relevance ranking.",
-    href: "https://arxiv.org/abs/2212.03533",
-    iconUrl: "/apis/e5.png",
-  },
-  {
-    key: "wikipedia",
-    name: "Wikipedia / MediaWiki REST API",
-    desc: "Fetches POI descriptions and structured extracts via REST endpoints.",
-    href: "https://www.mediawiki.org/wiki/API:REST_API",
-    iconUrl: "/apis/wiki.png",
-  },
-  {
-    key: "unesco",
-    name: "UNESCO References",
-    desc: "Authoritative reference pages for heritage-related POIs.",
-    href: "https://www.unesco.org.tr/Pages/125/122/UNESCO-Dünya-Mirası-Listesi",
-    iconUrl: "/apis/unesco.png",
-  },
-  {
-    key: "images1",
-    name: "Flickr",
-    desc: "POI photos used in POI detail pages (license-aware sourcing).",
-    href: "https://www.flickr.com/services/api/",
-    iconUrl: "/apis/flickr.png",
-  },
-  {
-    key: "images2",
-    name: "Pixabay",
-    desc: "POI photos used in POI detail pages (license-aware sourcing).",
-    href: "https://pixabay.com/api/docs/",
-    iconUrl: "/apis/pixabay.png",
-  },
-  {
-    key: "tts",
-    name: "ElevenLabs Text-to-Speech (TTS)",
-    desc: "Optional POI narration in multiple languages.",
-    href: "https://elevenlabs.io/docs",
-    iconUrl: "/apis/elevenlabs.png",
-  },
+  { key: "osrm", name: "OSRM (Routing Engine)", desc: "Computes travel distances and durations based on real road network data for route ordering and geometry generation.", href: "https://project-osrm.org/docs/v5.24.0/api/" },
+  { key: "leaflet", name: "Leaflet", desc: "Interactive map rendering library used for route visualization and POI marker display.", href: "https://leafletjs.com" },
+  { key: "osm", name: "OpenStreetMap", desc: "Primary backbone for geographic data, providing coordinates and baseline POI entries through the Overpass API.", href: "https://www.openstreetmap.org/copyright" },
+  { key: "supabase", name: "Supabase (PostgreSQL)", desc: "Managed backend platform built on PostgreSQL, providing structured storage, API generation, and data access for POIs, content, and media assets.", href: "https://supabase.com" },
+  { key: "wikipedia", name: "Wikipedia / Wikidata", desc: "Used to identify culturally significant locations and retrieve descriptive content for POI enrichment.", href: "https://www.mediawiki.org/wiki/API:REST_API" },
+  { key: "google-places", name: "Google Places API", desc: "Enriches POIs with popularity attributes (rating, review counts) and retrieves candidate photographs for visual content.", href: "https://developers.google.com/maps/documentation/places" },
+  { key: "google-tts", name: "Google Text-to-Speech", desc: "Generates multilingual audio guides (TR, EN, DE) from refined textual descriptions for POI narration.", href: "https://cloud.google.com/text-to-speech" },
+  { key: "flickr", name: "Flickr", desc: "License-aware POI photo sourcing used alongside Google Places for visual content curation.", href: "https://www.flickr.com/services/api/" },
+  { key: "pixabay", name: "Pixabay", desc: "Additional license-aware image source for POI detail pages.", href: "https://pixabay.com/api/docs/" },
+  { key: "unesco", name: "UNESCO References", desc: "Authoritative reference pages for heritage-related POI validation and enrichment.", href: "https://www.unesco.org.tr/Pages/125/122/UNESCO-D%C3%BCnya-Miras%C4%B1-Listesi" },
+  { key: "claude", name: "Claude Haiku (Anthropic)", desc: "Lightweight LLM used for text refinement, paraphrasing, and multilingual translation of POI descriptions during dataset preparation.", href: "https://www.anthropic.com/claude" },
 ];
 
 const TEAM = [
   { name: "Ebrar Sude Doğan", role: "Project Manager", photoUrl: "/us/ebrar_sude_dogan.jpeg" },
   { name: "Erdem Baran", role: "Database Administrator & API Specialist", photoUrl: "/us/erdem_baran.jpeg" },
   { name: "Kayrahan Toprak Tosun", role: "Scrum Master & Backend Development Leader", photoUrl: "/us/kayrahan_toprak_tosun.jpeg" },
-  { name: "Tuna Kodal", role: "AI Specialist & Frontend Development Leader", photoUrl: "/us/tuna_kodal.jpeg" },
+  { name: "Tuna Kodal", role: "Route Algorithm, Backend & Frontend Developer", photoUrl: "/us/tuna_kodal.jpeg" },
 ];
-
 
 const FLOW = [
-  {
-    key: "input",
-    title: "User Planning Input",
-    text:
-      "User selects city, trip days, distance constraints, interest categories, and exclusions. These inputs define feasibility and the candidate POI pool.",
-    iconUrl: "/project_flow/data.png",
-  },
-  {
-    key: "filter",
-    title: "Database Retrieval & Category Filtering",
-    text:
-      "Backend retrieves POIs from the database for the selected city, then applies category-based filtering and basic constraints.",
-    iconUrl: "/project_flow/database-storage.png",
-  },
-  {
-    key: "rank",
-    title: "POI Ranking (Feasibility-Aware)",
-    text:
-      "A ranking step prioritizes POIs when the user cannot visit everything. The goal is to select what is most relevant and realistically visitable within time/distance limits.",
-    iconUrl: "/project_flow/top-three.png",
-  },
-  {
-    key: "route",
-    title: "Shortest Path / Ordering via OSRM",
-    text:
-      "Ranked POIs are sent to OSRM to compute an ordered path and route geometry. This produces an efficient travel sequence on real road networks.",
-    iconUrl: "/project_flow/path.png",
-  },
-  {
-    key: "split",
-    title: "Day-by-Day Itinerary Construction",
-    text:
-      "The ordered route is segmented into daily plans according to trip days, estimated visit durations, and distance constraints.",
-    iconUrl: "/project_flow/calendar.png",
-  },
-  {
-    key: "viz",
-    title: "Frontend Route Visualization",
-    text:
-      "Map renders markers and route polylines. The user explores POIs via the interactive map and the ordered stop list.",
-    iconUrl: "/project_flow/web-design.png",
-  },
-  {
-    key: "replan",
-    title: "Optional Replanning (User Edits)",
-    text:
-      "User may edit POIs or constraints. If changed, the system reruns OSRM routing to produce an updated itinerary.",
-    iconUrl: "/project_flow/planning.png",
-  },
-  {
-    key: "details",
-    title: "POI Details & Optional Narration",
-    text:
-      "POI pages provide descriptions, images, and optional audio narration (TTS). Users can navigate between POIs and return to the route overview.",
-    iconUrl: "/project_flow/greek-pillars.png",
-  },
+  { key: "input", title: "User Planning Input", text: "User selects destination city, trip duration, daily distance constraints, and preferred interest categories. These define the feasibility bounds and candidate POI pool." },
+  { key: "validate", title: "Feasibility Validation", text: "System evaluates the requested configuration against available POIs. If insufficient, it suggests an alternative number of days or prompts category revision." },
+  { key: "filter", title: "Database Retrieval & Filtering", text: "Backend retrieves POIs from PostgreSQL (via Supabase) for the selected city, then applies category-based filtering and basic constraints." },
+  { key: "candidate", title: "Monte Carlo Candidate Generation", text: "For each day, 500+ candidate routes are generated by randomly sampling 4–9 POIs from the pool. Routes exceeding the 7-hour daily limit are discarded." },
+  { key: "score", title: "Composite Scoring & Selection", text: "Candidates are evaluated using a weighted score combining distance fit (Gaussian), spatial variance, popularity, category diversity, and POI count. The highest-scoring feasible route is selected." },
+  { key: "order", title: "Route Ordering (Nearest-Neighbor)", text: "Selected POIs are ordered using a greedy nearest-neighbor heuristic starting from the centroid-farthest point, then sent to OSRM for real road geometry." },
+  { key: "assemble", title: "Day-by-Day Itinerary Assembly", text: "Selected POIs are removed from the pool, and the process repeats for subsequent days until the trip duration is satisfied." },
+  { key: "viz", title: "Frontend Route Visualization", text: "Map renders markers and OSRM polylines via Leaflet. Users explore POIs through the interactive map and ordered stop list." },
+  { key: "replan", title: "Interactive Replanning", text: "Users can add, delete, or reorder POIs. Modified days are sent to the backend, which recomputes OSRM routes and returns updated geometry." },
+  { key: "explore", title: "POI Exploration & Audio Guides", text: "POI detail pages provide curated images, multilingual descriptions, and audio narration generated via Google TTS in Turkish, English, and German." },
 ];
-
-function IconPh({ iconUrl, alt }) {
-  if (iconUrl) {
-    return <img className={styles.iconImg} src={iconUrl} alt={alt ?? ""} />;
-  }
-  return <div className={styles.iconPh} aria-hidden="true" />;
-}
 
 export default function HowItWorks() {
   const navigate = useNavigate();
 
-  const [rows, setRows] = useState(() => pickRandomN(DEV_SAMPLE_ROWS, 20));
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const [err, setErr] = useState(null);
 
-  useEffect(() => {
-    // Backend hazır olunca:
-    // refreshRandom();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const refreshRandom = async () => {
+  const refreshRandom = useCallback(async () => {
     setLoading(true);
-    setErr("");
+    setErr(null);
     try {
-      if (import.meta.env.DEV) {
-        setRows(pickRandomN(DEV_SAMPLE_ROWS, 20));
-        return;
-      }
-
-      // Backend (example)
-      // const res = await fetch(`/api/poi-samples?limit=20&random=1`);
-      // if (!res.ok) throw new Error("Fetch failed");
-      // const data = await res.json();
-      // setRows(Array.isArray(data.items) ? data.items : []);
-
-      console.log("Hook point: GET /api/poi-samples?limit=20&random=1");
+      const res = await fetch("/api/v1/pois/random?limit=20");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setRows(Array.isArray(data?.items) ? data.items : []);
     } catch (e) {
       setErr(e?.message ?? "Failed to load");
+      setRows([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    refreshRandom();
+  }, [refreshRandom]);
 
   const tableMeta = useMemo(() => {
     if (loading) return "Loading random samples…";
-    if (err) return `Backend not connected: ${err}`;
-    return `Showing 20 random samples. You can change the sample set using the “Random Refresh” button.`;
-  }, [loading, err]);
+    if (err) return `Backend error: ${err}`;
+    return `Showing ${rows.length} random POIs from a dataset of 2,337 locations across all 81 provinces of Türkiye.`;
+  }, [loading, err, rows.length]);
 
   return (
     <div className={styles.page}>
@@ -255,20 +78,26 @@ export default function HowItWorks() {
             How <span className={styles.brand}>GUIDE</span> Works
           </h2>
           <p className={styles.subtitle}>
-            GUIDE combines curated POI data, AI-based ranking, and external services to generate optimized travel routes.
+            GUIDE transforms user-defined travel preferences into structured, route-aware multi-day itineraries
+            by combining curated POI data, Monte Carlo-based heuristic optimization, and real road network routing.
           </p>
         </header>
 
-        {/* DB overview FIRST */}
+        {/* DB Overview */}
         <section className={styles.section}>
-          <div className={styles.sectionTitle}>Point of Interest Database Overview</div>
+          <div className={styles.sectionTitle}>Point of Interest Database</div>
 
           <div className={styles.tableWrap}>
             <div className={styles.tableTopRow}>
               <div className={styles.tableMeta}>{tableMeta}</div>
 
-              <button type="button" className={styles.tableAction} onClick={refreshRandom} disabled={loading}>
-                Random Refresh
+              <button
+                type="button"
+                className={styles.tableAction}
+                onClick={refreshRandom}
+                disabled={loading}
+              >
+                {loading ? "Refreshing..." : "Random Refresh"}
               </button>
             </div>
 
@@ -279,26 +108,38 @@ export default function HowItWorks() {
                     <th>ID</th>
                     <th>Name</th>
                     <th>City</th>
-                    <th>Category</th>
-                    <th>Est. Visit</th>
-                    <th>Best Season</th>
+                    <th>Main Category</th>
+                    <th>Subcategory</th>
+                    <th>Rating</th>
+                    <th>Reviews</th>
                     <th>Lat</th>
                     <th>Lng</th>
-                    <th>Source</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {!loading && rows.length === 0 && (
+                    <tr>
+                      <td colSpan="9" style={{ textAlign: "center", padding: 20 }}>
+                        No data available
+                      </td>
+                    </tr>
+                  )}
+
                   {rows.map((r) => (
                     <tr key={r.id}>
                       <td className={styles.mono}>{r.id}</td>
                       <td className={styles.strongCell}>{r.name}</td>
                       <td>{r.city}</td>
-                      <td>{r.category}</td>
-                      <td>{r.estVisitMin ? `${r.estVisitMin} min` : "—"}</td>
-                      <td>{r.bestSeason ?? "—"}</td>
-                      <td className={styles.mono}>{r.lat}</td>
-                      <td className={styles.mono}>{r.lng}</td>
-                      <td>{r.source ?? "—"}</td>
+                      <td>{r.main_category_1}</td>
+                      <td>{r.sub_category_1}</td>
+                      <td>{r.google_rating?.toFixed?.(1) ?? "—"}</td>
+                      <td>{r.google_reviews_total ?? "—"}</td>
+                      <td className={styles.mono}>
+                        {typeof r.lat === "number" ? r.lat.toFixed(4) : "—"}
+                      </td>
+                      <td className={styles.mono}>
+                        {typeof r.lng === "number" ? r.lng.toFixed(4) : "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -307,49 +148,37 @@ export default function HowItWorks() {
           </div>
         </section>
 
-        {/* APIs AFTER DB */}
-        <section className={styles.section}>
-          <div className={styles.sectionTitle}>Data Sources & External Services</div>
-
-          <div className={styles.apiGrid}>
-            {API_LIST.map((a) => (
-                <a
-                    key={a.key}
-                    href={a.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.apiCard}
-                >
-                  <div className={styles.apiTop}>
-                    <div className={styles.apiIcon}>
-                      <IconPh iconUrl={a.iconUrl} alt=""/>
-                    </div>
-                    <div className={styles.apiName}>{a.name}</div>
-                  </div>
-
-                  <div className={styles.apiDesc}>{a.desc}</div>
-                  <div className={styles.apiIO}>{a.io}</div>
-                </a>
-            ))}
-          </div>
-        </section>
-
         {/* System Flow */}
         <section className={styles.section}>
           <div className={styles.sectionTitle}>System Flow</div>
 
           <div className={styles.flowGrid}>
-            {FLOW.map((f) => (
-                <div key={f.key} className={styles.flowCard}>
-                  <div className={styles.flowIcon}>
-                    <IconPh iconUrl={f.iconUrl} alt=""/>
-                  </div>
-
-                  <div className={styles.flowBody}>
-                    <div className={styles.flowTitle}>{f.title}</div>
-                    <div className={styles.flowText}>{f.text}</div>
-                </div>
+            {FLOW.map(({ key, title, text }, idx) => (
+              <div key={key} className={styles.flowCard}>
+                <div className={styles.flowNum}>{idx + 1}</div>
+                <div className={styles.flowTitle}>{title}</div>
+                <div className={styles.flowText}>{text}</div>
               </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Data Sources */}
+        <section className={styles.section}>
+          <div className={styles.sectionTitle}>Data Sources & External Services</div>
+
+          <div className={styles.apiGrid}>
+            {API_LIST.map(({ key, href, name, desc }) => (
+              <a
+                key={key}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.apiCard}
+              >
+                <div className={styles.apiName}>{name}</div>
+                <div className={styles.apiDesc}>{desc}</div>
+              </a>
             ))}
           </div>
         </section>
@@ -379,7 +208,7 @@ export default function HowItWorks() {
 
         <div className={styles.bottomRow}>
           <Button variant="ghost" className={styles.backBtnBottom} onClick={() => navigate("/")}>
-            ← Back to landing
+            Back to landing
           </Button>
         </div>
       </div>

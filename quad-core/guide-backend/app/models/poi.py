@@ -41,3 +41,25 @@ class PoiContent(BaseModel):
     description_text: str = ""
     images: list[MediaAsset] = []
     audio: Optional[MediaAsset] = None
+
+class RandomPoiItem(BaseModel):
+    id: str
+    name: str
+    city: str
+
+    main_category_1: str | None = None
+    main_category_2: str | None = None
+    sub_category_1: str | None = None
+    sub_category_2: str | None = None
+    sub_category_3: str | None = None
+    sub_category_4: str | None = None
+
+    lat: float
+    lng: float
+
+    google_rating: float | None = None
+    google_reviews_total: int | None = None
+
+
+class RandomPoiResponse(BaseModel):
+    items: list[RandomPoiItem]

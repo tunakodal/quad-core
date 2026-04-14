@@ -29,6 +29,7 @@ Estimated visit duration:
 from __future__ import annotations
 
 import json
+import random
 from pathlib import Path
 
 from app.models.geo import GeoPoint
@@ -317,3 +318,22 @@ class PostgresPoiRepository(AbstractPoiRepository):
         if not response.data:
             return None
         return _row_to_poi(response.data[0])
+
+    async def find_random(self, limit: int) -> list[Poi]:
+        batches = []
+
+        for _ in range(3):  # 3 farklı yerden çek
+            offset = random.randint(0, 2000)  # tahmini range
+            res = await (
+                self._client.table("pois")
+                .select(_POI_COLUMNS)
+                .range(offset, offset + 200)
+                .execute()
+            )
+            batches.extend(res.data)
+
+        pois = [_row_to_poi(r) for r in batches]
+
+        random.shuffle(pois)
+
+        return pois[:limit]

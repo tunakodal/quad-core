@@ -58,6 +58,10 @@ class AbstractPoiRepository(ABC):
         """ID'ye göre tek POI döner; bulunamazsa None."""
         ...
 
+    @abstractmethod
+    async def find_random(self, limit: int) -> list[Poi]:
+        pass
+
 
 class AbstractContentRepository(ABC):
     """POI metin içeriği ve görsel metadata için veri erişim arayüzü."""
