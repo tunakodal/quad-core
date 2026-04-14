@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import RouteMap from "./RouteMap";
 import styles from "../styles/Route.module.css";
@@ -40,6 +40,16 @@ const DEV_AVAILABLE_POIS = [
   { id: "p13", name: "Pierre Loti Hill", etaMin: 30, lat: 41.0539, lng: 28.9336 },
   { id: "p14", name: "Rumeli Fortress", etaMin: 30, lat: 41.0849, lng: 29.0568 },
 ];
+
+function mapPoiFromBackend(p) {
+  return {
+    id: p.id,
+    name: p.name,
+    etaMin: p.eta_min ?? p.estimated_visit_duration ?? 30,
+    lat: p.location?.latitude ?? p.lat,
+    lng: p.location?.longitude ?? p.lng,
+  };
+}
 
 function haversineKm(a, b) {
   const R = 6371;
@@ -96,17 +106,13 @@ export default function Route() {
     categories: [],
   };
 
-  const initialDays = useMemo(() => {
-    if (routeResponse?.itinerary?.days?.length) {
-      return routeResponse.itinerary.days.map((day) => {
-        const pois = day.pois.map((p) => ({
-          id: p.id,
-          name: p.name,
-          etaMin: p.eta_min ?? p.estimated_visit_duration ?? 30,
-          lat: p.location?.latitude ?? p.lat,
-          lng: p.location?.longitude ?? p.lng,
-        }));
+  const [currentRouteResponse, setCurrentRouteResponse] = useState(routeResponse);
+  const [replanLoading, setReplanLoading] = useState(false);
 
+  const initialDays = useMemo(() => {
+    if (currentRouteResponse?.itinerary?.days?.length) {
+      return currentRouteResponse.itinerary.days.map((day) => {
+        const pois = day.pois.map(mapPoiFromBackend);
         return {
           dayIndex: day.day_index,
           dateLabel: `Day ${day.day_index + 1}`,
@@ -128,7 +134,7 @@ export default function Route() {
     }
 
     return [];
-  }, [routeResponse]);
+  }, []);
 
   const [days, setDays] = useState(initialDays);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
@@ -138,8 +144,28 @@ export default function Route() {
     fromIndex: -1,
     overIndex: -1,
   });
+  const [addSearch, setAddSearch] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const addRef = useRef(null);
 
-  const availablePois = useMemo(() => DEV_AVAILABLE_POIS, []);
+  // Available POI'ler — ayrı state, replan'dan bağımsız
+  const [availablePoiList, setAvailablePoiList] = useState(() => {
+    if (routeResponse?.available_pois?.length) {
+      return routeResponse.available_pois.map(mapPoiFromBackend);
+    }
+    if (import.meta.env.DEV) return DEV_AVAILABLE_POIS;
+    return [];
+  });
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (addRef.current && !addRef.current.contains(e.target)) {
+        setAddOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
+  }, []);
 
   const activeDay = days[activeDayIndex] ?? null;
 
@@ -153,6 +179,18 @@ export default function Route() {
   const canDiscard = anyModified;
   const canFinalize = anyModified;
   const canStart = !anyModified;
+
+  // Dropdown filtresi — tüm günlerdeki POI'leri hariç tut
+  const filteredAddPois = useMemo(() => {
+    if (!activeDay) return [];
+    const existingIds = new Set(
+      days.flatMap((day) => day.pois.map((poi) => poi.id))
+    );
+    const available = availablePoiList.filter((poi) => !existingIds.has(poi.id));
+    if (!addSearch.trim()) return available;
+    const q = addSearch.toLowerCase();
+    return available.filter((poi) => poi.name.toLowerCase().includes(q));
+  }, [activeDay, days, availablePoiList, addSearch]);
 
   function recomputeDay(day, nextPois) {
     const cleanPois = clonePois(nextPois);
@@ -173,36 +211,41 @@ export default function Route() {
 
   function handleDeletePoi(poiId) {
     if (!activeDay) return;
+
+    const deletedPoi = activeDay.pois.find((poi) => poi.id === poiId);
     const nextPois = activeDay.pois.filter((poi) => poi.id !== poiId);
     updateActiveDayPois(nextPois);
+
+    // Silinen POI'yi available listesine geri ekle
+    if (deletedPoi) {
+      setAvailablePoiList((prev) => {
+        if (prev.some((p) => p.id === deletedPoi.id)) return prev;
+        return [...prev, { ...deletedPoi }];
+      });
+    }
   }
 
-  function handleAddPoi(e) {
-    const selectedId = e.target.value;
-    if (!selectedId || !activeDay) return;
-
-    const poiToAdd = availablePois.find((poi) => poi.id === selectedId);
+  function handleAddPoiById(poiId) {
+    if (!activeDay) return;
+    const poiToAdd = availablePoiList.find((poi) => poi.id === poiId);
     if (!poiToAdd) return;
-
-    const alreadyExists = activeDay.pois.some((poi) => poi.id === selectedId);
-    if (alreadyExists) {
-      e.target.value = "";
-      return;
-    }
 
     const nextPois = [...activeDay.pois, { ...poiToAdd }];
     updateActiveDayPois(nextPois);
-    e.target.value = "";
+
+    // Available listesinden çıkar
+    setAvailablePoiList((prev) => prev.filter((p) => p.id !== poiId));
+
+    setAddSearch("");
+    setAddOpen(false);
   }
 
   function movePoi(fromIndex, toIndex) {
     if (!activeDay) return;
     if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
-
     const next = [...activeDay.pois];
     const [moved] = next.splice(fromIndex, 1);
     next.splice(toIndex, 0, moved);
-
     updateActiveDayPois(next);
   }
 
@@ -213,7 +256,6 @@ export default function Route() {
     const handleMove = (moveE) => {
       const elements = document.querySelectorAll(`.${styles.poiItem}`);
       const y = moveE.clientY ?? moveE.touches?.[0]?.clientY;
-
       for (let i = 0; i < elements.length; i++) {
         const rect = elements[i].getBoundingClientRect();
         if (y >= rect.top && y <= rect.bottom) {
@@ -230,7 +272,6 @@ export default function Route() {
         }
         return { dragging: false, fromIndex: -1, overIndex: -1 };
       });
-
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
     };
@@ -240,6 +281,37 @@ export default function Route() {
   }
 
   function handleDiscardChanges() {
+    // Discard sırasında eklenen POI'leri available'a geri ver,
+    // silinen POI'leri available'dan geri çek
+    const originalIds = new Set(
+      days.flatMap((day) => day.originalPois.map((p) => p.id))
+    );
+    const currentIds = new Set(
+      days.flatMap((day) => day.pois.map((p) => p.id))
+    );
+
+    // Eklenenler (current'ta var, original'da yok) → available'a geri ekle
+    const addedPois = days.flatMap((day) =>
+      day.pois.filter((p) => !originalIds.has(p.id))
+    );
+
+    // Silinenler (original'da var, current'ta yok) → available'dan çıkar
+    const removedIds = new Set(
+      days.flatMap((day) =>
+        day.originalPois.filter((p) => !currentIds.has(p.id)).map((p) => p.id)
+      )
+    );
+
+    setAvailablePoiList((prev) => {
+      let updated = prev.filter((p) => !removedIds.has(p.id));
+      for (const poi of addedPois) {
+        if (!updated.some((p) => p.id === poi.id)) {
+          updated = [...updated, { ...poi }];
+        }
+      }
+      return updated;
+    });
+
     setDays((prev) =>
       prev.map((day) => ({
         ...day,
@@ -250,36 +322,80 @@ export default function Route() {
     setActivePoiIndex(-1);
   }
 
-  function handleFinalizeReplan() {
-    const modifiedDays = days.filter((day) => day.modified);
-    console.log("Finalize replan for modified days:", modifiedDays);
+  async function handleFinalizeReplan() {
+    if (!canFinalize) return;
 
-    setDays((prev) =>
-      prev.map((day) => ({
-        ...day,
-        originalPois: clonePois(day.pois),
-        modified: false,
-      }))
-    );
+    const orderedPoiIdsByDay = {};
+    days.forEach((day) => {
+      if (day.modified) {
+        orderedPoiIdsByDay[day.dayIndex] = day.pois.map((p) => p.id);
+      }
+    });
+
+    const requestBody = {
+      existing_itinerary: currentRouteResponse.itinerary,
+      edits: {
+        ordered_poi_ids_by_day: orderedPoiIdsByDay,
+      },
+      constraints: {
+        max_daily_distance: (planningInput.distanceKm ?? 20) * 1000,
+        max_trip_days: planningInput.days ?? 3,
+        max_pois_per_day: 9,
+      },
+    };
+
+    setReplanLoading(true);
+
+    try {
+      const resp = await fetch("/api/v1/routes/replan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!resp.ok) {
+        console.error("Replan failed:", resp.status);
+        return;
+      }
+
+      const data = await resp.json();
+      setCurrentRouteResponse(data);
+
+      setDays((prev) =>
+        prev.map((day) => {
+          const backendDay = data.itinerary.days.find(
+            (d) => d.day_index === day.dayIndex
+          );
+
+          if (!backendDay) return { ...day, modified: false };
+
+          const newPois = backendDay.pois.map(mapPoiFromBackend);
+
+          return {
+            ...day,
+            pois: clonePois(newPois),
+            originalPois: clonePois(newPois),
+            modified: false,
+          };
+        })
+      );
+    } catch (err) {
+      console.error("Replan error:", err);
+    } finally {
+      setReplanLoading(false);
+    }
   }
 
   function handleStartJourney() {
     if (!canStart) return;
-
     navigate("/journey", {
       state: {
         planningInput,
         days,
-        routeResponse,
+        routeResponse: currentRouteResponse,
       },
     });
   }
-
-  const selectablePois = useMemo(() => {
-    if (!activeDay) return [];
-    const existingIds = new Set(activeDay.pois.map((poi) => poi.id));
-    return availablePois.filter((poi) => !existingIds.has(poi.id));
-  }, [activeDay, availablePois]);
 
   return (
     <div className={styles.page}>
@@ -324,9 +440,9 @@ export default function Route() {
           </button>
         </section>
 
-        {routeResponse?.warnings?.length > 0 && (
+        {currentRouteResponse?.warnings?.length > 0 && (
           <section className={styles.warningsBar}>
-            {routeResponse.warnings.map((w, i) => (
+            {currentRouteResponse.warnings.map((w, i) => (
               <div key={i} className={styles.warningItem}>
                 ⚠️ {w.message}
               </div>
@@ -381,7 +497,7 @@ export default function Route() {
                 geometry={
                   activeDay?.modified
                     ? null
-                    : routeResponse?.route_plan?.segments?.[activeDayIndex]?.geometry_encoded ?? null
+                    : currentRouteResponse?.route_plan?.segments?.[activeDayIndex]?.geometry_encoded ?? null
                 }
                 activeIndex={activePoiIndex}
                 onHoverStop={setActivePoiIndex}
@@ -402,19 +518,60 @@ export default function Route() {
               )}
             </div>
 
-            <div className={styles.addRow}>
-              <select
-                className={styles.addSelect}
-                defaultValue=""
-                onChange={handleAddPoi}
-              >
-                <option value="" disabled>Add a place</option>
-                {selectablePois.map((poi) => (
-                  <option key={poi.id} value={poi.id}>
-                    {poi.name}
-                  </option>
-                ))}
-              </select>
+            <div className={styles.addRow} ref={addRef}>
+              <div className={styles.selectWrap}>
+                <div
+                  className={styles.selectTop}
+                  onClick={() => setAddOpen(!addOpen)}
+                >
+                  <span className={styles.searchIcon}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8"/>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                  </span>
+
+                  <input
+                    className={styles.selectInput}
+                    type="text"
+                    placeholder="Search place to add..."
+                    value={addSearch}
+                    onChange={(e) => {
+                      setAddSearch(e.target.value);
+                      setAddOpen(true);
+                    }}
+                    onFocus={() => setAddOpen(true)}
+                  />
+
+                  <span className={styles.chev}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </span>
+                </div>
+
+                {addOpen && (
+                  <div className={styles.dropdown}>
+                    <div className={styles.dropdownInner}>
+                      {filteredAddPois.length === 0 ? (
+                        <div className={styles.empty}>No places available</div>
+                      ) : (
+                        filteredAddPois.map((poi) => (
+                          <button
+                            key={poi.id}
+                            type="button"
+                            className={styles.option}
+                            onClick={() => handleAddPoiById(poi.id)}
+                          >
+                            <span className={styles.optionPin}>•</span>
+                            {poi.name}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className={styles.poiList}>
@@ -502,9 +659,9 @@ export default function Route() {
               type="button"
               className={styles.primaryBtn}
               onClick={handleFinalizeReplan}
-              disabled={!canFinalize}
+              disabled={!canFinalize || replanLoading}
             >
-              Finalize Replan
+              {replanLoading ? "Replanning..." : "Finalize Replan"}
             </button>
 
             <span className={styles.divider}>|</span>
@@ -520,9 +677,11 @@ export default function Route() {
           </div>
 
           <div className={styles.bottomHint}>
-            {anyModified
-              ? "Finalize changes before starting."
-              : "No pending edits. You can start the journey."}
+            {replanLoading
+              ? "Computing new routes..."
+              : anyModified
+                ? "Finalize changes before starting."
+                : "No pending edits. You can start the journey."}
           </div>
         </section>
       </div>

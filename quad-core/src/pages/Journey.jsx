@@ -20,6 +20,8 @@ export default function Journey() {
 
     const days = state?.days ?? [];
     const planningInput = state?.planningInput;
+    const routeResponse = state?.routeResponse ?? null;
+
 
     const [activeDayIndex, setActiveDayIndex] = useState(0);
     const [activePoiIndex, setActivePoiIndex] = useState(-1);
@@ -84,7 +86,9 @@ export default function Journey() {
                         <RouteMap
                             cityId={planningInput?.cityId}
                             stops={activeDayPois}
-                            geometry={null}
+                            geometry={
+                                routeResponse?.route_plan?.segments?.[activeDayIndex]?.geometry_encoded ?? null
+                            }
                             activeIndex={activePoiIndex}
                             onHoverStop={setActivePoiIndex}
                             onSelectStop={(idx) => handleOpenPoi(activeDayPois[idx], idx)}

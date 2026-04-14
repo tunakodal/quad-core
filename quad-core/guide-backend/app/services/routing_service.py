@@ -2,11 +2,11 @@ from app.models.enums import RoutingProfile
 from app.models.route import Itinerary, RoutePlan, RouteSegment
 from app.schemas.route_dtos import UserEdits
 from app.schemas.travel import TravelConstraints
-from app.integration.osrm_client import OsrmClient
+from app.integration.osrm_client import OsrmClient, OsrmRouteResponse
 from app.schemas.common import ApiWarning
 
+
 class RouteAssembler:
-    """Converts OSRM outputs into RoutePlan / RouteSegment structures."""
 
     def assemble(self, itinerary: Itinerary, osrm_outputs) -> RoutePlan:
         segments: list[RouteSegment] = []
@@ -24,7 +24,6 @@ class RouteAssembler:
             segments.append(seg)
             total_distance += osrm.distance
             total_duration += osrm.duration
-            # Last day geometry used as combined (frontend can decode per-day)
             combined_geometry = osrm.geometry_encoded
 
         return RoutePlan(
@@ -36,17 +35,13 @@ class RouteAssembler:
 
 
 class RoutingService:
-    """
-    Coordinates route computation via OSRM and assembles
-    results into day-segmented RoutePlan outputs.
-    """
 
     def __init__(self, osrm_client: OsrmClient, route_assembler: RouteAssembler):
         self.osrm_client = osrm_client
         self.route_assembler = route_assembler
 
     async def generate_route(
-            self, itinerary: Itinerary, constraints: TravelConstraints
+        self, itinerary: Itinerary, constraints: TravelConstraints
     ) -> tuple[RoutePlan, list[ApiWarning]]:
         osrm_outputs = []
 
@@ -58,17 +53,10 @@ class RoutingService:
                 waypoints, RoutingProfile.DRIVING
             )
 
-            # Sıralamayı uygula
             order = osrm_result.waypoint_order
             day.pois = [day.pois[i] for i in order]
 
             osrm_outputs.append(osrm_result)
-
-            print(f"\n=== Day {day.day_index} ===")
-            print(f"Distance: {osrm_result.distance / 1000:.1f} km")
-            print(f"Duration: {osrm_result.duration / 60:.0f} min")
-            for i, poi in enumerate(day.pois):
-                print(f"  {i + 1}. {poi.name}")
 
         route_plan = self.route_assembler.assemble(itinerary, osrm_outputs)
 
@@ -79,48 +67,44 @@ class RoutingService:
         return route_plan, warnings
 
     async def update_route_after_edits(
-            self, itinerary: Itinerary, edits: UserEdits
+        self, itinerary: Itinerary, edits: UserEdits
     ) -> tuple[RoutePlan, list[ApiWarning]]:
-        """
-        Recompute only the days affected by user edits.
 
-        For edited days, the current POI order in the itinerary is treated as
-        authoritative and routed with the ordered OSRM route endpoint.
-        Unaffected days reuse their existing route segments.
-        """
         warnings: list[ApiWarning] = []
-
-        affected_days = {op.day_index for op in edits.reorder_operations}
-
-        affected_days |= {
-            day.day_index
-            for day in itinerary.days
-            for poi in day.pois
-            if poi.id in edits.removed_poi_ids
-        }
-
-        if edits.ordered_poi_ids_by_day:
-            affected_days |= set(edits.ordered_poi_ids_by_day.keys())
+        affected_days = set(edits.ordered_poi_ids_by_day.keys())
 
         osrm_outputs = []
 
         for day in itinerary.days:
-            if day.day_index in affected_days or not day.route_segment:
+            if day.day_index in affected_days:
+                # Modified gün — frontend sırasıyla route al
                 waypoints = [poi.location for poi in day.pois]
                 if waypoints:
                     result = await self.osrm_client.route(
-                        waypoints,
-                        RoutingProfile.DRIVING,
+                        waypoints, RoutingProfile.DRIVING
                     )
                     osrm_outputs.append(result)
+                else:
+                    osrm_outputs.append(OsrmRouteResponse(
+                        distance=0, duration=0,
+                        geometry_encoded="", waypoint_order=[],
+                    ))
             else:
-                class _Passthrough:
-                    def __init__(self, seg):
-                        self.distance = seg.distance
-                        self.duration = seg.duration
-                        self.geometry_encoded = seg.geometry_encoded
-
-                osrm_outputs.append(_Passthrough(day.route_segment))
+                # Değişmemiş gün — mevcut segment'i koru
+                if day.route_segment:
+                    osrm_outputs.append(OsrmRouteResponse(
+                        distance=day.route_segment.distance,
+                        duration=day.route_segment.duration,
+                        geometry_encoded=day.route_segment.geometry_encoded,
+                        waypoint_order=list(range(len(day.pois))),
+                    ))
+                else:
+                    waypoints = [poi.location for poi in day.pois]
+                    if waypoints:
+                        result = await self.osrm_client.route(
+                            waypoints, RoutingProfile.DRIVING
+                        )
+                        osrm_outputs.append(result)
 
         route_plan = self.route_assembler.assemble(itinerary, osrm_outputs)
 

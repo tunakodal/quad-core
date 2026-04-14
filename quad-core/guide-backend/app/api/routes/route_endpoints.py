@@ -126,11 +126,19 @@ class RouteController:
             *routing_warnings,
         ]
 
+        used_ids = {
+            poi.id
+            for day in itinerary.days
+            for poi in day.pois
+        }
+        available_pois = [p for p in pois if p.id not in used_ids]
+
         return RouteResponse(
             itinerary=itinerary,
             route_plan=route_plan,
             warnings=warnings,
             effective_trip_days=len(itinerary.days),
+            available_pois=available_pois,
         )
 
     async def replan_route(self, req: ReplanRequest) -> JSONResponse | RouteResponse:
