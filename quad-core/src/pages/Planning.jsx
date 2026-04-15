@@ -156,7 +156,6 @@ function EditablePillNumber({ value, unitLabel, min, max, onCommit, disabled }) 
 function RangeRow({ title, value, min, max, step, unitLabel, onChange, disabled }) {
   return (
     <div className={styles.rangeRow}>
-
       <div className={styles.rangeHead}>
         <div className={styles.rangeTitle}>{title}</div>
 
@@ -185,7 +184,6 @@ function RangeRow({ title, value, min, max, step, unitLabel, onChange, disabled 
         <span>{min}</span>
         <span>{max}</span>
       </div>
-
     </div>
   );
 }
@@ -196,9 +194,14 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
   const [q, setQ] = useState("");
 
   const normalize = (str) =>
-    str.toLowerCase()
-      .replace(/ı/g, "i").replace(/ğ/g, "g").replace(/ş/g, "s")
-      .replace(/ö/g, "o").replace(/ç/g, "c").replace(/ü/g, "u");
+    str
+      .toLowerCase()
+      .replace(/ı/g, "i")
+      .replace(/ğ/g, "g")
+      .replace(/ş/g, "s")
+      .replace(/ö/g, "o")
+      .replace(/ç/g, "c")
+      .replace(/ü/g, "u");
 
   const filtered = useMemo(() => {
     const s = normalize(q.trim());
@@ -209,16 +212,26 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
   return (
     <div className={styles.selectWrap}>
       <div className={styles.selectTop}>
-        <span className={styles.searchIcon} aria-hidden="true">⌕</span>
+        <span className={styles.searchIcon} aria-hidden="true">
+          ⌕
+        </span>
         <input
           className={styles.selectInput}
           placeholder={placeholder}
           value={open ? q : selected?.name ?? ""}
-          onFocus={() => { setOpen(true); setQ(""); }}
-          onChange={(e) => { setOpen(true); setQ(e.target.value); }}
+          onFocus={() => {
+            setOpen(true);
+            setQ("");
+          }}
+          onChange={(e) => {
+            setOpen(true);
+            setQ(e.target.value);
+          }}
           onBlur={() => setTimeout(() => setOpen(false), 120)}
         />
-        <span className={styles.chev} aria-hidden="true">▾</span>
+        <span className={styles.chev} aria-hidden="true">
+          ▾
+        </span>
       </div>
       {open && (
         <div className={styles.dropdown} role="listbox">
@@ -229,7 +242,10 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
                 type="button"
                 className={styles.option}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => { onSelect(it.id); setOpen(false); }}
+                onClick={() => {
+                  onSelect(it.id);
+                  setOpen(false);
+                }}
               >
                 <span className={styles.dot}></span>
                 <span>{it.name}</span>
@@ -266,9 +282,6 @@ export default function Planning() {
 
   const [cities] = useState(ALL_CITIES);
 
-
-
-  // Şehir değişince Supabase'den kategorileri çek
   useEffect(() => {
     if (!cityId) {
       setAvailableKeys(null);
@@ -349,9 +362,9 @@ export default function Planning() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         city: payload.cityId,
-        categories: payload.categories
-    }),
-  });
+        categories: payload.categories,
+      }),
+    });
 
     if (!res.ok) throw new Error("Suggestion failed");
 
@@ -367,13 +380,11 @@ export default function Planning() {
 
       const suggestionRes = await fetchSuggestion(payload);
 
-      // 🔥 ONLY HARD ERROR
       if (suggestionRes.poi_count === 0) {
         setErrorMsg("No POIs found for selected categories");
         return;
       }
 
-      // 🔥 POPUP CASE
       if (payload.days > suggestionRes.max_recommended_days) {
         setSuggestion(suggestionRes);
         setPendingPayload(payload);
@@ -381,9 +392,7 @@ export default function Planning() {
         return;
       }
 
-      // 🔥 DIRECT GENERATE
       await generateRoute(payload);
-
     } catch (err) {
       setErrorMsg(err.message || "Something went wrong");
     } finally {
@@ -392,56 +401,52 @@ export default function Planning() {
   };
 
   const generateRoute = async (payload) => {
+    const distanceMeters = Math.max(payload.distanceKm * 1000, 1000);
 
-  const distanceMeters = Math.max(payload.distanceKm * 1000, 1000);
+    const requestBody = {
+      preferences: {
+        city: payload.cityId,
+        trip_days: payload.days,
+        categories: payload.categories,
+        max_distance_per_day: distanceMeters,
+      },
+      constraints: {
+        max_trip_days: payload.days,
+        max_pois_per_day: 9,
+        max_daily_distance: distanceMeters,
+      },
+      language: "EN",
+    };
 
-  const requestBody = {
-    preferences: {
-      city: payload.cityId,
-      trip_days: payload.days,
-      categories: payload.categories,
-      max_distance_per_day: distanceMeters,
-  },
-    constraints: {
-      max_trip_days: payload.days,
-      max_pois_per_day: 9,
-      max_daily_distance: distanceMeters,
-    },
-    language: "EN",
+    const response = await fetch("/api/v1/routes/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(errText || "Generate failed");
+    }
+
+    const data = await response.json();
+
+    navigate("/route", {
+      state: {
+        planningInput: payload,
+        routeResponse: data,
+      },
+    });
   };
 
-  const response = await fetch("/api/v1/routes/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody),
-  });
-  
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(errText || "Generate failed");
-  }
-
-  const data = await response.json();
-
-  navigate("/route", {
-    state: {
-      planningInput: payload,
-      routeResponse: data,
-    },
-  });
-};
-
-  // Kategori ağacını availableKeys'e göre filtrele
   const visibleCategoryTree = useMemo(() => {
     if (!availableKeys) return CATEGORY_TREE;
 
     return CATEGORY_TREE
       .map((cat) => {
         if (!cat.sub) {
-          // Leaf kategori (museums) — sadece availableKeys'de varsa göster
           return availableKeys.has(cat.key) ? cat : null;
         }
-        // Sub kategorileri filtrele
         const visibleSubs = cat.sub.filter((s) => availableKeys.has(s.key));
         if (visibleSubs.length === 0) return null;
         return { ...cat, sub: visibleSubs };
@@ -454,9 +459,7 @@ export default function Planning() {
       {showSuggestionModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalCard}>
-            <h3 className={styles.modalTitle}>
-              Maximum Trip Duration Reached
-            </h3>
+            <h3 className={styles.modalTitle}>Maximum Trip Duration Reached</h3>
 
             <p className={styles.modalText}>
               Based on your selected categories, the maximum feasible trip duration is{" "}
@@ -464,32 +467,32 @@ export default function Planning() {
             </p>
 
             <p className={styles.modalSubText}>
-              Your current selection exceeds the available POIs. You can continue with the suggested duration or modify your preferences.
+              Your current selection exceeds the available POIs. You can continue with the
+              suggested duration or modify your preferences.
             </p>
 
             <div className={styles.modalActions}>
               <button
                 className={styles.primaryBtn}
                 onClick={async () => {
-                try {
-                  setIsGenerating(true); // 🔥 tekrar başlat
+                  try {
+                    setIsGenerating(true);
 
-                  const newPayload = {
-                    ...pendingPayload,
-                    days: suggestion.max_recommended_days,
-                  };
+                    const newPayload = {
+                      ...pendingPayload,
+                      days: suggestion.max_recommended_days,
+                    };
 
-                  setShowSuggestionModal(false);
+                    setShowSuggestionModal(false);
 
-                  await generateRoute(newPayload);
-
-                } catch (err) {
-                  console.error(err);
-                  setErrorMsg(err.message);
-                } finally {
-                  setIsGenerating(false); // 🔥 garanti kapat
-                }
-              }}
+                    await generateRoute(newPayload);
+                  } catch (err) {
+                    console.error(err);
+                    setErrorMsg(err.message);
+                  } finally {
+                    setIsGenerating(false);
+                  }
+                }}
               >
                 Continue
               </button>
@@ -522,7 +525,6 @@ export default function Planning() {
           <p className={styles.quoteAuthor}>— Benjamin Franklin</p>
         </div>
 
-        {/* City */}
         <div className={styles.block}>
           <div className={styles.rangeTitle}>Select City</div>
           <SearchSelect
@@ -538,7 +540,6 @@ export default function Planning() {
         </div>
 
         <div className={`${styles.hero} ${!cityId ? styles.disabledSection : ""}`}>
-          {/* Days + Distance */}
           <div className={styles.twoCols}>
             <div className={styles.block}>
               <RangeRow
@@ -566,7 +567,6 @@ export default function Planning() {
             </div>
           </div>
 
-          {/* Categories — sadece o şehirde olanlar */}
           <div className={styles.block}>
             <div className={styles.sectionTitle}>Interests</div>
 
@@ -577,13 +577,18 @@ export default function Planning() {
 
                 return (
                   <div key={cat.key} className={styles.categoryBlock}>
-                    <label className={styles.mainRow}>
+                    <label
+                      className={`${styles.mainChip} ${
+                        isAllSelected ? styles.mainChipActive : ""
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         checked={isAllSelected}
                         ref={(el) => {
                           if (el) {
-                            const someSelected = visibleSubs.some((s) => selected.has(s.key)) && !isAllSelected;
+                            const someSelected =
+                              visibleSubs.some((s) => selected.has(s.key)) && !isAllSelected;
                             el.indeterminate = someSelected;
                           }
                         }}
@@ -591,9 +596,15 @@ export default function Planning() {
                       />
                       <span>{cat.label}</span>
                     </label>
+
                     <div className={styles.subList}>
                       {visibleSubs.map((s) => (
-                        <label key={s.key} className={styles.subRow}>
+                        <label
+                          key={s.key}
+                          className={`${styles.subChip} ${
+                            selected.has(s.key) ? styles.subChipActive : ""
+                          }`}
+                        >
                           <input
                             type="checkbox"
                             disabled={!cityId}
@@ -611,7 +622,11 @@ export default function Planning() {
               {visibleCategoryTree.filter((cat) => !cat.sub).map((cat) => (
                 <div key={cat.key} className={styles.fullWidth}>
                   <div className={styles.categoryBlock}>
-                    <label className={styles.mainRow}>
+                    <label
+                      className={`${styles.mainChip} ${
+                        selected.has(cat.key) ? styles.mainChipActive : ""
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         checked={selected.has(cat.key)}
@@ -624,6 +639,7 @@ export default function Planning() {
               ))}
             </div>
           </div>
+
           <div className={styles.cta}>
             <Button
               variant="primary"
@@ -633,13 +649,9 @@ export default function Planning() {
               Generate Route
             </Button>
           </div>
-         </div>
+        </div>
 
-        {errorMsg && (
-          <div className={styles.errorBanner}>
-            ⚠️ {errorMsg}
-          </div>
-        )}
+        {errorMsg && <div className={styles.errorBanner}>⚠️ {errorMsg}</div>}
       </div>
     </div>
   );
