@@ -7,13 +7,9 @@ const API_LIST = [
   { key: "osrm", name: "OSRM (Routing Engine)", desc: "Computes travel distances and durations based on real road network data for route ordering and geometry generation.", href: "https://project-osrm.org/docs/v5.24.0/api/" },
   { key: "leaflet", name: "Leaflet", desc: "Interactive map rendering library used for route visualization and POI marker display.", href: "https://leafletjs.com" },
   { key: "osm", name: "OpenStreetMap", desc: "Primary backbone for geographic data, providing coordinates and baseline POI entries through the Overpass API.", href: "https://www.openstreetmap.org/copyright" },
-  { key: "supabase", name: "Supabase (PostgreSQL)", desc: "Managed backend platform built on PostgreSQL, providing structured storage, API generation, and data access for POIs, content, and media assets.", href: "https://supabase.com" },
   { key: "wikipedia", name: "Wikipedia / Wikidata", desc: "Used to identify culturally significant locations and retrieve descriptive content for POI enrichment.", href: "https://www.mediawiki.org/wiki/API:REST_API" },
   { key: "google-places", name: "Google Places API", desc: "Enriches POIs with popularity attributes (rating, review counts) and retrieves candidate photographs for visual content.", href: "https://developers.google.com/maps/documentation/places" },
   { key: "google-tts", name: "Google Text-to-Speech", desc: "Generates multilingual audio guides (TR, EN, DE) from refined textual descriptions for POI narration.", href: "https://cloud.google.com/text-to-speech" },
-  { key: "flickr", name: "Flickr", desc: "License-aware POI photo sourcing used alongside Google Places for visual content curation.", href: "https://www.flickr.com/services/api/" },
-  { key: "pixabay", name: "Pixabay", desc: "Additional license-aware image source for POI detail pages.", href: "https://pixabay.com/api/docs/" },
-  { key: "unesco", name: "UNESCO References", desc: "Authoritative reference pages for heritage-related POI validation and enrichment.", href: "https://www.unesco.org.tr/Pages/125/122/UNESCO-D%C3%BCnya-Miras%C4%B1-Listesi" },
   { key: "claude", name: "Claude Haiku (Anthropic)", desc: "Lightweight LLM used for text refinement, paraphrasing, and multilingual translation of POI descriptions during dataset preparation.", href: "https://www.anthropic.com/claude" },
 ];
 
