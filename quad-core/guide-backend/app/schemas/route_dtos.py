@@ -1,10 +1,12 @@
+"""
+Route generation and replanning DTOs — request/response shapes for /api/v1/routes/*.
+"""
 from __future__ import annotations
 from typing import Optional
 
 from pydantic import BaseModel
 
 from app.models.enums import Language
-from app.models.poi import Poi
 from app.models.route import Itinerary, RoutePlan
 from app.schemas.common import ApiWarning
 from app.schemas.travel import TravelPreferences, TravelConstraints
@@ -16,6 +18,10 @@ class DayReorderOperation(BaseModel):
 
 
 class UserEdits(BaseModel):
+    removed_poi_ids: list[str] = []
+    selected_poi_ids: list[str] = []
+    locked_pois_by_day: dict[int, list[str]] = {}
+    reorder_operations: list[DayReorderOperation] = []
     ordered_poi_ids_by_day: dict[int, list[str]] = {}
 
 
@@ -30,7 +36,6 @@ class RouteResponse(BaseModel):
     route_plan: RoutePlan
     warnings: list[ApiWarning] = []
     effective_trip_days: Optional[int] = None
-    available_pois: list[Poi] = []
 
 
 class ReplanRequest(BaseModel):

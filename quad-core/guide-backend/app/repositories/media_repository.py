@@ -1,9 +1,5 @@
 """
-Media repository — görsel ve ses asset'i çözümleme.
-
-İki strateji:
-  MediaRepository         — yerel dosya sisteminden okur (geliştirme / fallback)
-  PostgresMediaRepository — Supabase Data API üzerinden okur (production)
+Media repository — Supabase Data API üzerinden görsel ve ses asset erişimi.
 
 DB ↔ domain model farkları:
   media_assets.id     INTEGER → domain MediaAsset.asset_id: str  (str() ile dönüştürülür)
@@ -12,61 +8,9 @@ DB ↔ domain model farkları:
 """
 from __future__ import annotations
 
-from pathlib import Path
-
 from app.models.enums import Language
 from app.models.media import MediaAsset
 from app.repositories.interfaces import AbstractAudioAssetResolver, AbstractMediaRepository
-
-
-# ── Dosya sistemi / geliştirme implementasyonu ────────────────────
-
-class MediaRepository(AbstractMediaRepository):
-    """
-    Statik medya asset'lerini (görseller ve önceden üretilmiş TTS sesleri)
-    yerel dosya sisteminden çözer.
-
-    Beklenen dizin yapısı:
-      <media_root>/images/<poi_id>/01.jpg   (veya .png / .webp)
-      <media_root>/audio/<poi_id>/<lang>.mp3 (veya .wav / .ogg)
-    """
-
-    def __init__(self, media_root_path: str):
-        self._media_root = Path(media_root_path)
-
-    async def get_image(self, poi_id: str) -> MediaAsset | None:
-        """
-        POI'nın ilk görselini döner.
-        Desteklenen formatlar: jpg, png, webp (öncelik sırası).
-        """
-        img_dir = self._media_root / "images" / poi_id
-        if img_dir.exists():
-            for ext in ("jpg", "png", "webp"):
-                candidate = img_dir / f"01.{ext}"
-                if candidate.exists():
-                    return MediaAsset(
-                        asset_id=f"{poi_id}-img-01",
-                        url_or_path=str(candidate),
-                        media_type="image",
-                    )
-        return None
-
-    async def get_audio(self, poi_id: str, lang: Language) -> MediaAsset | None:
-        """
-        POI için belirtilen dildeki ses dosyasını döner.
-        Desteklenen formatlar: mp3, wav, ogg (öncelik sırası).
-        """
-        audio_dir = self._media_root / "audio" / poi_id
-        lang_lower = lang.value.lower()
-        for ext in ("mp3", "wav", "ogg"):
-            candidate = audio_dir / f"{lang_lower}.{ext}"
-            if candidate.exists():
-                return MediaAsset(
-                    asset_id=f"{poi_id}-audio-{lang_lower}",
-                    url_or_path=str(candidate),
-                    media_type="audio",
-                )
-        return None
 
 
 class AudioAssetResolver(AbstractAudioAssetResolver):
@@ -83,8 +27,6 @@ class AudioAssetResolver(AbstractAudioAssetResolver):
     async def resolve_audio(self, poi_id: str, lang: Language) -> MediaAsset | None:
         return await self._media_repository.get_audio(poi_id, lang)
 
-
-# ── Supabase Data API implementasyonu ────────────────────────────
 
 class PostgresMediaRepository(AbstractMediaRepository):
     """

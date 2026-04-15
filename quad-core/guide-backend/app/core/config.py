@@ -23,9 +23,9 @@ class Settings(BaseSettings):
     # ── Trip planning limits ──────────────────────────────────────
     max_trip_days: int = 10
     max_pois_per_day: int = 9
-    max_total_pois: int = 110
+    max_total_pois: int = 90
     min_daily_distance_meters: int = 1000
-    max_category_count: int = 15
+    max_category_count: int = 10
     pois_per_day_baseline: int = 3
 
 

@@ -43,6 +43,12 @@ class InMemoryPoiRepository(AbstractPoiRepository):
     async def find_by_id(self, poi_id: str) -> Poi | None:
         return next((p for p in self._pois if p.id == poi_id), None)
 
+    async def find_random(self, limit: int) -> list[Poi]:
+        import random
+        sample = list(self._pois)
+        random.shuffle(sample)
+        return sample[:limit]
+
 
 # ── Fixtures ───────────────────────────────────────────────────────────────────
 

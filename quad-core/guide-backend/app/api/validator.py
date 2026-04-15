@@ -71,10 +71,9 @@ class RequestValidator:
             errors.append("existing_itinerary must contain at least one day.")
 
         day_indices = {d.day_index for d in req.existing_itinerary.days}
-
-        for day_index in req.edits.ordered_poi_ids_by_day:
-            if day_index not in day_indices:
-                errors.append(f"ordered_poi_ids_by_day references unknown day_index {day_index}.")
+        for op in req.edits.reorder_operations:
+            if op.day_index not in day_indices:
+                errors.append(f"Reorder operation references unknown day_index {op.day_index}.")
 
         return ValidationResult(is_valid=len(errors) == 0, errors=errors)
 

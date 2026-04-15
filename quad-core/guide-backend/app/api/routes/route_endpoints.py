@@ -7,8 +7,6 @@ Dependencies are resolved from the application container at request time.
 from fastapi import APIRouter, HTTPException, Request
 import httpx
 from fastapi.responses import JSONResponse
-from starlette.responses import JSONResponse
-
 from app.schemas.common import ApiErrorResponse, ApiWarning, Severity
 from app.schemas.route_dtos import ReplanRequest, RouteRequest, RouteResponse
 from app.schemas.suggestion_dtos import TripDaySuggestionRequest, TripDaySuggestionResponse
@@ -18,7 +16,6 @@ from app.services.itinerary_service import ItineraryService
 from app.services.routing_service import RoutingService
 from app.services.poi_service import PoiService
 from app.core.config import settings
-from app.models.route import Itinerary, RoutePlan
 
 router = APIRouter(prefix="/routes", tags=["Routes"])
 
@@ -69,7 +66,7 @@ class RouteController:
         self._routing_service = routing_service
 
 
-    async def generate_route(self, req: RouteRequest) -> JSONResponse | RouteResponse:
+    async def generate_route(self, req: RouteRequest) -> RouteResponse:
         """Generate a multi-day itinerary from user preferences."""
         validation = self._validator.validate_route_request(req)
         if not validation.is_valid:
@@ -78,28 +75,9 @@ class RouteController:
         pois = await self._poi_service.get_candidate_pois(req.preferences)
 
         if len(pois) < 2:
-            warnings = [
-                *validation.warnings,
-                ApiWarning(
-                    code="INSUFFICIENT_POIS",
-                    severity=Severity.WARN,
-                    message=(
-                        "Not enough POIs match the given filters to build the requested plan. "
-                        "Please adjust categories or city, or accept a reduced plan."
-                    ),
-                ),
-            ]
-
-            return RouteResponse(
-                itinerary=Itinerary(days=[]),
-                route_plan=RoutePlan(
-                    segments=[],
-                    total_distance=0,
-                    total_duration=0,
-                    geometry_encoded="",
-                ),
-                warnings=warnings,
-                effective_trip_days=0,
+            raise HTTPException(
+                status_code=400,
+                detail="Not enough POIs match the given filters. Try adjusting categories or city.",
             )
 
         itinerary, itinerary_warnings = await self._itinerary_service.build_itinerary(
@@ -126,22 +104,14 @@ class RouteController:
             *routing_warnings,
         ]
 
-        used_ids = {
-            poi.id
-            for day in itinerary.days
-            for poi in day.pois
-        }
-        available_pois = [p for p in pois if p.id not in used_ids]
-
         return RouteResponse(
             itinerary=itinerary,
             route_plan=route_plan,
             warnings=warnings,
             effective_trip_days=len(itinerary.days),
-            available_pois=available_pois,
         )
 
-    async def replan_route(self, req: ReplanRequest) -> JSONResponse | RouteResponse:
+    async def replan_route(self, req: ReplanRequest) -> RouteResponse:
         """Replan an existing itinerary after user edits (stateless)."""
         validation = self._validator.validate_replan_request(req)
         if not validation.is_valid:

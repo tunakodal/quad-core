@@ -1,13 +1,9 @@
 """
 Dependency Injection Container — Wires all components together.
-
-SUPABASE_URL + SUPABASE_KEY set edilmişse Supabase Data API repo'ları kullanılır.
-Set edilmemişse JSON dosya tabanlı repo'lara (geliştirme modu) düşülür.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Optional
 
 from app.core.config import settings
@@ -19,20 +15,9 @@ from app.repositories.interfaces import (
     AbstractMediaRepository,
     AbstractPoiRepository,
 )
-from app.repositories.poi_repository import (
-    JsonDataSource,
-    PoiRepository,
-    PostgresPoiRepository,
-)
-from app.repositories.content_repository import (
-    ContentRepository,
-    PostgresContentRepository,
-)
-from app.repositories.media_repository import (
-    AudioAssetResolver,
-    MediaRepository,
-    PostgresMediaRepository,
-)
+from app.repositories.poi_repository import PostgresPoiRepository
+from app.repositories.content_repository import PostgresContentRepository
+from app.repositories.media_repository import AudioAssetResolver, PostgresMediaRepository
 from app.services.content_service import ContentService
 from app.services.itinerary_builder import ItineraryBuilder
 from app.services.itinerary_planner import MonteCarloItineraryPlanner
@@ -77,29 +62,14 @@ class AppContainer:
 
 
 async def create_container() -> AppContainer:
-    """
-    Tam dependency graph'ı oluşturur.
-
-    SUPABASE_URL + SUPABASE_KEY .env'de tanımlıysa → Supabase Data API
-    Tanımlı değilse                                → JSON dosyalar (geliştirme modu)
-    """
-    supabase_client = None
-
+    """Tam dependency graph'ı oluşturur."""
     # ── Data Access ───────────────────────────────────────────────
-    if settings.supabase_url and settings.supabase_key:
-        supabase_client = await create_supabase_client(
-            settings.supabase_url, settings.supabase_key
-        )
-        poi_repository: AbstractPoiRepository = PostgresPoiRepository(supabase_client)
-        content_repository: AbstractContentRepository = PostgresContentRepository(supabase_client)
-        media_repository: AbstractMediaRepository = PostgresMediaRepository(supabase_client)
-    else:
-        # Geliştirme modu: JSON dosyalar
-        data_source = JsonDataSource(_resolve_data_path("pois.json"))
-        poi_repository = PoiRepository(data_source)
-        content_repository = ContentRepository(_resolve_data_path("contents.json"))
-        media_repository = MediaRepository(settings.media_root_path)
-
+    supabase_client = await create_supabase_client(
+        settings.supabase_url, settings.supabase_key
+    )
+    poi_repository: AbstractPoiRepository = PostgresPoiRepository(supabase_client)
+    content_repository: AbstractContentRepository = PostgresContentRepository(supabase_client)
+    media_repository: AbstractMediaRepository = PostgresMediaRepository(supabase_client)
     audio_asset_resolver: AbstractAudioAssetResolver = AudioAssetResolver(media_repository)
 
     # ── Integration ───────────────────────────────────────────────
