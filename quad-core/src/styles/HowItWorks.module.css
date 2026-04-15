@@ -399,3 +399,34 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 980px) {
+  .apiGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .apiCard,
+  .apiCard:nth-last-child(2):nth-child(3n+1),
+  .apiCard:last-child:nth-child(3n+2),
+  .apiCard:last-child:nth-child(3n+1) {
+    grid-column: auto;
+  }
+
+  .apiCard {
+    width: 100%;
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .apiName {
+    font-size: 13px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .apiDesc {
+    font-size: 12px;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+}

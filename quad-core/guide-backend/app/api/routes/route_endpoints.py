@@ -158,7 +158,7 @@ class RouteController:
             city=city,
             trip_days=req.constraints.max_trip_days,
             categories=[],
-            max_distance_per_day=req.constraints.max_daily_distance,
+            max_distance_per_day = max(req.constraints.max_daily_distance, 1000)
         )
 
         itinerary, itinerary_warnings = await self._itinerary_service.replan(
