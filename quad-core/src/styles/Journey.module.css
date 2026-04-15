@@ -202,22 +202,34 @@
     flex-direction: column;
 }
 
+
 @media (max-width: 768px) {
   .page {
     flex-direction: column;
+    height: auto;
   }
 
   .daysPanel {
-    display: flex;
+    width: 100%;
     flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px 8px;
     overflow-x: auto;
-    gap: 8px;
-    padding-bottom: 8px;
   }
 
   .dayButton {
     min-width: 80px;
     flex-shrink: 0;
+    transform: none;
+    font-size: 16px;
+    opacity: 0.7;
+  }
+
+  .active {
+    transform: none;
+    opacity: 1;
   }
 
   .divider {
@@ -225,18 +237,25 @@
   }
 
   .content {
+    display: grid;
+    grid-template-columns: 1fr;   /* EN KRİTİK SATIR */
+    gap: 16px;
     width: 100%;
+    padding: 16px;
+    align-items: stretch;
   }
 
   .card {
     width: 100%;
   }
-}
 
-@media (max-width: 768px) {
+  .poiGrid {
+    grid-template-columns: 1fr;   /* kartlar da tek kolon olsun */
+  }
+
   .cardHeader {
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+    gap: 6px;
   }
 }
