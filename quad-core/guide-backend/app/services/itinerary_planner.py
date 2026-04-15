@@ -2,6 +2,7 @@
 Monte Carlo güzergah planlayıcı — rastgele örnekleme ile aday planlar üretir
 ve en yüksek puanlıyı PlanRanker aracılığıyla seçer.
 """
+from typing import Any
 
 from app.models.poi import Poi
 from app.models.route import Itinerary
@@ -51,10 +52,10 @@ class MonteCarloItineraryPlanner:
         return candidates
 
     def select_best(
-        self,
-        pois: list[Poi],
-        constraints: TravelConstraints,
-        prefs: TravelPreferences,
+            self,
+            pois: list[Poi],
+            constraints: TravelConstraints,
+            prefs: TravelPreferences,
     ) -> Itinerary:
 
         remaining_pois = list(pois)
@@ -65,10 +66,8 @@ class MonteCarloItineraryPlanner:
             if len(remaining_pois) < 4:
                 break
 
-            candidates = self.generate_candidates(remaining_pois, constraints)
-
-            best_candidate = self.select_best_from_candidates(
-                candidates, constraints, prefs
+            best_candidate = self._select_with_retries(
+                remaining_pois, constraints, prefs
             )
 
             if not best_candidate:
@@ -88,12 +87,76 @@ class MonteCarloItineraryPlanner:
 
         return self.itinerary_builder.build_itinerary_from_days(day_plans)
 
+    def _select_with_retries(
+            self,
+            pois: list[Poi],
+            constraints: TravelConstraints,
+            prefs: TravelPreferences,
+            max_retries: int = 3,
+    ) -> list[Poi] | None:
+        """
+        Her denemede 500 aday üret, skorla sırala, ilk 10'a bak.
+        1) duration <= 420 mi?  Değilse geç.
+        2) mesafe target * [0.75, 1.25] arasında mı?  Değilse geç.
+        İkisini de geçen ilk adayı döndür.
+        max_retries kadar tekrar dene, bulamazsa en iyi skoru döndür.
+        """
+
+        MAX_DAILY_DURATION = 420
+        target_km = constraints.max_daily_distance / 1000
+        dist_lo = target_km * 0.75
+        dist_hi = target_km * 1.25
+
+        TOP_N = 10
+        fallback = None
+
+        for attempt in range(max_retries):
+            candidates = self.generate_candidates(pois, constraints)
+            if not candidates:
+                return None
+
+            scored = [
+                (cand, *self._score(cand, constraints, prefs))
+                for cand in candidates
+            ]
+            scored.sort(key=lambda x: x[1], reverse=True)
+
+            # Fallback olarak ilk denemede en iyi skoru sakla
+            if fallback is None and scored:
+                fallback = scored[0][2]
+
+            for _, score, route in scored[:TOP_N]:
+                if score <= 0:
+                    continue
+
+                # 1) Duration kontrolü
+                total_duration = sum(p.estimated_visit_duration for p in route)
+                if total_duration > MAX_DAILY_DURATION:
+                    continue
+
+                # 2) Mesafe kontrolü
+                total_dist = self._route_distance_km(route)
+                if not (dist_lo <= total_dist <= dist_hi):
+                    continue
+
+                return route
+
+        # Hiçbir şey uymadıysa fallback
+        return fallback
+
+    def _route_distance_km(self, route: list[Poi]) -> float:
+        """Route'un toplam mesafesini km cinsinden hesaplar (1.65 çarpanlı)."""
+        total = 0.0
+        for i in range(len(route) - 1):
+            total += self._distance(route[i], route[i + 1])
+        return total * 1.65
+
     def select_best_from_candidates(
-        self,
-        candidates: list[list[Poi]],
-        constraints: TravelConstraints,
-        prefs: TravelPreferences,
-    ) -> list[Poi]:
+            self,
+            candidates: list[list[Poi]],
+            constraints: TravelConstraints,
+            prefs: TravelPreferences,
+    ) -> Any | None:
 
         if not candidates:
             return None
@@ -103,10 +166,20 @@ class MonteCarloItineraryPlanner:
             for cand in candidates
         ]
 
-        # (original_cand, score, sorted_route)
-        best = max(scored_candidates, key=lambda x: x[1])
+        # Skora göre azalan sırala
+        scored_candidates.sort(key=lambda x: x[1], reverse=True)
 
-        return best[2]  # sıralı route
+        MAX_DAILY_DURATION = 420  # 7 saat
+
+        for _, score, route in scored_candidates:
+            if score <= 0:
+                break
+            total_duration = sum(p.estimated_visit_duration for p in route)
+            if total_duration <= MAX_DAILY_DURATION:
+                return route
+
+        # Hiçbiri 420'nin altında değilse en iyiyi yine de dön
+        return scored_candidates[0][2] if scored_candidates else None
 
     def _score(self, candidate, constraints, prefs):
 
@@ -223,10 +296,10 @@ class MonteCarloItineraryPlanner:
         # -------------------------
         score = (
                 0.40 * distance_score +
-                0.10 * variance_score +
+                0.20 * variance_score +
                 0.25 * popularity_score +
-                0.10 * diversity_score +
-                0.15 * count_score
+                0.05 * diversity_score +
+                0.10 * count_score
         )
 
         return score, route
