@@ -137,34 +137,22 @@ _POI_COLUMNS = (
     "google_rating, google_reviews_total"
 )
 def _compute_estimated_visit_duration(row: dict) -> int:
-    """
-    Computes estimated visit duration (minutes) according to the report logic:
-
-    1. Category-based base duration assignment
-    2. Review-count adjustment
-    3. Rating-based adjustment
-    4. Final clipping and rounding
-
-    For multiple categories:
-        category_duration = 0.70 * max_duration + 0.30 * avg_duration
-    """
-
     SUBCATEGORY_DURATION = {
-        "Ancient & Archaeology": 120,
-        "Museum": 120,
-        "Fortifications": 90,
-        "Civil & Traditional Architecture": 75,
-        "Terrain & Landforms": 75,
-        "Wildlife & Natural Experience": 75,
-        "Parks & Outdoor": 60,
-        "Water & Coastal": 60,
-        "Urban & Monumental Heritage": 60,
-        "Transportation as Heritage": 60,
-        "Historical Infrastructure": 60,
-        "Religious": 45,
+        "Ancient & Archaeology": 75,
+        "Museum": 75,
+        "Fortifications": 60,
+        "Civil & Traditional Architecture": 50,
+        "Terrain & Landforms": 50,
+        "Wildlife & Natural Experience": 50,
+        "Parks & Outdoor": 40,
+        "Water & Coastal": 40,
+        "Urban & Monumental Heritage": 40,
+        "Transportation as Heritage": 40,
+        "Historical Infrastructure": 40,
+        "Religious": 30,
     }
 
-    DEFAULT_DURATION = 60
+    DEFAULT_DURATION = 40
 
     categories = [
         row.get("sub_category_1"),
@@ -188,30 +176,26 @@ def _compute_estimated_visit_duration(row: dict) -> int:
     reviews = row.get("google_reviews_total") or 0
     rating = row.get("google_rating") or 0
 
-    # Review-count multiplier
+    # Review multiplier — daha dar aralık
     if reviews < 50:
         m_review = 0.90
-    elif reviews < 200:
+    elif reviews < 500:
         m_review = 1.00
-    elif reviews < 1000:
-        m_review = 1.10
     else:
-        m_review = 1.20
+        m_review = 1.10
 
-    # Rating-based multiplier
+    # Rating multiplier — daha dar aralık
     if rating < 3.5:
         m_rating = 0.90
-    elif rating < 4.2:
+    elif rating < 4.5:
         m_rating = 1.00
-    elif rating < 4.6:
-        m_rating = 1.10
     else:
-        m_rating = 1.20
+        m_rating = 1.10
 
     adjusted_duration = category_duration * m_review * m_rating
 
     duration = int(round(adjusted_duration / 5) * 5)
-    duration = max(15, min(duration, 360))
+    duration = max(15, min(duration, 150))
 
     return duration
 
