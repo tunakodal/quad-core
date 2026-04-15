@@ -195,6 +195,7 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
 
   const normalize = (str) =>
     str
+      .replace(/İ/g, "i")  // toLowerCase() İ→i dönüşümünü doğru yapmıyor (U+0130)
       .toLowerCase()
       .replace(/ı/g, "i")
       .replace(/ğ/g, "g")
@@ -655,4 +656,4 @@ export default function Planning() {
       </div>
     </div>
   );
-}
+}                                                                                   
