@@ -195,7 +195,7 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
 
   const normalize = (str) =>
     str
-      .replace(/İ/g, "i")  // U+0130 does not convert correctly with toLowerCase()
+      .replace(/\u0130/g, "i")
       .toLowerCase()
       .replace(/ı/g, "i")
       .replace(/ğ/g, "g")
@@ -656,4 +656,4 @@ export default function Planning() {
       </div>
     </div>
   );
-}                                                                                   
+}
