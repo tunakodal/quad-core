@@ -104,7 +104,7 @@ def test_select_best_returns_highest_scoring_candidate(planner, istanbul_pois):
     }
 
     def fake_score(candidate, constraints, prefs):
-        return score_map[id(candidate)]
+        return (score_map[id(candidate)], candidate)
 
     planner._score = fake_score
 

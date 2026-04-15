@@ -235,11 +235,11 @@ def test_replan_rejects_empty_itinerary(validator):
     assert not result.is_valid
 
 
-def test_replan_rejects_unknown_day_index_in_reorder(validator):
-    """Reorder operation referencing a non-existent day_index must be rejected."""
+def test_replan_rejects_unknown_day_index_in_ordered_poi_ids_by_day(validator):
+    """ordered_poi_ids_by_day referencing a non-existent day_index must be rejected."""
     itinerary = _make_minimal_itinerary()
     edits = UserEdits(
-        reorder_operations=[DayReorderOperation(day_index=99, ordered_poi_ids=["p1"])]
+        ordered_poi_ids_by_day={99: ["p1"]}
     )
     req = ReplanRequest(
         existing_itinerary=itinerary,
@@ -249,7 +249,7 @@ def test_replan_rejects_unknown_day_index_in_reorder(validator):
     result = validator.validate_replan_request(req)
 
     assert not result.is_valid
-    assert any("99" in e for e in result.errors)
+    assert any("unknown day_index 99" in e.lower() for e in result.errors)
 
 
 def test_replan_valid_request_passes(validator):

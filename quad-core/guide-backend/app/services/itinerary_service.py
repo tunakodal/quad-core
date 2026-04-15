@@ -79,14 +79,7 @@ class ItineraryService:
                     poi = await self.poi_repository.find_by_id(pid)
 
                 if poi is None:
-                    warnings.append(
-                        ApiWarning(
-                            code="POI_NOT_FOUND",
-                            severity=Severity.WARN,
-                            message=f"POI with id '{pid}' could not be found, skipped.",
-                        )
-                    )
-                    continue
+                    raise ValueError(f"POI with id '{pid}' could not be found.")
 
                 pois.append(poi)
 

@@ -72,9 +72,13 @@ class RequestValidator:
 
         day_indices = {d.day_index for d in req.existing_itinerary.days}
 
-        for day_index in req.edits.ordered_poi_ids_by_day:
+        for day_index in (req.edits.ordered_poi_ids_by_day or {}):
             if day_index not in day_indices:
                 errors.append(f"ordered_poi_ids_by_day references unknown day_index {day_index}.")
+
+        for op in (getattr(req.edits, "reorder_operations", None) or []):
+            if op.day_index not in day_indices:
+                errors.append(f"reorder_operations references unknown day_index {op.day_index}.")
 
         return ValidationResult(is_valid=len(errors) == 0, errors=errors)
 

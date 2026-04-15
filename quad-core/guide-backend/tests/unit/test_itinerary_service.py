@@ -36,11 +36,11 @@ def make_poi(pid):
         google_reviews_total=None,
     )
 
-
 @pytest.mark.asyncio
 async def test_replan_remove_pois():
     """
-    TC-UT-17 — Removed POIs must not appear in the new itinerary.
+    TC-UT-17 — POIs omitted from the reordered day payload
+    must not appear in the replanned itinerary.
     """
 
     existing = Itinerary(days=[
@@ -49,7 +49,10 @@ async def test_replan_remove_pois():
     ])
 
     edits = UserEdits(
-        removed_poi_ids=["p2", "p3"]
+        ordered_poi_ids_by_day={
+            1: ["p1"],   # p2 removed from day 1
+            2: ["p4"],   # p3 removed from day 2
+        }
     )
 
     constraints = TravelConstraints()
@@ -80,14 +83,13 @@ async def test_replan_remove_pois():
 
     assert "p2" not in remaining_ids
     assert "p3" not in remaining_ids
+    assert remaining_ids == {"p1", "p4"}
 
 
 @pytest.mark.asyncio
 async def test_replan_reorders_pois_within_a_day():
     """
-    TC-UT-18
-
-    Verifies that the replanning result preserves the expected intra-day POI order.
+    TC-UT-18 — Replanning must preserve the requested intra-day POI order.
     """
 
     p1 = make_poi("p1")
@@ -99,12 +101,9 @@ async def test_replan_reorders_pois_within_a_day():
     ])
 
     edits = UserEdits(
-        reorder_operations=[
-            DayReorderOperation(
-                day_index=1,
-                ordered_poi_ids=["p2", "p1", "p3"],
-            )
-        ]
+        ordered_poi_ids_by_day={
+            1: ["p2", "p1", "p3"]
+        }
     )
 
     service = ItineraryService(
@@ -131,11 +130,11 @@ async def test_replan_reorders_pois_within_a_day():
 
     assert reordered_ids == ["p2", "p1", "p3"]
 
-
 @pytest.mark.asyncio
 async def test_replan_respects_selected_poi_ids():
     """
-    TC-UT-19 — Replan must respect selected POIs from frontend.
+    TC-UT-19 — Replanning must preserve only the POIs
+    explicitly included in the day-level ordered payload.
     """
 
     p1 = make_poi("p1")
@@ -147,7 +146,9 @@ async def test_replan_respects_selected_poi_ids():
     ])
 
     edits = UserEdits(
-        selected_poi_ids=["p1", "p3"]  # 🔥 p2 removed implicitly
+        ordered_poi_ids_by_day={
+            1: ["p1", "p3"]   # p2 implicitly removed
+        }
     )
 
     service = ItineraryService(
@@ -172,7 +173,8 @@ async def test_replan_respects_selected_poi_ids():
 
     ids = [poi.id for poi in replanned.days[0].pois]
 
-    assert set(ids) == {"p1", "p3"}
+    assert ids == ["p1", "p3"]
+
 
 @pytest.mark.asyncio
 async def test_replan_does_not_modify_unaffected_days():
@@ -327,3 +329,4 @@ async def test_replan_rejects_unknown_poi_id():
         )
 
     assert "p999" in str(exc_info.value)
+

@@ -78,7 +78,7 @@ async def test_trip_parses_distance_duration_and_geometry(monkeypatch):
     and geometry from a mocked OSRM trip response.
     """
     payload = {
-        "trips": [
+        "routes": [
             {
                 "distance": 54321.9,
                 "duration": 1111.8,
