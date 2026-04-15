@@ -201,3 +201,42 @@
     display: flex;
     flex-direction: column;
 }
+
+@media (max-width: 768px) {
+  .page {
+    flex-direction: column;
+  }
+
+  .daysPanel {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .dayButton {
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .content {
+    width: 100%;
+  }
+
+  .card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
