@@ -55,7 +55,7 @@ async def test_distance_preference_is_reflected_in_final_routed_output():
 
     target_daily_distance = 30_000
     lower_bound = 0
-    upper_bound = target_daily_distance * 5
+    upper_bound = target_daily_distance * 2
 
     payload = {
         "preferences": {
