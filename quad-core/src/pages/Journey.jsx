@@ -9,7 +9,7 @@ function enrichPois(pois) {
         return {
             ...poi,
             stayMin: poi.etaMin ?? null,
-            moveMin: prev ? 10 : null, // sadeleştirdik
+            moveMin: prev ? 10 : null,
         };
     });
 }
@@ -22,7 +22,6 @@ export default function Journey() {
     const planningInput = state?.planningInput;
     const routeResponse = state?.routeResponse ?? null;
 
-
     const [activeDayIndex, setActiveDayIndex] = useState(0);
     const [activePoiIndex, setActivePoiIndex] = useState(-1);
 
@@ -32,6 +31,19 @@ export default function Journey() {
         if (!activeDay) return [];
         return enrichPois(activeDay.pois);
     }, [activeDay]);
+
+    const totalDuration = useMemo(() => {
+        return activeDayPois.reduce((sum, poi) => sum + (poi.stayMin ?? 0), 0);
+    }, [activeDayPois]);
+
+    const totalDistanceKm = useMemo(() => {
+        const segment = routeResponse?.route_plan?.segments?.[activeDayIndex];
+        console.log("segments:", routeResponse?.route_plan?.segments?.[activeDayIndex]);
+        if (segment?.distance) {
+            return (segment.distance / 1000).toFixed(1);
+        }
+        return null;
+    }, [routeResponse, activeDayIndex]);
 
     function handleOpenPoi(poi, idx) {
         navigate(`/poi/${poi.id}`, {
@@ -99,7 +111,12 @@ export default function Journey() {
                 {/* POI CARD */}
                 <div className={styles.card}>
                     <div className={styles.cardHeader}>
-                        Day {activeDayIndex + 1}
+                        <span>Day {activeDayIndex + 1}</span>
+                        <span className={styles.dayStats}>
+                            {totalDistanceKm && <span>{totalDistanceKm} km</span>}
+                            {totalDistanceKm && <span className={styles.statsDot}>·</span>}
+                            <span>{totalDuration} min</span>
+                        </span>
                     </div>
 
                     <div className={styles.poiGrid}>
