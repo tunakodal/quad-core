@@ -431,10 +431,11 @@ export default function Route() {
             </div>
           </div>
 
+          {/* ← Değişen kısım: planningInput'u state olarak gönder */}
           <button
             type="button"
             className={styles.editBtn}
-            onClick={() => navigate("/planning")}
+            onClick={() => navigate("/planning", { state: { planningInput } })}
           >
             Edit Inputs
           </button>

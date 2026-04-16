@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "../styles/Planning.module.css";
 import { Button } from "../ui/Button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { fetchCityCategories } from "../api/supabaseClient";
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
@@ -261,27 +261,39 @@ function SearchSelect({ placeholder, items, valueId, onSelect }) {
 }
 
 export default function Planning() {
-  const [cityId, setCityId] = useState("");
-  const [cityName, setCityName] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Geri dönüşte önceki inputları restore etmek için
+  const incomingState = location.state?.planningInput ?? null;
+
+  const [cityId, setCityId] = useState(incomingState?.cityId ?? "");
+  const [cityName, setCityName] = useState(incomingState?.cityName ?? "");
 
   const [daysRange, setDaysRange] = useState({ min: 0, max: 0 });
   const [distanceRange, setDistanceRange] = useState({ min: 0, max: 0 });
 
-  const [days, setDays] = useState(0);
-  const [distanceKm, setDistanceKm] = useState(0);
+  const [days, setDays] = useState(incomingState?.days ?? 0);
+  const [distanceKm, setDistanceKm] = useState(incomingState?.distanceKm ?? 0);
 
-  const [selected, setSelected] = useState(new Set());
+  const [selected, setSelected] = useState(
+    incomingState?.categories?.length
+      ? new Set(incomingState.categories)
+      : new Set()
+  );
   const [availableKeys, setAvailableKeys] = useState(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
-  const navigate = useNavigate();
 
   const [suggestion, setSuggestion] = useState(null);
   const [showSuggestionModal, setShowSuggestionModal] = useState(false);
   const [pendingPayload, setPendingPayload] = useState(null);
 
   const [cities] = useState(ALL_CITIES);
+
+  // incomingState'i sadece ilk mount'ta kullanmak için ref
+  const restoredRef = useState(() => !!incomingState)[0];
 
   useEffect(() => {
     if (!cityId) {
@@ -308,16 +320,34 @@ export default function Planning() {
       const frontendKeys = new Set(result.categories);
 
       setAvailableKeys(frontendKeys.size > 0 ? frontendKeys : null);
-      setSelected(new Set(frontendKeys));
 
       const maxDays = result.maxDays ?? 5;
       setDaysRange({ min: 1, max: maxDays });
-      setDays(1);
 
       const minDist = Math.floor(result.minDistanceKm ?? 0);
       const maxDist = Math.ceil(result.maxDistanceKm ?? 500);
       setDistanceRange({ min: minDist, max: maxDist });
-      setDistanceKm(minDist);
+
+      // Eğer Route sayfasından geri dönüyorsak ve şehir aynıysa → önceki değerleri koru
+      if (incomingState && incomingState.cityId === cityId && restoredRef) {
+        setDays(clamp(incomingState.days ?? 1, 1, maxDays));
+        setDistanceKm(clamp(incomingState.distanceKm ?? minDist, minDist, maxDist));
+
+        // Kategori seçimini restore et (mevcut olanlarla kesişim)
+        const restoredCategories = (incomingState.categories ?? []).filter((key) =>
+          frontendKeys.has(key)
+        );
+        setSelected(
+          restoredCategories.length > 0
+            ? new Set(restoredCategories)
+            : new Set(frontendKeys)
+        );
+      } else {
+        // Normal akış — ilk kez şehir seçimi
+        setSelected(new Set(frontendKeys));
+        setDays(1);
+        setDistanceKm(minDist);
+      }
     });
   }, [cityId]);
 
