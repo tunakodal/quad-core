@@ -38,6 +38,7 @@ class PoiController:
         content_service: ContentService,
         poi_repository: AbstractPoiRepository,
     ):
+        """Controller bagimliliklerini alir ve saklar."""
         self._validator = validator
         self._poi_service = poi_service
         self._content_service = content_service
@@ -73,6 +74,7 @@ class PoiController:
         return PoiContentResponse(content=content, warnings=warnings)
 
     async def get_random_pois(self, limit: int) -> RandomPoiResponse:
+        """Kesif ve harita on-yukleme icin rastgele POI listesi doner."""
         pois = await self._poi_service.get_random_pois(limit)
 
         items = [
@@ -122,6 +124,7 @@ def _get_controller(request: Request) -> PoiController:
     summary="Search POIs by city and category",
 )
 async def search_pois(query: PoiQuery, request: Request):
+    """DI container'dan PoiController'i cozer ve POI arama istegini iletir."""
     return await _get_controller(request).search_pois(query)
 
 
@@ -132,6 +135,7 @@ async def search_pois(query: PoiQuery, request: Request):
     summary="Get POI content (description, images, audio)",
 )
 async def get_poi_content(req: PoiContentRequest, request: Request):
+    """DI container'dan PoiController'i cozer ve icerik istegini iletir."""
     return await _get_controller(request).get_poi_content(req)
 
 
@@ -141,6 +145,7 @@ async def get_poi_content(req: PoiContentRequest, request: Request):
     summary="Get random POIs",
 )
 async def get_random_pois(request: Request, limit: int = 20):
+    """Kesif ve harita on-yukleme icin rastgele POI listesi doner."""
     return await _get_controller(request).get_random_pois(limit)
 
 
@@ -151,6 +156,7 @@ async def get_random_pois(request: Request, limit: int = 20):
     summary="Get a single POI by ID",
 )
 async def get_poi_by_id(poi_id: str, request: Request):
+    """DI container'dan PoiController'i cozer ve tekli POI sorgusunu iletir."""
     return await _get_controller(request).get_poi_by_id(poi_id)
 
 

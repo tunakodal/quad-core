@@ -10,12 +10,14 @@ from app.schemas.common import ApiWarning
 
 
 class TripDaySuggestionRequest(BaseModel):
+    """Maksimum onerilecek gezi suresi icin istek govdesi."""
     city: str
     categories: list[str] = []
     max_distance_per_day: Optional[int] = None
 
 
 class TripDaySuggestionResponse(BaseModel):
+    """Gezi suresi onerisi endpoint'inden donen yanit."""
     max_recommended_days: int
     poi_count: int
     warnings: list[ApiWarning] = []

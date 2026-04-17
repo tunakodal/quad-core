@@ -43,6 +43,7 @@ class PoiContent(BaseModel):
     audio: Optional[MediaAsset] = None
 
 class RandomPoiItem(BaseModel):
+    """Kesif ekrani ve harita on-yukleme icin kullanilan hafif POI temsili."""
     id: str
     name: str
     city: str
@@ -62,4 +63,5 @@ class RandomPoiItem(BaseModel):
 
 
 class RandomPoiResponse(BaseModel):
+    """Rastgele POI discovery endpoint'inin response sarmalayicisi."""
     items: list[RandomPoiItem]

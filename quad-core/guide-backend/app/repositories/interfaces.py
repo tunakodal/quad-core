@@ -60,6 +60,7 @@ class AbstractPoiRepository(ABC):
 
     @abstractmethod
     async def find_random(self, limit: int) -> list[Poi]:
+        """Veri setinden rastgele en fazla limit adet POI doner."""
         pass
 
 

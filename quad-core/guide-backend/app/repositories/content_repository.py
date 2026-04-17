@@ -34,6 +34,7 @@ class ContentRepository(AbstractContentRepository):
 
     def __init__(self, json_path: str):
         # {poi_id: {lang_value: PoiContent}}
+        """JSON dosyasini okur ve bellek-ici arama yapisini olusturur."""
         self._contents: dict[str, dict[str, PoiContent]] = {}
         self._load(json_path)
 
@@ -94,6 +95,7 @@ class PostgresContentRepository(AbstractContentRepository):
     """
 
     def __init__(self, client):
+        """JSON dosyasini okur ve bellek-ici arama yapisini olusturur."""
         self._client = client
 
     async def find_content(self, poi_id: str, lang: Language) -> PoiContent | None:

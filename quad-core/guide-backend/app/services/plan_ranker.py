@@ -41,6 +41,7 @@ class HeuristicPlanRanker(PlanRanker):
         prefs: TravelPreferences,
         constraints: TravelConstraints,
     ) -> float:
+        """Adayi puanlar; yuksek deger daha iyi plani ifade eder."""
         if not candidate.days:
             return 0.0
 

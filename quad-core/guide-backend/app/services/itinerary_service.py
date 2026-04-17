@@ -9,11 +9,13 @@ from app.schemas.common import ApiWarning, Severity
 
 class ItineraryService:
 
+    """Gezi plani olusturma ve yeniden planlama is mantigini yoneten servis."""
     def __init__(
         self,
         planner: MonteCarloItineraryPlanner,
         poi_repository: AbstractPoiRepository,
     ):
+        """Planner ve POI repository bagimliliklerini alir."""
         self.planner = planner
         self.poi_repository = poi_repository
 
@@ -21,6 +23,7 @@ class ItineraryService:
         self, pois: list[Poi], constraints: TravelConstraints, prefs: TravelPreferences
     ) -> tuple[Itinerary, list[ApiWarning]]:
 
+        """POI listesinden en iyi cok gunluk itinerary'yi olusturur; eksik gun icin uyari ekler."""
         itinerary = self.planner.select_best(pois, constraints, prefs)
         warnings: list[ApiWarning] = []
         if len(itinerary.days) < prefs.trip_days:
@@ -41,6 +44,7 @@ class ItineraryService:
         prefs: TravelPreferences,
     ) -> tuple[Itinerary, list[ApiWarning]]:
 
+        """Kullanici duzenlemelerini mevcut itinerary'ye uygular; degismemis gunler korunur."""
         warnings: list[ApiWarning] = []
 
         if not edits.ordered_poi_ids_by_day:

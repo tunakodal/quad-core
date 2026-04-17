@@ -10,8 +10,11 @@ from app.schemas.dtos import ApiErrorResponse
 
 
 class ErrorMapper:
+    """HTTP exception ve validation hatalarini standart ApiErrorResponse yapisina donusturur."""
+
     @staticmethod
     def to_api_error(exc: Exception) -> tuple[int, ApiErrorResponse]:
+        """Verilen exception tipine gore HTTP durum kodu ve ApiErrorResponse doner."""
         if isinstance(exc, RequestValidationError):
             details = [
                 f"{'/'.join(str(p) for p in err.get('loc', []))}: {err.get('msg', 'Invalid')}"
@@ -59,4 +62,3 @@ class ErrorMapper:
             message=str(exc),
             details=[],
         )
-

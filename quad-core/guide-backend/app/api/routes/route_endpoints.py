@@ -31,6 +31,7 @@ _ERROR_RESPONSES = {
 
 
 def _calculate_days_from_poi_count(poi_count: int) -> int:
+    """POI sayisina gore onerilen maksimum gezi gun sayisini doner."""
     THRESHOLDS = [
         (9, 1),
         (18, 2),
@@ -63,6 +64,7 @@ class RouteController:
         itinerary_service: ItineraryService,
         routing_service: RoutingService,
     ):
+        """Controller bagimliliklerini alir ve saklar."""
         self._validator = validator
         self._poi_service = poi_service
         self._itinerary_service = itinerary_service
@@ -273,6 +275,7 @@ def _get_controller(request: Request) -> RouteController:
     summary="Generate a multi-day itinerary and route",
 )
 async def generate_route(req: RouteRequest, request: Request):
+    """DI container'dan RouteController'i cozer ve rota olusturma istegini iletir."""
     return await _get_controller(request).generate_route(req)
 
 
@@ -283,6 +286,7 @@ async def generate_route(req: RouteRequest, request: Request):
     summary="Replan itinerary after user edits",
 )
 async def replan_route(req: ReplanRequest, request: Request):
+    """DI container'dan RouteController'i cozer ve yeniden planlama istegini iletir."""
     return await _get_controller(request).replan_route(req)
 
 
@@ -293,4 +297,5 @@ async def replan_route(req: ReplanRequest, request: Request):
     summary="Suggest max feasible trip days",
 )
 async def suggest_trip_days(req: TripDaySuggestionRequest, request: Request):
+    """DI container'dan RouteController'i cozer ve gezi suresi onerisi istegini iletir."""
     return await _get_controller(request).suggest_trip_days(req)

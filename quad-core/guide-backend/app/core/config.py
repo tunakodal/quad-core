@@ -4,23 +4,25 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """.env veya ortam degiskenlerinden okunan uygulama geneli yapilandirma ayarlari."""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
     )
 
-    # ── Supabase ──────────────────────────────────────────────────
+    # -- Supabase --
     supabase_url: Optional[str] = None
     supabase_key: Optional[str] = None  # anon/publishable key
 
-    # ── OSRM ─────────────────────────────────────────────────────
+    # -- OSRM --
     osrm_base_url: str = "http://localhost:5000"
     osrm_timeout_ms: int = 5000
 
-    # ── Media ─────────────────────────────────────────────────────
+    # -- Media --
     media_root_path: str = "./media"
 
-    # ── Trip planning limits ──────────────────────────────────────
+    # -- Trip planning limits --
     max_trip_days: int = 10
     max_pois_per_day: int = 9
     max_total_pois: int = 110

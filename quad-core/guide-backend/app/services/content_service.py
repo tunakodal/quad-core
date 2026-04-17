@@ -11,6 +11,7 @@ class ContentService:
     """
 
     def __init__(self, content_repository, media_repository, audio_asset_resolver):
+        """Repository ve resolver bagimliliklerini alir ve saklar."""
         self.content_repository = content_repository
         self.media_repository = media_repository
         self.audio_asset_resolver = audio_asset_resolver
@@ -18,6 +19,7 @@ class ContentService:
     async def get_poi_content(
         self, poi_id: str, lang: Language
     ) -> tuple[PoiContent, list[ApiWarning]]:
+        """POI icin aciklama, gorsel ve ses icerigini toplar; eksik asset'lerde graceful degradation uygular."""
         warnings: list[ApiWarning] = []
 
         content = await self.content_repository.find_content(poi_id, lang)
@@ -51,6 +53,7 @@ class ContentService:
     async def batch_get_content(
         self, poi_ids: list[str], lang: Language
     ) -> dict[str, PoiContent]:
+        """Birden fazla POI icin icerik paketlerini toplu olarak doner."""
         result = {}
         for poi_id in poi_ids:
             content, _ = await self.get_poi_content(poi_id, lang)

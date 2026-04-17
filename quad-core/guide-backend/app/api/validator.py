@@ -9,12 +9,14 @@ class RequestValidator:
     """Validates incoming API requests at the boundary layer."""
 
     def __init__(self):
+        """Sistem limitlerini config'den okuyarak validator'u baslatir."""
         self.max_trip_days = settings.max_trip_days
         self.max_pois_per_day = settings.max_pois_per_day
         self.min_daily_distance = settings.min_daily_distance_meters
         self.max_category_count = settings.max_category_count
 
     def validate_route_request(self, req: RouteRequest) -> ValidationResult:
+        """Rota olusturma istegini dogrular: sehir, kategoriler, gun sayisi ve mesafe limiti."""
         errors, warnings = [], []
 
         trip_days = req.preferences.trip_days
@@ -65,6 +67,7 @@ class RequestValidator:
         )
 
     def validate_replan_request(self, req: ReplanRequest) -> ValidationResult:
+        """Yeniden planlama istegini dogrular: itinerary bos olmamali, gun indeksleri gecerli olmali."""
         errors = []
 
         if not req.existing_itinerary.days:
@@ -83,6 +86,7 @@ class RequestValidator:
         return ValidationResult(is_valid=len(errors) == 0, errors=errors)
 
     def validate_poi_query(self, query: PoiQuery) -> ValidationResult:
+        """POI arama sorgusunu dogrular: sehir zorunlu, kategori sayisi limitli."""
         errors = []
         if not query.city:
             errors.append("city is required.")
@@ -95,6 +99,7 @@ class RequestValidator:
     def validate_trip_day_suggestion_request(
         self, req: TripDaySuggestionRequest
     ) -> ValidationResult:
+        """Gezi suresi onerisi istegini dogrular: sehir zorunlu."""
         errors = []
         if not req.city:
             errors.append("city is required.")

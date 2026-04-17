@@ -9,6 +9,7 @@ class PoiService:
     """
 
     def __init__(self, poi_repository):
+        """POI repository bagimliligini alir ve saklar."""
         self.poi_repository = poi_repository
 
     async def get_candidate_pois(self, prefs: TravelPreferences) -> list[Poi]:
@@ -19,10 +20,12 @@ class PoiService:
         )
 
     async def count_available_pois(self, city: str, categories: list[str]) -> int:
+        """Verilen sehir ve kategoriler icin uygun POI sayisini doner."""
         pois = await self.poi_repository.find_by_city_and_categories(city, categories)
         return len(pois)
 
 
     async def get_random_pois(self, limit: int) -> list[Poi]:
+        """Kesif kullanim durumu icin rastgele POI listesi doner."""
         return await self.poi_repository.find_random(limit)
 

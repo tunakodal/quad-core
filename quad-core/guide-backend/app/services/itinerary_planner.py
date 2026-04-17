@@ -18,6 +18,7 @@ from math import radians, sin, cos, sqrt, atan2
 
 class MonteCarloItineraryPlanner:
 
+    """Monte Carlo yontemiyle cok gunluk gezi plani olusturan planlayici."""
     def __init__(
         self,
         itinerary_builder: ItineraryBuilder,
@@ -25,6 +26,7 @@ class MonteCarloItineraryPlanner:
         max_iterations: int = 100,
         random_seed: int | None = None,
     ):
+        """Planlayici bagimliliklerini ve iterasyon parametrelerini alir."""
         self.itinerary_builder = itinerary_builder
         self.plan_ranker = plan_ranker
         self.max_iterations = max_iterations
@@ -36,6 +38,7 @@ class MonteCarloItineraryPlanner:
         constraints: TravelConstraints,
     ) -> list[list[Poi]]:
 
+        """500 rastgele POI kombinasyonu uretir; her biri gunluk plan adayidir."""
         if len(pois) < 4:
             return []
 
@@ -58,6 +61,7 @@ class MonteCarloItineraryPlanner:
             prefs: TravelPreferences,
     ) -> Itinerary:
 
+        """POI listesinden gun gune en iyi itinerary'yi olusturur."""
         remaining_pois = list(pois)
         day_plans: list[DayPlan] = []
 
@@ -158,6 +162,7 @@ class MonteCarloItineraryPlanner:
             prefs: TravelPreferences,
     ) -> Any | None:
 
+        """Onceden uretilmis aday listesinden en iyi plani secer."""
         if not candidates:
             return None
 
@@ -183,6 +188,7 @@ class MonteCarloItineraryPlanner:
 
     def _score(self, candidate, constraints, prefs):
 
+        """Adayi puanlar ve nearest-neighbor ile optimize edilmis rota sirasi doner."""
         if len(candidate) < 2:
             return 0, candidate
 
@@ -306,6 +312,7 @@ class MonteCarloItineraryPlanner:
 
     @staticmethod
     def _distance_raw(lat1, lng1, lat2, lng2):
+        """Iki koordinat arasindaki mesafeyi km cinsinden hesaplar (Haversine)."""
         R = 6371
         dlat = radians(lat2 - lat1)
         dlng = radians(lng2 - lng1)
@@ -314,6 +321,7 @@ class MonteCarloItineraryPlanner:
         return R * c
 
     def _distance(self, p1, p2):
+        """Iki Poi nesnesi arasindaki mesafeyi km cinsinden doner."""
         return self._distance_raw(
             p1.location.latitude, p1.location.longitude,
             p2.location.latitude, p2.location.longitude,

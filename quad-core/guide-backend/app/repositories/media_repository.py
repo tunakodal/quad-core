@@ -32,6 +32,7 @@ class MediaRepository(AbstractMediaRepository):
     """
 
     def __init__(self, media_root_path: str):
+        """Nesneyi baslatir."""
         self._media_root = Path(media_root_path)
 
     async def get_image(self, poi_id: str) -> MediaAsset | None:
@@ -78,9 +79,11 @@ class AudioAssetResolver(AbstractAudioAssetResolver):
     """
 
     def __init__(self, media_repository: AbstractMediaRepository):
+        """Nesneyi baslatir."""
         self._media_repository = media_repository
 
     async def resolve_audio(self, poi_id: str, lang: Language) -> MediaAsset | None:
+        """Verilen POI ve dil icin ses asset'ini media repository uzerinden cozer."""
         return await self._media_repository.get_audio(poi_id, lang)
 
 
@@ -96,6 +99,7 @@ class PostgresMediaRepository(AbstractMediaRepository):
     """
 
     def __init__(self, client):
+        """Nesneyi baslatir."""
         self._client = client
 
     async def get_image(self, poi_id: str) -> MediaAsset | None:

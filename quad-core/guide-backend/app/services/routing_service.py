@@ -8,7 +8,9 @@ from app.schemas.common import ApiWarning
 
 class RouteAssembler:
 
+    """OSRM ciktilarini gunluk RouteSegment'lere ve tam RoutePlan'a donusturucu."""
     def assemble(self, itinerary: Itinerary, osrm_outputs) -> RoutePlan:
+        """Itinerary ve OSRM ciktilarini eslestirerek RoutePlan olusturur."""
         segments: list[RouteSegment] = []
         total_distance = 0
         total_duration = 0
@@ -36,13 +38,16 @@ class RouteAssembler:
 
 class RoutingService:
 
+    """OSRM uzerinden rota hesaplama ve guncelleme islemlerini yoneten servis."""
     def __init__(self, osrm_client: OsrmClient, route_assembler: RouteAssembler):
+        """OSRM istemcisi ve route assembler bagimliliklerini alir."""
         self.osrm_client = osrm_client
         self.route_assembler = route_assembler
 
     async def generate_route(
         self, itinerary: Itinerary, constraints: TravelConstraints
     ) -> tuple[RoutePlan, list[ApiWarning]]:
+        """Her gun icin OSRM trip API'si kullanarak rota hesaplar."""
         osrm_outputs = []
 
         for day in itinerary.days:
@@ -70,6 +75,7 @@ class RoutingService:
         self, itinerary: Itinerary, edits: UserEdits
     ) -> tuple[RoutePlan, list[ApiWarning]]:
 
+        """Yalnizca duzenlenmis gunlerin rotasini yeniden hesaplar; digerlerini korur."""
         warnings: list[ApiWarning] = []
         affected_days = set(edits.ordered_poi_ids_by_day.keys())
 

@@ -6,6 +6,7 @@ from app.core.config import settings
 
 
 class OsrmRouteResponse:
+    """OSRM'den donen rota sonucunu tasir: mesafe, sure, encoded geometri ve nokta sirasi."""
     def __init__(
         self,
         distance: int,
@@ -13,6 +14,7 @@ class OsrmRouteResponse:
         geometry_encoded: str,
         waypoint_order: list[int],
     ):
+        """Nesneyi baslatir."""
         self.distance = distance
         self.duration = duration
         self.geometry_encoded = geometry_encoded
@@ -21,19 +23,23 @@ class OsrmRouteResponse:
 
 class OsrmClient:
 
+    """OSRM Route ve Trip endpoint'leriyle iletisim kuran asenkron HTTP istemcisi."""
     def __init__(
         self,
         base_url: str = settings.osrm_base_url,
         timeout_ms: int = settings.osrm_timeout_ms,
     ):
+        """Nesneyi baslatir."""
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout_ms / 1000
 
     def _coords_str(self, waypoints: list[GeoPoint]) -> str:
+        """Koordinat listesini OSRM formatina (lng,lat;lng,lat) donusturur."""
         return ";".join(f"{p.longitude},{p.latitude}" for p in waypoints)
 
     @staticmethod
     def _haversine(a: GeoPoint, b: GeoPoint) -> float:
+        """Iki koordinat arasindaki kus ucusu mesafesini metre cinsinden hesaplar (Haversine)."""
         R = 6371000
         lat1, lat2 = math.radians(a.latitude), math.radians(b.latitude)
         dlat = lat2 - lat1
@@ -50,6 +56,7 @@ class OsrmClient:
         profile: RoutingProfile = RoutingProfile.DRIVING,
     ) -> OsrmRouteResponse:
 
+        """Verilen noktalari en iyi sirada birbirine baglayan tur rotasini OSRM'den hesaplar."""
         n = len(waypoints)
 
         if n <= 1:
@@ -101,4 +108,5 @@ class OsrmClient:
         waypoints: list[GeoPoint],
         profile: RoutingProfile = RoutingProfile.DRIVING,
     ) -> OsrmRouteResponse:
+        """Noktalari verilen sirada birbirine baglayan rota hesaplar; sabit sira icin kullanilir."""
         return await self.trip(waypoints, profile)

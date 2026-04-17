@@ -48,6 +48,7 @@ class JsonDataSource(AbstractDataSource):
     """
 
     def __init__(self, json_path: str):
+        """JSON dosyasini diskten okur ve bellek-ici index olusturur."""
         self._pois: list[Poi] = []
         self._index: dict[str, Poi] = {}
         self._load(json_path)
@@ -102,6 +103,7 @@ class PoiRepository(AbstractPoiRepository):
     """
 
     def __init__(self, data_source: AbstractDataSource):
+        """JSON dosyasini diskten okur ve bellek-ici index olusturur."""
         self._data_source = data_source
 
     async def find_by_city(self, city: str) -> list[Poi]:
@@ -137,6 +139,7 @@ _POI_COLUMNS = (
     "google_rating, google_reviews_total"
 )
 def _compute_estimated_visit_duration(row: dict) -> int:
+    """Alt kategori, yorum sayisi ve puana gore tahmini ziyaret suresini (dk) hesaplar."""
     SUBCATEGORY_DURATION = {
         "Ancient & Archaeology": 75,
         "Museum": 75,
@@ -200,6 +203,7 @@ def _compute_estimated_visit_duration(row: dict) -> int:
     return duration
 
 def _row_to_poi(row: dict) -> Poi:
+    """Ham Supabase satirini Poi domain modeline donusturur."""
     raw_cats = row.get("categories") or []
 
     category = (
@@ -233,6 +237,7 @@ def _row_to_poi(row: dict) -> Poi:
     )
 
 def _extract_poi_subcategories(poi: Poi) -> set[str]:
+    """Poi'nin dolu alt kategori alanlarini kucuk harfli set olarak doner."""
     return {
         c.lower()
         for c in [
@@ -246,6 +251,7 @@ def _extract_poi_subcategories(poi: Poi) -> set[str]:
 
 
 def _poi_matches_categories(poi: Poi, categories: list[str]) -> bool:
+    """POI alt kategorilerinden en az biri istenen listeyle eslesiyor mu kontrol eder."""
     if not categories:
         return True
 
@@ -264,6 +270,7 @@ class PostgresPoiRepository(AbstractPoiRepository):
     """
 
     def __init__(self, client):
+        """JSON dosyasini diskten okur ve bellek-ici index olusturur."""
         self._client = client
 
     async def find_by_city(self, city: str) -> list[Poi]:
@@ -304,6 +311,7 @@ class PostgresPoiRepository(AbstractPoiRepository):
         return _row_to_poi(response.data[0])
 
     async def find_random(self, limit: int) -> list[Poi]:
+        """Veri setinden rastgele en fazla limit adet POI doner."""
         batches = []
 
         for _ in range(3):  # 3 farklı yerden çek
