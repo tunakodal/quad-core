@@ -1,5 +1,5 @@
 """
-Route Endpoints — API Boundary for route generation, replanning, and trip-day suggestion.
+Route Endpoints -- API Boundary for route generation, replanning, and trip-day suggestion.
 
 Aligned with GUIDE LLD: RouteController class (Appendix A.1.1).
 Dependencies are resolved from the application container at request time.
@@ -32,10 +32,10 @@ _ERROR_RESPONSES = {
 
 def _calculate_days_from_poi_count(poi_count: int) -> int:
     """
-    POI sayısına göre önerilen maksimum gezi süresini hesaplar.
+    Returns the recommended maximum number of trip days for a given POI count.
 
-    Her gün için ortalama ~9-14 POI kullanıldığı varsayımıyla eşik değerleri
-    belirlenir. 100'ün üzerindeki POI sayıları için 8 gün fallback değer döner.
+    Thresholds assume approximately 9-14 POIs are visited per day.
+    Returns 8 as a fallback for POI counts exceeding 100.
     """
     THRESHOLDS = [
         (9, 1),
@@ -257,7 +257,7 @@ class RouteController:
         )
 
 
-# ── Lazy controller accessor ──────────────────────────────────────
+# -- Lazy controller accessor --
 
 def _get_controller(request: Request) -> RouteController:
     """Resolve RouteController from the application DI container."""
@@ -270,7 +270,7 @@ def _get_controller(request: Request) -> RouteController:
     )
 
 
-# ── Endpoint wrappers ─────────────────────────────────────────────
+# -- Endpoint wrappers --
 
 @router.post(
     "/generate",
@@ -279,7 +279,7 @@ def _get_controller(request: Request) -> RouteController:
     summary="Generate a multi-day itinerary and route",
 )
 async def generate_route(req: RouteRequest, request: Request):
-    """DI container'dan RouteController'ı çözerek rota oluşturma isteğini iletir."""
+    """Resolves RouteController from the DI container and forwards the route generation request."""
     return await _get_controller(request).generate_route(req)
 
 
@@ -290,7 +290,7 @@ async def generate_route(req: RouteRequest, request: Request):
     summary="Replan itinerary after user edits",
 )
 async def replan_route(req: ReplanRequest, request: Request):
-    """DI container'dan RouteController'ı çözerek yeniden planlama isteğini iletir."""
+    """Resolves RouteController from the DI container and forwards the replan request."""
     return await _get_controller(request).replan_route(req)
 
 
@@ -298,8 +298,8 @@ async def replan_route(req: ReplanRequest, request: Request):
     "/suggest-days",
     response_model=TripDaySuggestionResponse,
     responses=_ERROR_RESPONSES,
-    summary="Suggest max feasible trip days",
+    summary="Suggest maximum trip days based on available POIs",
 )
 async def suggest_trip_days(req: TripDaySuggestionRequest, request: Request):
-    """DI container'dan RouteController'ı çözerek gün önerisi isteğini iletir."""
+    """Resolves RouteController from the DI container and forwards the trip-day suggestion request."""
     return await _get_controller(request).suggest_trip_days(req)

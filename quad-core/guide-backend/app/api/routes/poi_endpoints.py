@@ -1,5 +1,5 @@
 """
-POI Endpoints — API Boundary for POI search, detail, and content retrieval.
+POI Endpoints -- API Boundary for POI search, detail, and content retrieval.
 
 Aligned with GUIDE LLD: PoiController class (Appendix A.1.1).
 Dependencies are resolved from the application container at request time.
@@ -73,7 +73,7 @@ class PoiController:
         return PoiContentResponse(content=content, warnings=warnings)
 
     async def get_random_pois(self, limit: int) -> RandomPoiResponse:
-        """Keşif amaçlı kullanım için rastgele POI'lar döner; harita ön yüklemesi için kullanılır."""
+        """Returns random POIs for discovery use cases and map preloading."""
         pois = await self._poi_service.get_random_pois(limit)
 
         items = [
@@ -81,17 +81,14 @@ class PoiController:
                 id=p.id,
                 name=p.name,
                 city=p.city,
-
                 main_category_1=p.main_category_1,
                 main_category_2=p.main_category_2,
                 sub_category_1=p.sub_category_1,
                 sub_category_2=p.sub_category_2,
                 sub_category_3=p.sub_category_3,
                 sub_category_4=p.sub_category_4,
-
                 lat=p.location.latitude,
                 lng=p.location.longitude,
-
                 google_rating=p.google_rating,
                 google_reviews_total=p.google_reviews_total,
             )
@@ -101,7 +98,7 @@ class PoiController:
         return RandomPoiResponse(items=items)
 
 
-# ── Lazy controller accessor (resolved from app.state.container) ──
+# -- Lazy controller accessor (resolved from app.state.container) --
 
 def _get_controller(request: Request) -> PoiController:
     """Resolve PoiController from the application DI container."""
@@ -114,7 +111,7 @@ def _get_controller(request: Request) -> PoiController:
     )
 
 
-# ── Endpoint wrappers ─────────────────────────────────────────────
+# -- Endpoint wrappers --
 
 @router.post(
     "/search",
@@ -123,7 +120,7 @@ def _get_controller(request: Request) -> PoiController:
     summary="Search POIs by city and category",
 )
 async def search_pois(query: PoiQuery, request: Request):
-    """DI container'dan PoiController'ı çözerek POI arama isteğini iletir."""
+    """Resolves PoiController from the DI container and forwards the POI search request."""
     return await _get_controller(request).search_pois(query)
 
 
@@ -134,7 +131,7 @@ async def search_pois(query: PoiQuery, request: Request):
     summary="Get POI content (description, images, audio)",
 )
 async def get_poi_content(req: PoiContentRequest, request: Request):
-    """DI container'dan PoiController'ı çözerek içerik isteğini iletir."""
+    """Resolves PoiController from the DI container and forwards the content request."""
     return await _get_controller(request).get_poi_content(req)
 
 
@@ -144,7 +141,7 @@ async def get_poi_content(req: PoiContentRequest, request: Request):
     summary="Get random POIs",
 )
 async def get_random_pois(request: Request, limit: int = 20):
-    """DI container'dan PoiController'ı çözerek rastgele POI isteğini iletir."""
+    """Resolves PoiController from the DI container and forwards the random POI request."""
     return await _get_controller(request).get_random_pois(limit)
 
 
@@ -155,8 +152,5 @@ async def get_random_pois(request: Request, limit: int = 20):
     summary="Get a single POI by ID",
 )
 async def get_poi_by_id(poi_id: str, request: Request):
-    """DI container'dan PoiController'ı çözerek tekil POI sorgusunu iletir."""
+    """Resolves PoiController from the DI container and forwards the single POI query."""
     return await _get_controller(request).get_poi_by_id(poi_id)
-
-
-

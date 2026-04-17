@@ -115,12 +115,7 @@ class RequestValidator:
     def validate_trip_day_suggestion_request(
         self, req: TripDaySuggestionRequest
     ) -> ValidationResult:
-        """
-        Validates a trip-day suggestion request.
-
-        Only checks that city is non-empty. Categories are optional;
-        if omitted, all POIs in the city are counted for the suggestion.
-        """
+        """Validates a trip-day suggestion request; city is required."""
         errors = []
         if not req.city:
             errors.append("city is required.")

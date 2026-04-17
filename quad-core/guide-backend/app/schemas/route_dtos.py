@@ -11,7 +11,7 @@ from app.schemas.travel import TravelPreferences, TravelConstraints
 
 
 class DayReorderOperation(BaseModel):
-    """Tek bir güne ait POI sırasını yeniden tanımlayan operasyon."""
+    """Tek bir gune ait POI sirasini yeniden tanimlayan operasyon."""
 
     day_index: int
     ordered_poi_ids: list[str]
@@ -19,10 +19,10 @@ class DayReorderOperation(BaseModel):
 
 class UserEdits(BaseModel):
     """
-    Kullanıcının mevcut itinerary üzerinde yaptığı düzenlemeleri taşır.
+    Kullanicinin mevcut itinerary uzerinde yaptigi duzenlemeleri tasir.
 
-    ordered_poi_ids_by_day: {gün_indeksi: [poi_id, ...]} formatında,
-    yalnızca değiştirilen günleri içerir. Belirtilmeyen günler dokunulmaz.
+    ordered_poi_ids_by_day: {gun_indeksi: [poi_id, ...]} formatinda,
+    yalnizca degistirilen gunleri icerir. Belirtilmeyen gunler dokunulmaz.
     """
 
     ordered_poi_ids_by_day: dict[int, list[str]] = {}
@@ -30,11 +30,11 @@ class UserEdits(BaseModel):
 
 class RouteRequest(BaseModel):
     """
-    Yeni rota oluşturma isteği.
+    Yeni rota olusturma istegi.
 
-    preferences: Şehir, gün sayısı, kategori ve mesafe tercihleri.
-    constraints: Sistem limitleri (max mekan/gün, max mesafe).
-    language:    İçerik dili (varsayılan: İngilizce).
+    preferences: Sehir, gun sayisi, kategori ve mesafe tercihleri.
+    constraints: Sistem limitleri (max mekan/gun, max mesafe).
+    language:    Icerik dili (varsayilan: Ingilizce).
     """
 
     preferences: TravelPreferences
@@ -44,13 +44,13 @@ class RouteRequest(BaseModel):
 
 class RouteResponse(BaseModel):
     """
-    Rota oluşturma veya yeniden planlama sonucu.
+    Rota olusturma veya yeniden planlama sonucu.
 
-    itinerary:        Günlük POI planları.
-    route_plan:       OSRM'den gelen yol geometrisi ve mesafe/süre bilgileri.
-    warnings:         Kısmi plan, yetersiz POI gibi non-fatal uyarılar.
-    effective_trip_days: Gerçekte oluşturulan gün sayısı (istenenin altında olabilir).
-    available_pois:   Plana dahil edilmemiş, öneri olarak sunulabilecek mekanlar.
+    itinerary:          Gunluk POI planlari.
+    route_plan:         OSRM'den gelen yol geometrisi ve mesafe/sure bilgileri.
+    warnings:           Kismi plan, yetersiz POI gibi non-fatal uyarilar.
+    effective_trip_days: Gercekte olusturulan gun sayisi (istenenin altinda olabilir).
+    available_pois:     Plana dahil edilmemis, oneri olarak sunulabilecek mekanlar.
     """
 
     itinerary: Itinerary
@@ -62,11 +62,11 @@ class RouteResponse(BaseModel):
 
 class ReplanRequest(BaseModel):
     """
-    Kullanıcı düzenlemesi sonrası yeniden planlama isteği.
+    Kullanici duzenlemesi sonrasi yeniden planlama istegi.
 
-    existing_itinerary: Düzenlenmeden önceki mevcut plan (stateless — sunucu state tutmuyor).
-    edits:              Hangi günlerde hangi değişiklik yapıldığı.
-    constraints:        Güncel sistem limitleri.
+    existing_itinerary: Duzenlenmeden onceki mevcut plan (stateless -- sunucu state tutmuyor).
+    edits:              Hangi gunlerde hangi degisiklik yapildi.
+    constraints:        Guncel sistem limitleri.
     """
 
     existing_itinerary: Itinerary
