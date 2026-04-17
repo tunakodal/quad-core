@@ -259,6 +259,9 @@ class MonteCarloItineraryPlanner:
         # -------------------------
         # 6. POPULARITY SCORE
         # -------------------------
+        DATASET_MIN_POP = 1.8022
+        DATASET_MAX_POP = 57.9995
+
         pop_scores = []
         for poi in route:
             rating = poi.google_rating or 0
@@ -266,14 +269,9 @@ class MonteCarloItineraryPlanner:
             pop = rating * math.log(1 + reviews)
             pop_scores.append(pop)
 
-        min_pop = min(pop_scores)
-        max_pop = max(pop_scores)
-        if max_pop > min_pop:
-            popularity_score = (
-                    (sum(pop_scores) / len(pop_scores) - min_pop) / (max_pop - min_pop)
-            )
-        else:
-            popularity_score = 1.0
+        avg_pop = sum(pop_scores) / len(pop_scores)
+        popularity_score = (avg_pop - DATASET_MIN_POP) / (DATASET_MAX_POP - DATASET_MIN_POP)
+        popularity_score = max(0.0, min(1.0, popularity_score))
 
         # -------------------------
         # 7. CATEGORY DIVERSITY
