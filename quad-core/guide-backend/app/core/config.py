@@ -4,6 +4,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """
+    Uygulama genelindeki yapılandırma ayarları.
+
+    Değerler .env dosyasından veya ortam değişkenlerinden okunur.
+    Supabase ve OSRM bağlantıları isteğe bağlıdır; tanımlı değilse
+    uygulama JSON tabanlı geliştirme moduna düşer.
+    """
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

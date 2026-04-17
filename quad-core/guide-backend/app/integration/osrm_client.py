@@ -6,6 +6,8 @@ from app.core.config import settings
 
 
 class OsrmRouteResponse:
+    """OSRM'den dönen rota sonucunu taşıyan veri nesnesi."""
+
     def __init__(
         self,
         distance: int,
@@ -13,6 +15,13 @@ class OsrmRouteResponse:
         geometry_encoded: str,
         waypoint_order: list[int],
     ):
+        """
+        Args:
+            distance:         Toplam rota mesafesi (metre).
+            duration:         Toplam sürüş süresi (saniye).
+            geometry_encoded: Polyline formatında encode edilmiş rota geometrisi.
+            waypoint_order:   OSRM'in optimize ettiği waypoint sırası (orijinal listedeki indeksler).
+        """
         self.distance = distance
         self.duration = duration
         self.geometry_encoded = geometry_encoded
@@ -20,6 +29,13 @@ class OsrmRouteResponse:
 
 
 class OsrmClient:
+    """
+    OSRM (Open Source Routing Machine) HTTP API istemcisi.
+
+    Sürüş rotası hesaplamak için OSRM'in /route endpoint'ini kullanır.
+    trip() ve route() metodları aynı işlevi görür; kullanıcı tarafından
+    verilen waypoint sırası korunur, OSRM tarafından optimize edilmez.
+    """
 
     def __init__(
         self,
@@ -30,10 +46,17 @@ class OsrmClient:
         self.timeout = timeout_ms / 1000
 
     def _coords_str(self, waypoints: list[GeoPoint]) -> str:
+        """Waypoint listesini OSRM'in beklediği 'lng,lat;lng,lat' formatına dönüştürür."""
         return ";".join(f"{p.longitude},{p.latitude}" for p in waypoints)
 
     @staticmethod
     def _haversine(a: GeoPoint, b: GeoPoint) -> float:
+        """
+        İki koordinat noktası arasındaki kuş uçuşu mesafeyi metre cinsinden hesaplar.
+
+        Haversine formülü kullanır; yeryüzü eğriliğini dikkate alır.
+        Gerçek yol mesafesini değil, düz hat mesafesini verir.
+        """
         R = 6371000
         lat1, lat2 = math.radians(a.latitude), math.radians(b.latitude)
         dlat = lat2 - lat1
@@ -49,7 +72,24 @@ class OsrmClient:
         waypoints: list[GeoPoint],
         profile: RoutingProfile = RoutingProfile.DRIVING,
     ) -> OsrmRouteResponse:
+        """
+        Verilen waypoint'ler için OSRM üzerinden sürüş rotası hesaplar.
 
+        Waypoint sırası kullanıcı tarafından belirlenir, optimize edilmez.
+        1 veya daha az waypoint verilirse 0 mesafe/süre ile erken döner.
+        Hesaplama sonrası kuş uçuşu vs gerçek mesafe oranı konsola loglanır.
+
+        Args:
+            waypoints: Sıralı konum noktaları listesi.
+            profile:   Ulaşım modu (varsayılan: DRIVING).
+
+        Returns:
+            Mesafe (m), süre (s), polyline geometrisi ve waypoint sırasını
+            içeren OsrmRouteResponse.
+
+        Raises:
+            httpx.HTTPError: OSRM'e erişilemezse veya geçersiz yanıt dönerse.
+        """
         n = len(waypoints)
 
         if n <= 1:
@@ -101,4 +141,8 @@ class OsrmClient:
         waypoints: list[GeoPoint],
         profile: RoutingProfile = RoutingProfile.DRIVING,
     ) -> OsrmRouteResponse:
+        """
+        trip() için takma ad. Kullanıcı düzenlemelerinde waypoint sırasının
+        korunması gerektiğini vurgulamak için route() adıyla çağrılır.
+        """
         return await self.trip(waypoints, profile)

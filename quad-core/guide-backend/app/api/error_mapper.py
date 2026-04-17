@@ -10,8 +10,25 @@ from app.schemas.dtos import ApiErrorResponse
 
 
 class ErrorMapper:
+    """
+    Uygulama genelindeki istisnaları standart ApiErrorResponse modeline dönüştürür.
+
+    FastAPI exception handler'larından çağrılır; HTTP durum kodu ile birlikte
+    tutarlı bir hata yapısı döner. Bilinmeyen istisnalar 500 INTERNAL_ERROR
+    olarak map'lenir.
+    """
+
     @staticmethod
     def to_api_error(exc: Exception) -> tuple[int, ApiErrorResponse]:
+        """
+        Verilen istisnayı (HTTP status kodu, ApiErrorResponse) tuple'ına dönüştürür.
+
+        Desteklenen istisna türleri:
+          - RequestValidationError → 422, hata alanları detay olarak listelenir.
+          - HTTPException          → orijinal status kodu korunur; 400/404/422
+                                     için anlamlı error_code atanır.
+          - Diğer tüm istisnalar  → 500 INTERNAL_ERROR, exc mesajı eklenir.
+        """
         if isinstance(exc, RequestValidationError):
             details = [
                 f"{'/'.join(str(p) for p in err.get('loc', []))}: {err.get('msg', 'Invalid')}"
