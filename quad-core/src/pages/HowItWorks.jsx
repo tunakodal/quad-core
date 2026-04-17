@@ -179,6 +179,15 @@ export default function HowItWorks() {
           </div>
         </section>
 
+        {/* Map */}
+        <section className={styles.section}>
+          <img
+            src="/map.jpeg"
+            alt="Map"
+            style={{ width: "100%", borderRadius: "12px", display: "block" }}
+          />
+        </section>
+
         {/* Team */}
         <section className={styles.section}>
           <div className={styles.teamTitle}>

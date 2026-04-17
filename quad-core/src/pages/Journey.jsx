@@ -3,13 +3,49 @@ import { useLocation, useNavigate } from "react-router-dom";
 import RouteMap from "./RouteMap";
 import styles from "../styles/Journey.module.css";
 
-function enrichPois(pois) {
+function haversineKm(a, b) {
+    const R = 6371;
+    const toRad = (d) => (d * Math.PI) / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const s =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+const DEFAULT_SPEED_KMH = 18;
+
+function estimateMoveMin(from, to) {
+    const km = haversineKm(from, to);
+    const min = Math.round((km / DEFAULT_SPEED_KMH) * 60);
+    return Math.max(1, min);
+}
+
+function enrichPois(pois, segment) {
+    // OSRM segment'ten leg sürelerini al (saniye → dakika)
+    const legs = segment?.legs ?? null;
+
     return pois.map((poi, idx) => {
         const prev = pois[idx - 1];
+        let moveMin = null;
+
+        if (prev) {
+            const legDuration = legs?.[idx - 1]?.duration;
+            if (typeof legDuration === "number") {
+                moveMin = Math.max(1, Math.round(legDuration / 60));
+            } else {
+                // OSRM yoksa haversine fallback
+                moveMin = estimateMoveMin(prev, poi);
+            }
+        }
+
         return {
             ...poi,
             stayMin: poi.etaMin ?? null,
-            moveMin: prev ? 10 : null,
+            moveMin,
         };
     });
 }
@@ -27,23 +63,29 @@ export default function Journey() {
 
     const activeDay = days[activeDayIndex];
 
+    const activeSegment = useMemo(
+        () => routeResponse?.route_plan?.segments?.[activeDayIndex] ?? null,
+        [routeResponse, activeDayIndex]
+    );
+
     const activeDayPois = useMemo(() => {
         if (!activeDay) return [];
-        return enrichPois(activeDay.pois);
-    }, [activeDay]);
+        return enrichPois(activeDay.pois, activeSegment);
+    }, [activeDay, activeSegment]);
 
     const totalDuration = useMemo(() => {
-        return activeDayPois.reduce((sum, poi) => sum + (poi.stayMin ?? 0), 0);
+        return activeDayPois.reduce(
+            (sum, poi) => sum + (poi.stayMin ?? 0) + (poi.moveMin ?? 0),
+            0
+        );
     }, [activeDayPois]);
 
     const totalDistanceKm = useMemo(() => {
-        const segment = routeResponse?.route_plan?.segments?.[activeDayIndex];
-        console.log("segments:", routeResponse?.route_plan?.segments?.[activeDayIndex]);
-        if (segment?.distance) {
-            return (segment.distance / 1000).toFixed(1);
+        if (activeSegment?.distance) {
+            return (activeSegment.distance / 1000).toFixed(1);
         }
         return null;
-    }, [routeResponse, activeDayIndex]);
+    }, [activeSegment]);
 
     function handleOpenPoi(poi, idx) {
         navigate(`/poi/${poi.id}`, {
@@ -98,9 +140,7 @@ export default function Journey() {
                         <RouteMap
                             cityId={planningInput?.cityId}
                             stops={activeDayPois}
-                            geometry={
-                                routeResponse?.route_plan?.segments?.[activeDayIndex]?.geometry_encoded ?? null
-                            }
+                            geometry={activeSegment?.geometry_encoded ?? null}
                             activeIndex={activePoiIndex}
                             onHoverStop={setActivePoiIndex}
                             onSelectStop={(idx) => handleOpenPoi(activeDayPois[idx], idx)}
