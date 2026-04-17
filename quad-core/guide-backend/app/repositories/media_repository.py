@@ -1,14 +1,14 @@
 """
-Media repository -- image and audio asset resolution.
+Media repository — görsel ve ses asset'i çözümleme.
 
-Two strategies:
-  MediaRepository         -- reads from local filesystem (development / fallback)
-  PostgresMediaRepository -- reads from Supabase Data API (production)
+İki strateji:
+  MediaRepository         — yerel dosya sisteminden okur (geliştirme / fallback)
+  PostgresMediaRepository — Supabase Data API üzerinden okur (production)
 
-DB <-> domain model notes:
-  media_assets.id     INTEGER -> domain MediaAsset.asset_id: str  (converted with str())
-  media_assets.poi_id INTEGER -> queried with int(poi_id)
-  url_or_path         Supabase URL or path is passed directly to MediaAsset
+DB ↔ domain model farkları:
+  media_assets.id     INTEGER → domain MediaAsset.asset_id: str  (str() ile dönüştürülür)
+  media_assets.poi_id INTEGER → sorguda int(poi_id) ile kullanılır
+  url_or_path         Supabase'den gelen URL veya yol doğrudan MediaAsset'e aktarılır
 """
 from __future__ import annotations
 
@@ -19,16 +19,16 @@ from app.models.media import MediaAsset
 from app.repositories.interfaces import AbstractAudioAssetResolver, AbstractMediaRepository
 
 
-# -- Filesystem / development implementation --
+# ── Dosya sistemi / geliştirme implementasyonu ────────────────────
 
 class MediaRepository(AbstractMediaRepository):
     """
-    Resolves static media assets (images and pre-generated TTS audio)
-    from the local filesystem.
+    Statik medya asset'lerini (görseller ve önceden üretilmiş TTS sesleri)
+    yerel dosya sisteminden çözer.
 
-    Expected directory structure:
-      <media_root>/images/<poi_id>/01.jpg   (or .png / .webp)
-      <media_root>/audio/<poi_id>/<lang>.mp3 (or .wav / .ogg)
+    Beklenen dizin yapısı:
+      <media_root>/images/<poi_id>/01.jpg   (veya .png / .webp)
+      <media_root>/audio/<poi_id>/<lang>.mp3 (veya .wav / .ogg)
     """
 
     def __init__(self, media_root_path: str):
@@ -36,8 +36,8 @@ class MediaRepository(AbstractMediaRepository):
 
     async def get_image(self, poi_id: str) -> MediaAsset | None:
         """
-        Returns the first available image for a POI.
-        Supported formats: jpg, png, webp (in priority order).
+        POI'nın ilk görselini döner.
+        Desteklenen formatlar: jpg, png, webp (öncelik sırası).
         """
         img_dir = self._media_root / "images" / poi_id
         if img_dir.exists():
@@ -53,8 +53,8 @@ class MediaRepository(AbstractMediaRepository):
 
     async def get_audio(self, poi_id: str, lang: Language) -> MediaAsset | None:
         """
-        Returns the audio file for a POI in the specified language.
-        Supported formats: mp3, wav, ogg (in priority order).
+        POI için belirtilen dildeki ses dosyasını döner.
+        Desteklenen formatlar: mp3, wav, ogg (öncelik sırası).
         """
         audio_dir = self._media_root / "audio" / poi_id
         lang_lower = lang.value.lower()
@@ -71,35 +71,36 @@ class MediaRepository(AbstractMediaRepository):
 
 class AudioAssetResolver(AbstractAudioAssetResolver):
     """
-    Resolves the correct audio asset for a POI and language.
+    POI ve dil için doğru ses asset'ini çözer.
 
-    Thin wrapper over MediaRepository; makes it easy to wire in alternative
-    audio sources (e.g. a TTS API) in the future.
+    MediaRepository üzerinde oturan ince bir sarmalayıcıdır;
+    gelecekte farklı ses kaynaklarını (örn. TTS API) buraya bağlamak kolaylaşır.
     """
 
     def __init__(self, media_repository: AbstractMediaRepository):
         self._media_repository = media_repository
 
     async def resolve_audio(self, poi_id: str, lang: Language) -> MediaAsset | None:
-        """Resolves the audio asset for the given POI and language via media repository."""
+        """Belirtilen POI ve dil için ses asset'ini media repository'den çözer."""
         return await self._media_repository.get_audio(poi_id, lang)
 
 
-# -- Supabase Data API implementation --
+# ── Supabase Data API implementasyonu ────────────────────────────
 
 class PostgresMediaRepository(AbstractMediaRepository):
     """
-    Provides media asset access via the Supabase Data API (PostgREST).
+    Supabase Data API (PostgREST) üzerinden medya asset erişimi sağlar.
 
-    Multiple records may exist in media_assets; rows are ordered by sort_order
-    and the first is returned. url_or_path carries the Supabase URL directly.
+    media_assets tablosunda birden fazla kayıt olabilir; sort_order'a göre
+    sıralanır ve ilk kayıt döndürülür. url_or_path alanı Supabase'den
+    gelen URL veya dosya yolunu doğrudan taşır.
     """
 
     def __init__(self, client):
         self._client = client
 
     async def get_image(self, poi_id: str) -> MediaAsset | None:
-        """Fetches the first image asset for a POI from Supabase (sorted by sort_order)."""
+        """POI'nın ilk görsel asset'ini Supabase'den çeker (sort_order'a göre sıralı)."""
         response = await (
             self._client.table("media_assets")
             .select("id, url_or_path, media_type")
@@ -119,7 +120,7 @@ class PostgresMediaRepository(AbstractMediaRepository):
         )
 
     async def get_audio(self, poi_id: str, lang: Language) -> MediaAsset | None:
-        """Fetches the first audio asset for a POI and language from Supabase."""
+        """POI için belirtilen dildeki ilk ses asset'ini Supabase'den çeker."""
         response = await (
             self._client.table("media_assets")
             .select("id, url_or_path, media_type")

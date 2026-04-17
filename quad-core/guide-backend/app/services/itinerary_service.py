@@ -1,8 +1,10 @@
 """
-Itinerary Service -- orchestration layer between planner and repository.
+Itinerary Service - planlayici ile repository arasindaki orkestrasyon katmani.
 
-build_itinerary : Selects the best daily plan from a POI list via Monte Carlo planner.
-replan          : Applies user edits to an existing itinerary; only rebuilds changed days.
+build_itinerary : Verilen POI listesinden Monte Carlo planlayici araciligiyla
+                  en iyi gunluk plani secer.
+replan          : Kullanici duzenlemelerini mevcut itinerary'ye uygular;
+                  yalnizca degisen gunleri yeniden olusturur.
 """
 from app.models.poi import Poi
 from app.models.route import Itinerary, DayPlan
@@ -15,10 +17,10 @@ from app.schemas.common import ApiWarning, Severity
 
 class ItineraryService:
     """
-    Manages itinerary creation and replanning business logic.
+    Seyahat programi olusturma ve yeniden planlama is mantigini yonetir.
 
-    Decoupled from the planner (MonteCarloItineraryPlanner); a different
-    planning strategy can be injected to swap the algorithm.
+    Planlayicidan (MonteCarloItineraryPlanner) bagimsizdır; farkli bir
+    planlama stratejisi enjekte edilerek algoritma degistirilebilir.
     """
 
     def __init__(
@@ -33,19 +35,18 @@ class ItineraryService:
         self, pois: list[Poi], constraints: TravelConstraints, prefs: TravelPreferences
     ) -> tuple[Itinerary, list[ApiWarning]]:
         """
-        Builds the best itinerary from a POI list via the injected planner.
+        POI listesinden planlayici araciligiyla en iyi itinerary'yi olusturur.
 
-        If the number of generated days is less than the requested trip_days,
-        a PARTIAL_ITINERARY warning is added -- this is not an error, just a
-        signal that the POI pool was insufficient.
+        Uretilen gun sayisi istenen trip_days'den azsa PARTIAL_ITINERARY uyarisi
+        eklenir - bu hata degil, POI havuzunun yetersizligini bildiren bir uyaridir.
 
         Args:
-            pois:        Candidate venues for planning.
-            constraints: System limits such as max POIs/day and max distance.
-            prefs:       User-requested trip length and city.
+            pois:        Planlama icin aday mekan listesi.
+            constraints: Gunluk max mekan sayisi, max mesafe gibi sistem kisitlari.
+            prefs:       Kullanicinin istedigi gun sayisi ve sehir bilgisi.
 
         Returns:
-            (Itinerary, warnings) tuple.
+            (Itinerary, warnings) tuple'i.
         """
         itinerary = self.planner.select_best(pois, constraints, prefs)
         warnings: list[ApiWarning] = []
@@ -67,28 +68,32 @@ class ItineraryService:
         prefs: TravelPreferences,
     ) -> tuple[Itinerary, list[ApiWarning]]:
         """
-        Applies user edits to an existing itinerary; only rebuilds changed days.
+        Kullanicinin duzenledigi gunleri mevcut itinerary uzerinde gunceller.
 
-        Days not listed in edits.ordered_poi_ids_by_day are preserved as-is.
-        Newly added POI IDs (not in the existing plan) are fetched from the DB.
+        Yalnizca edits.ordered_poi_ids_by_day'de belirtilen gunler yeniden
+        olusturulur; diger gunler degismeden korunur. Yeni eklenen POI'lar
+        (existing_map'te bulunmayanlar) repository'den sorgulanir.
+
+        Duplicate POI ID'ler sessizce gormezden gelinir (seen set ile).
 
         Args:
-            existing:    The current itinerary before edits.
-            edits:       Which days changed and their new POI order.
-            constraints: Current system limits.
-            prefs:       User preferences (used for context only).
+            existing:    Kullanicinin duzenledigi mevcut itinerary.
+            edits:       Degisen gunler ve yeni POI sirasi.
+            constraints: Seyahat kisitlari (su an aktif kullanilmiyor, ilerisi icin).
+            prefs:       Seyahat tercihleri (su an aktif kullanilmiyor, ilerisi icin).
 
         Returns:
-            (Itinerary, warnings) tuple.
+            (Itinerary, warnings) tuple'i.
 
         Raises:
-            ValueError: If a referenced POI ID cannot be found in DB or existing plan.
+            ValueError: Belirtilen POI ID'si ne mevcut itinerary'de ne de DB'de bulunuyorsa.
         """
         warnings: list[ApiWarning] = []
 
         if not edits.ordered_poi_ids_by_day:
             return existing, warnings
 
+        # Mevcut POI'leri map'le
         existing_map = {
             poi.id: poi
             for day in existing.days
@@ -100,10 +105,12 @@ class ItineraryService:
         for day in existing.days:
             requested_ids = edits.ordered_poi_ids_by_day.get(day.day_index)
 
+            # Bu gun modified degilse aynen koru
             if requested_ids is None:
                 new_days.append(day)
                 continue
 
+            # Modified gun - POI'leri sirayla topla
             pois: list[Poi] = []
             seen: set[str] = set()
 
@@ -114,6 +121,7 @@ class ItineraryService:
 
                 poi = existing_map.get(pid)
 
+                # Yeni eklenen POI - DB'den al
                 if poi is None:
                     poi = await self.poi_repository.find_by_id(pid)
 

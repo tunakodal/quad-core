@@ -1,7 +1,8 @@
 """
-Plan scoring strategies -- evaluates candidate routes and selects the best one.
+Plan puanlama stratejileri — aday güzergahları değerlendirerek en iyisini seçer.
 
-Strategy pattern: implement PlanRanker ABC to swap scoring algorithms at runtime.
+Strateji deseni: PlanRanker ABC'si implement edilerek farklı puanlama
+algoritmaları çalışma zamanında değiştirilebilir.
 """
 from abc import ABC, abstractmethod
 
@@ -10,7 +11,7 @@ from app.schemas.travel import TravelConstraints, TravelPreferences
 
 
 class PlanRanker(ABC):
-    """Abstract scorer that assigns a numeric score to a candidate itinerary."""
+    """Bir aday güzergaha sayısal puan veren soyut puanlayıcı."""
 
     @abstractmethod
     def score(
@@ -20,17 +21,18 @@ class PlanRanker(ABC):
         constraints: TravelConstraints,
     ) -> float:
         """
-        Score the itinerary; higher is better.
-        Only used for comparison -- absolute value has no meaning.
+        Güzergahı puanlar; yüksek puan daha iyi planı ifade eder.
+        Karşılaştırma için kullanılır — mutlak değeri anlam taşımaz.
         """
         ...
 
 
 class HeuristicPlanRanker(PlanRanker):
     """
-    Basic heuristic scoring:
-      + Rewards category diversity across days (one point per distinct category)
-      - Penalises each day that exceeds max_daily_distance (-1.0 per violation)
+    Temel sezgisel puanlama:
+      + Günler arası kategori çeşitliliği ödüllendirilir
+        (farklı kategorilerdeki POI sayısı kadar puan eklenir)
+      - Günlük maksimum mesafeyi aşan her gün için ceza uygulanır
     """
 
     def score(
@@ -40,22 +42,22 @@ class HeuristicPlanRanker(PlanRanker):
         constraints: TravelConstraints,
     ) -> float:
         """
-        Returns a heuristic score rewarding diversity and penalising distance violations.
+        Kategori çeşitliliğini ödüllendiren, mesafe aşımını cezalandıran sezgisel skor.
 
-        Returns 0.0 for an empty itinerary. Higher score means better plan;
-        absolute value is meaningless -- use only for ranking.
+        Boş itinerary için 0.0 döner. Yüksek puan daha iyi planı ifade eder;
+        mutlak değerin anlamı yoktur, yalnızca karşılaştırma için kullanılır.
         """
         if not candidate.days:
             return 0.0
 
-        # Distance violation penalty: -1.0 per offending day
+        # Mesafe aşımı cezası: her ihlal eden gün için -1.0
         penalty = 0.0
         for day in candidate.days:
             if day.route_segment:
                 if day.route_segment.distance > constraints.max_daily_distance:
                     penalty += 1.0
 
-        # Diversity bonus: how many distinct sub-categories appear across the whole trip
+        # Çeşitlilik bonusu: güzergah genelinde kaç farklı kategori var
         diversity = len({
             c
             for day in candidate.days

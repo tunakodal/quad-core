@@ -2,16 +2,16 @@
 POI data source and repository implementations.
 
 Two strategies:
-  JsonDataSource / PoiRepository  -- reads from JSON (development / fallback)
-  PostgresPoiRepository           -- reads from Supabase Data API (production)
+  JsonDataSource / PoiRepository      — reads from JSON (development / fallback)
+  PostgresPoiRepository               — reads from Supabase Data API (production)
 
-DB <-> domain model mapping (PostgresPoiRepository):
-  pois.id   INTEGER -> Poi.id: str  (converted with str())
+DB ↔ domain model mapping (handled in PostgresPoiRepository):
+  pois.id              INTEGER  → Poi.id: str   (converted using str())
 
 Taxonomy fields:
   pois.categories, main_category_1/2, sub_category_1/2/3/4
-    -> mapped to Poi taxonomy fields.
-    category is retained for UI/filter compatibility.
+    → mapped to Poi taxonomy fields
+    category is retained for compatibility and display purposes.
 
 IMPORTANT:
   - Filtering and diversity logic rely on sub_category_* fields as the source of truth.
@@ -19,8 +19,11 @@ IMPORTANT:
 
 Estimated visit duration:
   - Not stored in the database.
-  - Computed dynamically via _compute_estimated_visit_duration().
-  - Based on: subcategory base durations, review count multiplier, rating multiplier.
+  - Computed dynamically via `_compute_estimated_visit_duration(...)`.
+  - Calculation is based on:
+      - subcategory-based base durations
+      - review count multiplier
+      - rating multiplier
 """
 
 from __future__ import annotations
@@ -34,14 +37,14 @@ from app.models.poi import Poi
 from app.repositories.interfaces import AbstractDataSource, AbstractPoiRepository
 
 
-# -- JSON / development implementation --
+# ── JSON / geliştirme implementasyonu ────────────────────────────
 
 class JsonDataSource(AbstractDataSource):
     """
-    Loads POI records from a JSON file on disk.
+    POI kayıtlarını disk üzerindeki JSON dosyasından yükler.
 
-    Used in development and as a fallback when Supabase is not configured.
-    If the file does not exist, silently returns an empty list.
+    Geliştirme ortamında ve Supabase bağlantısı olmadığında fallback olarak kullanılır.
+    Dosya yoksa sessizce boş liste döner; uygulama başlamaya devam eder.
     """
 
     def __init__(self, json_path: str):
@@ -50,7 +53,7 @@ class JsonDataSource(AbstractDataSource):
         self._load(json_path)
 
     def _load(self, json_path: str) -> None:
-        """Reads and deserialises the JSON file into memory."""
+        """JSON dosyasını okur ve belleğe alır."""
         path = Path(json_path)
         if not path.exists():
             return
@@ -61,12 +64,14 @@ class JsonDataSource(AbstractDataSource):
                 id=item["id"],
                 name=item["name"],
                 category=item.get("category", "Other"),
+
                 main_category_1=item.get("main_category_1"),
                 main_category_2=item.get("main_category_2"),
                 sub_category_1=item.get("sub_category_1"),
                 sub_category_2=item.get("sub_category_2"),
                 sub_category_3=item.get("sub_category_3"),
                 sub_category_4=item.get("sub_category_4"),
+
                 city=item["city"],
                 location=GeoPoint(
                     latitude=item["location"]["latitude"],
@@ -80,27 +85,27 @@ class JsonDataSource(AbstractDataSource):
             self._index[poi.id] = poi
 
     def load_all_pois(self) -> list[Poi]:
-        """Returns all loaded POIs."""
+        """Yüklü tüm POI'ları döner."""
         return list(self._pois)
 
     def load_by_id(self, poi_id: str) -> Poi | None:
-        """Returns the POI with the given ID, or None if not found."""
+        """Verilen ID'ye sahip POI'yı döner; bulunamazsa None."""
         return self._index.get(poi_id)
 
 
 class PoiRepository(AbstractPoiRepository):
     """
-    Provides POI access via a pluggable AbstractDataSource.
+    Takılabilir bir AbstractDataSource üzerinden POI erişimi sağlar.
 
-    Strategy pattern: whichever DataSource is injected is used.
-    Currently backed by JsonDataSource; other sources can be wired in.
+    Strateji deseni: hangi DataSource inject edilirse o kullanılır.
+    Şu an JsonDataSource ile çalışır; gelecekte başka kaynaklar da takılabilir.
     """
 
     def __init__(self, data_source: AbstractDataSource):
         self._data_source = data_source
 
     async def find_by_city(self, city: str) -> list[Poi]:
-        """Returns all POIs in the given city (case-insensitive)."""
+        """Verilen şehirdeki tüm POI'ları döner (büyük/küçük harf duyarsız)."""
         all_pois = self._data_source.load_all_pois()
         return [p for p in all_pois if p.city.lower() == city.lower()]
 
@@ -115,19 +120,15 @@ class PoiRepository(AbstractPoiRepository):
         city_pois = await self.find_by_city(city)
         if not categories:
             return city_pois
+
         return [p for p in city_pois if _poi_matches_categories(p, categories)]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
-        """Returns a single POI by ID, or None if not found."""
+        """ID'ye göre tek POI döner; bulunamazsa None."""
         return self._data_source.load_by_id(poi_id)
 
-    async def find_random(self, limit: int) -> list[Poi]:
-        """Returns up to `limit` randomly selected POIs from the full dataset."""
-        all_pois = self._data_source.load_all_pois()
-        return random.sample(all_pois, min(limit, len(all_pois)))
 
-
-# -- Supabase Data API implementation --
+# ── Supabase Data API implementasyonu ────────────────────────────
 
 _POI_COLUMNS = (
     "id, name, city, latitude, longitude, categories, "
@@ -135,25 +136,23 @@ _POI_COLUMNS = (
     "sub_category_1, sub_category_2, sub_category_3, sub_category_4, "
     "google_rating, google_reviews_total"
 )
-
-
 def _compute_estimated_visit_duration(row: dict) -> int:
     """
-    Computes the estimated visit duration (minutes) for a POI.
+    Bir POI için tahmini ziyaret süresini (dakika) hesaplar.
 
-    Not stored in the DB; computed dynamically on each call.
-    Based on three factors:
-      1. Subcategory base duration (e.g. Museum: 75 min, Religious: 30 min)
-      2. Review count multiplier: few reviews -> 0.90x, many -> 1.10x
-      3. Rating multiplier: low rating -> 0.90x, high -> 1.10x
+    Veritabanında saklı olmayan bu değer her seferinde dinamik olarak üretilir.
+    Hesaplama üç faktöre dayanır:
+      1. Alt kategori bazlı temel süre (ör. Müze: 75 dk, Dini yapı: 30 dk)
+      2. Yorum sayısı çarpanı: az yorum → 0.90x, çok yorum → 1.10x
+      3. Puan çarpanı: düşük puan → 0.90x, yüksek puan → 1.10x
 
-    Result is rounded to 5 minutes and clamped to [15, 150].
+    Sonuç 5 dakika yuvarlamasıyla [15, 150] aralığına kırpılır.
 
     Args:
-        row: Raw POI data from Supabase (expects sub_category_* and google_* fields).
+        row: Supabase'den gelen ham POI verisi (sub_category_*, google_* alanları beklenir).
 
     Returns:
-        Estimated visit duration in minutes.
+        Dakika cinsinden tahmini ziyaret süresi.
     """
     SUBCATEGORY_DURATION = {
         "Ancient & Archaeology": 75,
@@ -181,7 +180,10 @@ def _compute_estimated_visit_duration(row: dict) -> int:
     categories = [c for c in categories if c]
 
     if categories:
-        durations = [SUBCATEGORY_DURATION.get(c, DEFAULT_DURATION) for c in categories]
+        durations = [
+            SUBCATEGORY_DURATION.get(category, DEFAULT_DURATION)
+            for category in categories
+        ]
         max_duration = max(durations)
         avg_duration = sum(durations) / len(durations)
         category_duration = 0.70 * max_duration + 0.30 * avg_duration
@@ -191,22 +193,37 @@ def _compute_estimated_visit_duration(row: dict) -> int:
     reviews = row.get("google_reviews_total") or 0
     rating = row.get("google_rating") or 0
 
-    m_review = 0.90 if reviews < 50 else (1.10 if reviews >= 500 else 1.00)
-    m_rating = 0.90 if rating < 3.5 else (1.10 if rating >= 4.5 else 1.00)
+    # Review multiplier — daha dar aralık
+    if reviews < 50:
+        m_review = 0.90
+    elif reviews < 500:
+        m_review = 1.00
+    else:
+        m_review = 1.10
+
+    # Rating multiplier — daha dar aralık
+    if rating < 3.5:
+        m_rating = 0.90
+    elif rating < 4.5:
+        m_rating = 1.00
+    else:
+        m_rating = 1.10
 
     adjusted_duration = category_duration * m_review * m_rating
-    duration = int(round(adjusted_duration / 5) * 5)
-    return max(15, min(duration, 150))
 
+    duration = int(round(adjusted_duration / 5) * 5)
+    duration = max(15, min(duration, 150))
+
+    return duration
 
 def _row_to_poi(row: dict) -> Poi:
     """
-    Converts a raw Supabase row into a Poi domain model.
+    Supabase'den gelen ham satırı Poi domain modeline dönüştürür.
 
-    The category field is kept for compatibility; priority order:
-    main_category_1 > sub_category_1 > first element of categories list > "Other"
+    category alanı uyumluluk için korunur; öncelik sırası:
+    main_category_1 > sub_category_1 > categories listesinin ilk elemanı > "Other"
 
-    estimated_visit_duration is computed dynamically on each call.
+    estimated_visit_duration her çağrıda _compute_estimated_visit_duration ile hesaplanır.
     """
     raw_cats = row.get("categories") or []
 
@@ -220,25 +237,28 @@ def _row_to_poi(row: dict) -> Poi:
         id=str(row["id"]),
         name=row["name"],
         category=category,
+
         main_category_1=row.get("main_category_1"),
         main_category_2=row.get("main_category_2"),
         sub_category_1=row.get("sub_category_1"),
         sub_category_2=row.get("sub_category_2"),
         sub_category_3=row.get("sub_category_3"),
         sub_category_4=row.get("sub_category_4"),
+
         city=row["city"],
         location=GeoPoint(
             latitude=row["latitude"],
             longitude=row["longitude"],
         ),
+
         estimated_visit_duration=_compute_estimated_visit_duration(row),
+
         google_rating=row.get("google_rating"),
         google_reviews_total=row.get("google_reviews_total"),
     )
 
-
 def _extract_poi_subcategories(poi: Poi) -> set[str]:
-    """Returns the non-empty sub_category fields of a POI as a lowercase set."""
+    """Bir POI'nun dolu sub_category alanlarını küçük harfli küme olarak döner."""
     return {
         c.lower()
         for c in [
@@ -253,31 +273,33 @@ def _extract_poi_subcategories(poi: Poi) -> set[str]:
 
 def _poi_matches_categories(poi: Poi, categories: list[str]) -> bool:
     """
-    Returns True if at least one of the POI's subcategories matches the requested list.
+    POI'nın alt kategorilerinden en az biri istenen kategorilerle örtüşüyorsa True döner.
 
-    Comparison is case-insensitive. If categories is empty, every POI matches.
+    Karşılaştırma büyük/küçük harf duyarsızdır.
+    categories boşsa her POI eşleşir (filtre uygulanmaz).
     """
     if not categories:
         return True
+
     wanted = {c.lower() for c in categories}
     poi_subs = _extract_poi_subcategories(poi)
-    return not wanted.isdisjoint(poi_subs)
 
+    return not wanted.isdisjoint(poi_subs)
 
 class PostgresPoiRepository(AbstractPoiRepository):
     """
-    Provides POI access via the Supabase Data API (PostgREST).
+    Supabase Data API (PostgREST) üzerinden POI erişimi sağlar.
 
-    Category filtering is applied in Python to reduce network traffic:
-    all POIs for the city are fetched first, then filtered in-memory
-    with case-insensitive subcategory matching.
+    Kategori filtresi ağ trafiğini azaltmak için Python tarafında uygulanır:
+    önce şehrin tüm POI'ları çekilir, ardından kategori eşleştirmesi
+    büyük/küçük harf duyarsız biçimde in-memory yapılır.
     """
 
     def __init__(self, client):
         self._client = client
 
     async def find_by_city(self, city: str) -> list[Poi]:
-        """Fetches all POIs for the given city from Supabase (case-insensitive)."""
+        """Verilen şehirdeki tüm POI'ları Supabase'den çeker (büyük/küçük harf duyarsız)."""
         response = await (
             self._client.table("pois")
             .select(_POI_COLUMNS)
@@ -297,10 +319,11 @@ class PostgresPoiRepository(AbstractPoiRepository):
         all_pois = await self.find_by_city(city)
         if not categories:
             return all_pois
+
         return [p for p in all_pois if _poi_matches_categories(p, categories)]
 
     async def find_by_id(self, poi_id: str) -> Poi | None:
-        """Returns a single POI by ID, or None if not found."""
+        """ID'ye göre tek POI döner; bulunamazsa None."""
         response = await (
             self._client.table("pois")
             .select(_POI_COLUMNS)
@@ -314,15 +337,16 @@ class PostgresPoiRepository(AbstractPoiRepository):
 
     async def find_random(self, limit: int) -> list[Poi]:
         """
-        Returns random POIs from the database.
+        Veritabanından rastgele POI'lar döner.
 
-        Fetches 200-row batches from 3 random offsets, shuffles and
-        returns the first `limit` results. Not guaranteed to be perfectly random;
-        intended for discovery/exploration use cases.
+        3 farklı ofset noktasından 200'er kayıt çekip birleştirir,
+        ardından karıştırarak ilk `limit` kadarını döner.
+        Tam rastgelelik garanti edilmez; keşif amaçlı kullanım içindir.
         """
         batches = []
-        for _ in range(3):
-            offset = random.randint(0, 2000)
+
+        for _ in range(3):  # 3 farklı yerden çek
+            offset = random.randint(0, 2000)  # tahmini range
             res = await (
                 self._client.table("pois")
                 .select(_POI_COLUMNS)
@@ -332,5 +356,7 @@ class PostgresPoiRepository(AbstractPoiRepository):
             batches.extend(res.data)
 
         pois = [_row_to_poi(r) for r in batches]
+
         random.shuffle(pois)
+
         return pois[:limit]

@@ -5,11 +5,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     """
-    Application-wide configuration settings.
+    Uygulama genelindeki yapılandırma ayarları.
 
-    Values are read from the .env file or environment variables.
-    Supabase and OSRM connections are optional; if not set, the app
-    falls back to JSON-file-based development mode.
+    Değerler .env dosyasından veya ortam değişkenlerinden okunur.
+    Supabase ve OSRM bağlantıları isteğe bağlıdır; tanımlı değilse
+    uygulama JSON tabanlı geliştirme moduna düşer.
     """
 
     model_config = SettingsConfigDict(
@@ -17,18 +17,18 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
     )
 
-    # -- Supabase --
+    # ── Supabase ──────────────────────────────────────────────────
     supabase_url: Optional[str] = None
     supabase_key: Optional[str] = None  # anon/publishable key
 
-    # -- OSRM --
+    # ── OSRM ─────────────────────────────────────────────────────
     osrm_base_url: str = "http://localhost:5000"
     osrm_timeout_ms: int = 5000
 
-    # -- Media --
+    # ── Media ─────────────────────────────────────────────────────
     media_root_path: str = "./media"
 
-    # -- Trip planning limits --
+    # ── Trip planning limits ──────────────────────────────────────
     max_trip_days: int = 10
     max_pois_per_day: int = 9
     max_total_pois: int = 110

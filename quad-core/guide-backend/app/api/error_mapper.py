@@ -11,22 +11,23 @@ from app.schemas.dtos import ApiErrorResponse
 
 class ErrorMapper:
     """
-    Maps application-wide exceptions to a standard ApiErrorResponse.
+    Uygulama genelindeki istisnaları standart ApiErrorResponse modeline dönüştürür.
 
-    Called from FastAPI exception handlers; returns an HTTP status code
-    alongside a consistent error body. Unknown exceptions map to 500 INTERNAL_ERROR.
+    FastAPI exception handler'larından çağrılır; HTTP durum kodu ile birlikte
+    tutarlı bir hata yapısı döner. Bilinmeyen istisnalar 500 INTERNAL_ERROR
+    olarak map'lenir.
     """
 
     @staticmethod
     def to_api_error(exc: Exception) -> tuple[int, ApiErrorResponse]:
         """
-        Converts an exception to an (HTTP status code, ApiErrorResponse) tuple.
+        Verilen istisnayı (HTTP status kodu, ApiErrorResponse) tuple'ına dönüştürür.
 
-        Supported exception types:
-          - RequestValidationError -> 422, field errors listed in details.
-          - HTTPException          -> original status code preserved; readable
-                                      error_code assigned for 400/404/422.
-          - All other exceptions   -> 500 INTERNAL_ERROR, exc message included.
+        Desteklenen istisna türleri:
+          - RequestValidationError → 422, hata alanları detay olarak listelenir.
+          - HTTPException          → orijinal status kodu korunur; 400/404/422
+                                     için anlamlı error_code atanır.
+          - Diğer tüm istisnalar  → 500 INTERNAL_ERROR, exc mesajı eklenir.
         """
         if isinstance(exc, RequestValidationError):
             details = [
@@ -75,3 +76,4 @@ class ErrorMapper:
             message=str(exc),
             details=[],
         )
+
