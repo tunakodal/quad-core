@@ -31,12 +31,6 @@ _ERROR_RESPONSES = {
 
 
 def _calculate_days_from_poi_count(poi_count: int) -> int:
-    """
-    POI sayısına göre önerilen maksimum gezi süresini hesaplar.
-
-    Her gün için ortalama ~9-14 POI kullanıldığı varsayımıyla eşik değerleri
-    belirlenir. 100'ün üzerindeki POI sayıları için 8 gün fallback değer döner.
-    """
     THRESHOLDS = [
         (9, 1),
         (18, 2),
@@ -279,7 +273,6 @@ def _get_controller(request: Request) -> RouteController:
     summary="Generate a multi-day itinerary and route",
 )
 async def generate_route(req: RouteRequest, request: Request):
-    """DI container'dan RouteController'ı çözerek rota oluşturma isteğini iletir."""
     return await _get_controller(request).generate_route(req)
 
 
@@ -290,7 +283,6 @@ async def generate_route(req: RouteRequest, request: Request):
     summary="Replan itinerary after user edits",
 )
 async def replan_route(req: ReplanRequest, request: Request):
-    """DI container'dan RouteController'ı çözerek yeniden planlama isteğini iletir."""
     return await _get_controller(request).replan_route(req)
 
 
@@ -301,5 +293,4 @@ async def replan_route(req: ReplanRequest, request: Request):
     summary="Suggest max feasible trip days",
 )
 async def suggest_trip_days(req: TripDaySuggestionRequest, request: Request):
-    """DI container'dan RouteController'ı çözerek gün önerisi isteğini iletir."""
     return await _get_controller(request).suggest_trip_days(req)

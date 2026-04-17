@@ -137,23 +137,6 @@ _POI_COLUMNS = (
     "google_rating, google_reviews_total"
 )
 def _compute_estimated_visit_duration(row: dict) -> int:
-    """
-    Bir POI için tahmini ziyaret süresini (dakika) hesaplar.
-
-    Veritabanında saklı olmayan bu değer her seferinde dinamik olarak üretilir.
-    Hesaplama üç faktöre dayanır:
-      1. Alt kategori bazlı temel süre (ör. Müze: 75 dk, Dini yapı: 30 dk)
-      2. Yorum sayısı çarpanı: az yorum → 0.90x, çok yorum → 1.10x
-      3. Puan çarpanı: düşük puan → 0.90x, yüksek puan → 1.10x
-
-    Sonuç 5 dakika yuvarlamasıyla [15, 150] aralığına kırpılır.
-
-    Args:
-        row: Supabase'den gelen ham POI verisi (sub_category_*, google_* alanları beklenir).
-
-    Returns:
-        Dakika cinsinden tahmini ziyaret süresi.
-    """
     SUBCATEGORY_DURATION = {
         "Ancient & Archaeology": 75,
         "Museum": 75,
@@ -217,14 +200,6 @@ def _compute_estimated_visit_duration(row: dict) -> int:
     return duration
 
 def _row_to_poi(row: dict) -> Poi:
-    """
-    Supabase'den gelen ham satırı Poi domain modeline dönüştürür.
-
-    category alanı uyumluluk için korunur; öncelik sırası:
-    main_category_1 > sub_category_1 > categories listesinin ilk elemanı > "Other"
-
-    estimated_visit_duration her çağrıda _compute_estimated_visit_duration ile hesaplanır.
-    """
     raw_cats = row.get("categories") or []
 
     category = (
@@ -258,7 +233,6 @@ def _row_to_poi(row: dict) -> Poi:
     )
 
 def _extract_poi_subcategories(poi: Poi) -> set[str]:
-    """Bir POI'nun dolu sub_category alanlarını küçük harfli küme olarak döner."""
     return {
         c.lower()
         for c in [
@@ -272,12 +246,6 @@ def _extract_poi_subcategories(poi: Poi) -> set[str]:
 
 
 def _poi_matches_categories(poi: Poi, categories: list[str]) -> bool:
-    """
-    POI'nın alt kategorilerinden en az biri istenen kategorilerle örtüşüyorsa True döner.
-
-    Karşılaştırma büyük/küçük harf duyarsızdır.
-    categories boşsa her POI eşleşir (filtre uygulanmaz).
-    """
     if not categories:
         return True
 
@@ -336,13 +304,6 @@ class PostgresPoiRepository(AbstractPoiRepository):
         return _row_to_poi(response.data[0])
 
     async def find_random(self, limit: int) -> list[Poi]:
-        """
-        Veritabanından rastgele POI'lar döner.
-
-        3 farklı ofset noktasından 200'er kayıt çekip birleştirir,
-        ardından karıştırarak ilk `limit` kadarını döner.
-        Tam rastgelelik garanti edilmez; keşif amaçlı kullanım içindir.
-        """
         batches = []
 
         for _ in range(3):  # 3 farklı yerden çek

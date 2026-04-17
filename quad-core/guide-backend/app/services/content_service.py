@@ -11,12 +11,6 @@ class ContentService:
     """
 
     def __init__(self, content_repository, media_repository, audio_asset_resolver):
-        """
-        Args:
-            content_repository:    Metin içeriği ve görsel metadata için veri kaynağı.
-            media_repository:      Görsel ve ses asset'leri için veri kaynağı.
-            audio_asset_resolver:  Doğru ses dosyasını seçen çözümleyici.
-        """
         self.content_repository = content_repository
         self.media_repository = media_repository
         self.audio_asset_resolver = audio_asset_resolver
@@ -24,20 +18,6 @@ class ContentService:
     async def get_poi_content(
         self, poi_id: str, lang: Language
     ) -> tuple[PoiContent, list[ApiWarning]]:
-        """
-        Bir POI için metin içeriği ve ses asset'ini bir arada döner.
-
-        İçerik bulunamazsa CONTENT_NOT_FOUND uyarısıyla boş PoiContent döner
-        (graceful degradation — 404 fırlatmaz). Ses bulunamazsa AUDIO_NOT_FOUND
-        INFO uyarısı eklenir ancak içerik yine de döner.
-
-        Args:
-            poi_id: İçeriği istenen mekanın kimliği.
-            lang:   İstenen içerik dili.
-
-        Returns:
-            (PoiContent, warnings) tuple'ı.
-        """
         warnings: list[ApiWarning] = []
 
         content = await self.content_repository.find_content(poi_id, lang)
@@ -71,19 +51,6 @@ class ContentService:
     async def batch_get_content(
         self, poi_ids: list[str], lang: Language
     ) -> dict[str, PoiContent]:
-        """
-        Birden fazla POI için içerikleri toplu olarak çeker.
-
-        get_poi_content'i sırayla çağırır; içerik bulunamayan POI'lar için
-        boş PoiContent oluşturulur (uyarılar bu metodda yoksayılır).
-
-        Args:
-            poi_ids: İçerik istenen mekan kimliklerinin listesi.
-            lang:    İstenen içerik dili.
-
-        Returns:
-            {poi_id: PoiContent} eşlemesi. Tüm poi_id'ler sonuçta bulunur.
-        """
         result = {}
         for poi_id in poi_ids:
             content, _ = await self.get_poi_content(poi_id, lang)

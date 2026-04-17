@@ -17,22 +17,6 @@ from math import radians, sin, cos, sqrt, atan2
 
 
 class MonteCarloItineraryPlanner:
-    """
-    Monte Carlo örneklemesi ile günlük POI kombinasyonları arasından
-    en iyi seyahat planını seçen planlayıcı.
-
-    Her gün için 500 rastgele aday üretilir, çok kriterli skor fonksiyonu
-    ile değerlendirilir ve kısıtları (günlük süre, mesafe) karşılayan
-    en iyi kombinasyon seçilir. Seçilen mekanlar bir sonraki günün
-    havuzundan çıkarılır.
-
-    Ağırlıklar (_score):
-        %40 mesafe skoru (Gaussian — hedefe yakınlık)
-        %25 popülerlik (Google rating × log(reviews))
-        %20 segment varyans skoru (dengeli adım mesafeleri)
-        %10 mekan sayısı
-        %5  kategori çeşitliliği
-    """
 
     def __init__(
         self,
@@ -51,21 +35,7 @@ class MonteCarloItineraryPlanner:
         pois: list[Poi],
         constraints: TravelConstraints,
     ) -> list[list[Poi]]:
-        """
-        Verilen POI havuzundan 500 rastgele aday kombinasyon üretir.
 
-        Her aday, [4, max_pois_per_day] aralığında rastgele k adet POI
-        içerir. Yeterince aday üretmek için minimum 4 POI gereklidir;
-        bu sayının altında boş liste döner.
-
-        Args:
-            pois:        Örnekleme yapılacak mekan havuzu.
-            constraints: max_pois_per_day üst sınırını belirler.
-
-        Returns:
-            500 elemanlı aday listesi; her eleman rastgele seçilmiş bir POI listesidir.
-            POI sayısı < 4 ise boş liste döner.
-        """
         if len(pois) < 4:
             return []
 
@@ -87,23 +57,7 @@ class MonteCarloItineraryPlanner:
             constraints: TravelConstraints,
             prefs: TravelPreferences,
     ) -> Itinerary:
-        """
-        Verilen POI havuzundan prefs.trip_days kadar günlük plan oluşturur.
 
-        Her gün için _select_with_retries çağrılır; seçilen mekanlar bir
-        sonraki günün havuzundan çıkarılır (aynı mekan iki günde görünmez).
-        Havuzda 4'ten az mekan kalırsa ya da en iyi aday bulunamazsa planlama
-        erken sonlandırılır ve o ana kadar oluşturulan günler döndürülür.
-
-        Args:
-            pois:        Tüm gezi için aday mekan havuzu.
-            constraints: Günlük max mekan ve mesafe kısıtları.
-            prefs:       Kaç günlük plan isteniyor (trip_days).
-
-        Returns:
-            Oluşturulan günlük planları içeren Itinerary.
-            İstenen gün sayısına ulaşılamazsa kısmi Itinerary döner.
-        """
         remaining_pois = list(pois)
         day_plans: list[DayPlan] = []
 
@@ -203,25 +157,7 @@ class MonteCarloItineraryPlanner:
             constraints: TravelConstraints,
             prefs: TravelPreferences,
     ) -> Any | None:
-        """
-        Dışarıdan verilen hazır aday listesi arasından en iyisini seçer.
 
-        select_best'in aksine yeni aday üretmez; skorlayıp sıralar ve
-        günlük süre kısıtını (420 dk) geçen ilk uygun adayı döndürür.
-        Hiçbir aday kısıta uymasa bile en yüksek skoru döndürür (fallback).
-
-        Kullanım: Harici testlerde ya da önceden hesaplanmış adaylarla
-        karşılaştırmalı değerlendirme senaryolarında kullanılır.
-
-        Args:
-            candidates:  Değerlendirilecek hazır POI kombinasyon listesi.
-            constraints: Mesafe kısıtları (_score içinde kullanılır).
-            prefs:       Kullanıcı tercihleri (_score içinde kullanılır).
-
-        Returns:
-            En iyi skoru alan ve kısıtları karşılayan POI listesi.
-            candidates boşsa None döner.
-        """
         if not candidates:
             return None
 
@@ -246,32 +182,7 @@ class MonteCarloItineraryPlanner:
         return scored_candidates[0][2] if scored_candidates else None
 
     def _score(self, candidate, constraints, prefs):
-        """
-        Bir POI kombinasyonunu çok kriterli skorlama fonksiyonuyla değerlendirir.
 
-        Önce greedy nearest-neighbor ile rota sırası oluşturur (merkeze en uzak
-        noktadan başlar), ardından beş kritere göre [0, 1] aralığında alt skorlar
-        hesaplar ve ağırlıklı toplamı döndürür.
-
-        Kriter ağırlıkları:
-            0.40 — distance_score : Toplam mesafe hedefe ne kadar yakın (Gaussian)
-            0.20 — variance_score : Segment mesafeleri ne kadar dengeli (1/(1+CV))
-            0.25 — popularity_score: Google rating × log(1+reviews) normalize
-            0.05 — diversity_score : Farklı kategori sayısı / maksimum mümkün
-            0.10 — count_score    : Mekan sayısı / max_pois_per_day
-
-        Hard cap: Toplam mesafe target × 2'yi aşarsa skor direkt 0 döner.
-
-        Args:
-            candidate:   Değerlendirilecek POI listesi.
-            constraints: max_daily_distance ve max_pois_per_day kısıtları.
-            prefs:       Şu an kullanılmıyor; ileriki genişleme için parametre olarak tutuluyor.
-
-        Returns:
-            (score: float, route: list[Poi]) tuple'ı.
-            score [0, 1] aralığındadır; yüksek = daha iyi.
-            route, nearest-neighbor ile sıralanmış POI listesidir.
-        """
         if len(candidate) < 2:
             return 0, candidate
 
@@ -395,12 +306,6 @@ class MonteCarloItineraryPlanner:
 
     @staticmethod
     def _distance_raw(lat1, lng1, lat2, lng2):
-        """
-        İki koordinat arasındaki kuş uçuşu mesafeyi Haversine formülü ile hesaplar.
-
-        Returns:
-            Kilometre cinsinden mesafe (float).
-        """
         R = 6371
         dlat = radians(lat2 - lat1)
         dlng = radians(lng2 - lng1)
@@ -409,10 +314,6 @@ class MonteCarloItineraryPlanner:
         return R * c
 
     def _distance(self, p1, p2):
-        """
-        İki Poi nesnesi arasındaki kuş uçuşu mesafeyi km cinsinden döner.
-        İç kullanım için _distance_raw üzerindeki sarmalayıcı.
-        """
         return self._distance_raw(
             p1.location.latitude, p1.location.longitude,
             p2.location.latitude, p2.location.longitude,

@@ -41,12 +41,6 @@ class HeuristicPlanRanker(PlanRanker):
         prefs: TravelPreferences,
         constraints: TravelConstraints,
     ) -> float:
-        """
-        Kategori çeşitliliğini ödüllendiren, mesafe aşımını cezalandıran sezgisel skor.
-
-        Boş itinerary için 0.0 döner. Yüksek puan daha iyi planı ifade eder;
-        mutlak değerin anlamı yoktur, yalnızca karşılaştırma için kullanılır.
-        """
         if not candidate.days:
             return 0.0
 

@@ -81,7 +81,6 @@ class AudioAssetResolver(AbstractAudioAssetResolver):
         self._media_repository = media_repository
 
     async def resolve_audio(self, poi_id: str, lang: Language) -> MediaAsset | None:
-        """Belirtilen POI ve dil için ses asset'ini media repository'den çözer."""
         return await self._media_repository.get_audio(poi_id, lang)
 
 

@@ -15,13 +15,6 @@ class RequestValidator:
         self.max_category_count = settings.max_category_count
 
     def validate_route_request(self, req: RouteRequest) -> ValidationResult:
-        """
-        Validates a route generation request.
-
-        Checks that city and categories are provided, that trip_days and
-        max_distance_per_day are within system limits, and that at least
-        one planning constraint is present.
-        """
         errors, warnings = [], []
 
         trip_days = req.preferences.trip_days
@@ -72,13 +65,6 @@ class RequestValidator:
         )
 
     def validate_replan_request(self, req: ReplanRequest) -> ValidationResult:
-        """
-        Validates a replanning request.
-
-        Ensures existing_itinerary contains at least one day, and that all
-        day_index values referenced in edits correspond to actual days in the
-        itinerary. An unknown day_index reference will result in a 422 error.
-        """
         errors = []
 
         if not req.existing_itinerary.days:
@@ -97,12 +83,6 @@ class RequestValidator:
         return ValidationResult(is_valid=len(errors) == 0, errors=errors)
 
     def validate_poi_query(self, query: PoiQuery) -> ValidationResult:
-        """
-        Validates a POI search query.
-
-        city is required; categories must not exceed max_category_count.
-        An empty categories list is valid and returns all POIs for the city.
-        """
         errors = []
         if not query.city:
             errors.append("city is required.")
@@ -115,16 +95,11 @@ class RequestValidator:
     def validate_trip_day_suggestion_request(
         self, req: TripDaySuggestionRequest
     ) -> ValidationResult:
-        """
-        Validates a trip-day suggestion request.
-
-        Only checks that city is non-empty. Categories are optional;
-        if omitted, all POIs in the city are counted for the suggestion.
-        """
         errors = []
         if not req.city:
             errors.append("city is required.")
         return ValidationResult(is_valid=len(errors) == 0, errors=errors)
+
 
     def _get_city_max_distance(self, city: str) -> int | None:
         """
