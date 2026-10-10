@@ -4,26 +4,25 @@
 
 > BIL495 / BIL496 Graduation Project · Team **QUAD-CORE** · TOBB University of Economics and Technology, Department of Computer Engineering, Ankara
 >
-> 🎓 Accepted and published at **MUISC 2026** (Maltepe University International Student Congress) — see [Publication](#-publication--conference).
+> Accepted and published at **MUISC 2026** (Maltepe University International Student Congress) — see [Publication](#publication--conference).
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Publication & Conference](#-publication--conference)
+2. [Publication & Conference](#publication--conference)
 3. [Key Features](#key-features)
 4. [Repository Structure](#repository-structure)
 5. [System Architecture](#system-architecture)
 6. [How the Itinerary Planner Works](#how-the-itinerary-planner-works)
 7. [The POI Dataset](#the-poi-dataset)
 8. [Tech Stack](#tech-stack)
-9. [Running the Project Locally](#running-the-project-locally)
-10. [API Reference](#api-reference)
-11. [Testing](#testing)
-12. [Documentation](#documentation)
-13. [Project Status](#project-status)
-14. [Team](#team)
+9. [API Reference](#api-reference)
+10. [Testing](#testing)
+11. [Documentation](#documentation)
+12. [Project Status](#project-status)
+13. [Team](#team)
 
 ---
 
@@ -42,7 +41,7 @@ Travel planning is usually done through a fragmented mix of map services, review
 
 After the plan is generated, users can **add, remove and reorder** POIs and have the itinerary re-computed instantly.
 
-## 🎓 Publication & Conference
+## Publication & Conference
 
 GUIDE was accepted to, and is included in the official abstract book of:
 
@@ -116,7 +115,7 @@ quad-core/
 
 | I want to… | Go to |
 |---|---|
-| Run the app | [`quad-core/`](quad-core) and [`quad-core/guide-backend/`](quad-core/guide-backend) |
+| Browse the application code | [`quad-core/`](quad-core) and [`quad-core/guide-backend/`](quad-core/guide-backend) |
 | Understand the algorithm | [`quad-core/guide-backend/app/services/`](quad-core/guide-backend/app/services) and the Final Report |
 | See how the dataset was built | [`Data_Pipeline/`](Data_Pipeline) |
 | Read the project reports | [`Documentation/BIL496_Documentation/`](Documentation/BIL496_Documentation) |
@@ -190,41 +189,6 @@ The complete, ordered 14-step pipeline is documented in [`Data_Pipeline/GUIDE Da
 | Storage | AWS S3 |
 | Testing | pytest (+ asyncio) |
 
-## Running the Project Locally
-
-> **Note:** the production deployment (hosting, OSRM server and managed database) is no longer running, so a full local run requires you to provide your own services. The repository is primarily kept as a presentation and archival artifact.
-
-### Backend
-
-```bash
-cd quad-core/guide-backend
-pip install -r requirements.txt
-```
-
-Create a `.env` file in `quad-core/guide-backend/` (all values optional — the app falls back to bundled JSON data when Supabase is not configured):
-
-```env
-SUPABASE_URL=...
-SUPABASE_KEY=...                    # anon / publishable key
-OSRM_BASE_URL=http://localhost:5000
-```
-
-```bash
-uvicorn main:app --reload           # http://localhost:8000  (docs at /docs)
-```
-
-### Frontend
-
-```bash
-cd quad-core
-npm install
-npm run dev                         # http://localhost:5173 (proxies /api → localhost:8000)
-```
-
-### OSRM (optional, for real routing)
-
-Run an OSRM backend with a Türkiye OpenStreetMap extract on port `5000` (see the OSRM documentation).
-
 ## API Reference
 
 Base path: `/api/v1`
@@ -238,8 +202,6 @@ Base path: `/api/v1`
 | `GET` | `/pois/{poi_id}` | Get a single POI |
 | `POST` | `/pois/content` | Get POI content, media and audio |
 | `GET` | `/health` | Health check |
-
-Interactive docs are served at `http://localhost:8000/docs` while the backend is running.
 
 ## Testing
 
@@ -277,5 +239,3 @@ The system was fully implemented and evaluated as an undergraduate capstone proj
 - Kayrahan Toprak Tosun
 - Erdem Baran
 - Tuna Kodal
-
-**Links:** [Project site (GitHub Pages)](https://tunakodal.github.io/quad-core/) · [Shared Google Drive](https://drive.google.com/drive/folders/1lyXuqaJ0JrhiMycv8PPHxm4y8imNcxqK?usp=sharing)
