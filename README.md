@@ -229,7 +229,7 @@ All of the above live under [`Documentation/`](Documentation).
 
 ## Project Status
 
-The system was fully implemented and evaluated as an undergraduate capstone project and presented at MUISC 2026. The live deployment has since been taken down (hosting and API costs); the code, data pipeline, reports and designs in this repository are preserved for presentation and reference.
+The system was fully implemented and evaluated as an undergraduate capstone project and presented at MUISC 2026.
 
 ## Team
 
